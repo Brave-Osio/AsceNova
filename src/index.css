@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+@theme {
+  --color-rank-iron: #6b7280;
+  --color-rank-bronze: #d97706;
+  --color-rank-silver: #94a3b8;
+  --color-rank-gold: #f59e0b;
+  --color-rank-platinum: #2dd4bf;
+  --color-rank-diamond: #38bdf8;
+  --color-rank-ascendant: #4ade80;
+  --color-rank-immortal: #c084fc;
+  --color-rank-radiant: #fb7185;
+
+  /* Brand palette */
+  --color-brand-bg: #080b12;
+  --color-brand-surface: #0f1219;
+  --color-brand-card: #131720;
+  --color-brand-border: rgba(255,255,255,0.08);
+  --color-brand-primary: #7c3aed;
+  --color-brand-primary-light: #9b5cf6;
+  --color-brand-accent: #06d6a0;
+  --color-brand-accent2: #f72585;
+  --color-brand-neon: #00f5d4;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-brand-bg);
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-brand-bg); }
+::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.7); }
+
+/* ── Mesh gradient backgrounds ─────────────────────────────── */
+.bg-mesh {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6,214,160,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(247,37,133,0.04) 0%, transparent 70%),
+    var(--color-brand-bg);
+}
+
+/* ── Glass cards ───────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.glass-strong {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* ── Glow utilities ────────────────────────────────────────── */
+.glow-violet { box-shadow: 0 0 30px rgba(124,58,237,0.25), 0 0 60px rgba(124,58,237,0.1); }
+.glow-cyan   { box-shadow: 0 0 30px rgba(6,214,160,0.20), 0 0 60px rgba(6,214,160,0.08); }
+.glow-pink   { box-shadow: 0 0 30px rgba(247,37,133,0.20), 0 0 60px rgba(247,37,133,0.08); }
+
+/* ── Gradient text ─────────────────────────────────────────── */
+.text-gradient-violet {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #67e8f9 0%, #06d6a0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-hero {
+  background: linear-gradient(135deg, #f8fafc 0%, #c4b5fd 40%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Animated border ───────────────────────────────────────── */
+.border-animated {
+  position: relative;
+}
+.border-animated::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #7c3aed, #06d6a0, #f72585, #7c3aed);
+  background-size: 300% 300%;
+  animation: border-spin 4s linear infinite;
+  z-index: -1;
+}
+@keyframes border-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Floating orbs ─────────────────────────────────────────── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: orb-float 8s ease-in-out infinite;
+}
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-20px) scale(1.05); }
+}
+
+/* ── Pulse dot ─────────────────────────────────────────────── */
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(124,58,237,0); }
+}
+
+/* ── Card hover lift ───────────────────────────────────────── */
+.card-hover {
+  border-radius: 1rem;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 6px 20px rgba(124, 58, 237, 0.12),
+    0 0 12px rgba(124, 58, 237, 0.08);
+}
+
+/* ── Streak fire ───────────────────────────────────────────── */
+@keyframes flicker {
+  0%, 100% { transform: scale(1) rotate(-1deg); }
+  50% { transform: scale(1.1) rotate(1deg); }
+}
+.fire { display: inline-block; animation: flicker 1.2s ease-in-out infinite; }
+
+/* ── Chat bubbles ──────────────────────────────────────────── */
+.chat-user-bubble {
+  background: linear-gradient(135deg, #7c3aed, #9b5cf6);
+  box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+}
+.chat-coach-bubble {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ── Suggested question pill ───────────────────────────────── */
+.suggestion-pill {
+  background: rgba(124,58,237,0.08);
+  border: 1px solid rgba(124,58,237,0.25);
+  transition: all 0.2s ease;
+}
+.suggestion-pill:hover {
+  background: rgba(124,58,237,0.2);
+  border-color: rgba(155,92,246,0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124,58,237,0.2);
+}
+
+/* ── Table rows ────────────────────────────────────────────── */
+.workout-row {
+  transition: background 0.15s ease;
+}
+.workout-row:hover {
+  background: rgba(124,58,237,0.06);
+}
+
+/* ── Navbar active glow ─────────────────────────────────────── */
+.nav-active {
+  color: #a78bfa;
+  position: relative;
+}
+.nav-active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #7c3aed, #06d6a0);
+  border-radius: 1px;
+}
