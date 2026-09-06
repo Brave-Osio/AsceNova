@@ -4,14 +4,28 @@ import type { Profile } from '../types/profile.types';
 
 function makeProfile(overrides: Partial<Profile> = {}): Profile {
   return {
-    name: 'Test User',
+    id: 'test-profile-id',
+    userId: 'test-user-id',
+    fullName: 'Test User',
+    birthday: null,
     age: 25,
+    gender: null,
     heightCm: 175,
-    weightKg: 70,
-    goal: 'maintain_weight',
-    fitnessLevel: 'intermediate',
-    equipmentAccess: 'gym',
+    currentWeightKg: 70,
+    goalWeightKg: null,
+    goal: 'MAINTAIN_WEIGHT',
+    fitnessLevel: 'INTERMEDIATE',
+    equipmentAccess: 'GYM',
+    activityLevel: null,
+    workoutFrequency: null,
+    preferredSplitStyle: null,
+    foodPreference: null,
+    foodAllergies: [],
+    medicalRestrictions: [],
+    dailySchedule: null,
+    sleepHoursTarget: null,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...overrides,
   };
 }
@@ -49,7 +63,7 @@ describe('fitnessService.generatePlan', () => {
   });
 
   it('swaps to bodyweight framing for push/pull/legs when equipment is home-only', async () => {
-    const homeProfile = makeProfile({ equipmentAccess: 'home' });
+    const homeProfile = makeProfile({ equipmentAccess: 'HOME' });
     const plan = await generatePlan(homeProfile, 'push_pull_legs');
 
     const allFocuses = plan.workoutDays.map((d) => d.focus).join(' ');
@@ -57,7 +71,7 @@ describe('fitnessService.generatePlan', () => {
   });
 
   it('does not add bodyweight framing when gym access is available', async () => {
-    const gymProfile = makeProfile({ equipmentAccess: 'gym' });
+    const gymProfile = makeProfile({ equipmentAccess: 'GYM' });
     const plan = await generatePlan(gymProfile, 'push_pull_legs');
 
     const allFocuses = plan.workoutDays.map((d) => d.focus).join(' ');
@@ -65,13 +79,13 @@ describe('fitnessService.generatePlan', () => {
   });
 
   it('keeps the user-chosen style even when equipment access does not match it (does not override the pick)', async () => {
-    const homeProfile = makeProfile({ equipmentAccess: 'home' });
+    const homeProfile = makeProfile({ equipmentAccess: 'HOME' });
     const plan = await generatePlan(homeProfile, 'upper_lower');
     expect(plan.splitStyle).toBe('upper_lower');
   });
 
   it('includes more cardio for weight_loss goal regardless of split style', async () => {
-    const weightLossProfile = makeProfile({ goal: 'weight_loss' });
+    const weightLossProfile = makeProfile({ goal: 'WEIGHT_LOSS' });
     const plan = await generatePlan(weightLossProfile, 'full_body');
 
     const allFocuses = plan.workoutDays.map((d) => d.focus).join(' ');

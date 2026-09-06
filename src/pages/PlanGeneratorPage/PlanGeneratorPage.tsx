@@ -68,8 +68,8 @@ export default function PlanGeneratorPage() {
             </span>
             <h1 className="text-3xl font-extrabold text-white sm:text-4xl">Your Fitness Plan</h1>
             <p className="mt-1.5 text-gray-400">
-              Tailored for <span className="text-white font-semibold">{profile.name}</span>'s{' '}
-              <span className="text-violet-300">{profile.goal.replace('_', ' ')}</span> goal
+              Tailored for <span className="text-white font-semibold">{profile.fullName}</span>'s{' '}
+              <span className="text-violet-300">{profile.goal.replace(/_/g, ' ').toLowerCase()}</span> goal
             </p>
           </div>
         </div>

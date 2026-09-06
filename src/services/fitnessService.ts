@@ -28,8 +28,8 @@ export async function generatePlan(
 }
 
 function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): WorkoutDay[] {
-  const usesGym = profile.equipmentAccess === 'gym' || profile.equipmentAccess === 'both';
-  const isWeightLoss = profile.goal === 'weight_loss';
+  const usesGym = profile.equipmentAccess === 'GYM' || profile.equipmentAccess === 'BOTH';
+  const isWeightLoss = profile.goal === 'WEIGHT_LOSS';
 
   // Equipment-aware exercise framing: Push/Pull/Legs and Upper/Lower
   // assume gym-style isolation work. If the user picked one of those
@@ -81,23 +81,24 @@ function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): Wor
 
 function buildNutritionTargets(profile: Profile): NutritionPlan {
   // Mifflin-St Jeor baseline, then adjusted by goal.
-  const baseCalories = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 200;
+  const baseCalories =
+    10 * profile.currentWeightKg + 6.25 * profile.heightCm - 5 * profile.age + 200;
 
   const goalAdjustment: Record<Profile['goal'], number> = {
-    weight_loss: -300,
-    muscle_gain: 300,
-    maintain_weight: 0,
+    WEIGHT_LOSS: -300,
+    MUSCLE_GAIN: 300,
+    MAINTAIN_WEIGHT: 0,
   };
 
   const calories = Math.round(baseCalories + goalAdjustment[profile.goal]);
 
   // Protein: ~2g/kg for muscle gain, ~1.8g/kg for weight loss, ~1.6g/kg for maintain
   const proteinMultiplier =
-    profile.goal === 'muscle_gain' ? 2.0 : profile.goal === 'weight_loss' ? 1.8 : 1.6;
-  const proteinGrams = Math.round(profile.weightKg * proteinMultiplier);
+    profile.goal === 'MUSCLE_GAIN' ? 2.0 : profile.goal === 'WEIGHT_LOSS' ? 1.8 : 1.6;
+  const proteinGrams = Math.round(profile.currentWeightKg * proteinMultiplier);
 
   // Fat: 25–30% of calories (higher for muscle gain)
-  const fatCaloriePct = profile.goal === 'muscle_gain' ? 0.30 : 0.25;
+  const fatCaloriePct = profile.goal === 'MUSCLE_GAIN' ? 0.30 : 0.25;
   const fatGrams = Math.round((calories * fatCaloriePct) / 9);
 
   // Carbs: remaining calories after protein + fat
@@ -106,10 +107,10 @@ function buildNutritionTargets(profile: Profile): NutritionPlan {
   const carbsGrams = Math.round((calories - proteinCals - fatCals) / 4);
 
   // Sodium: 2000–2300 mg/day; slightly higher for active/muscle gain
-  const sodiumMg = profile.goal === 'muscle_gain' ? 2300 : 2000;
+  const sodiumMg = profile.goal === 'MUSCLE_GAIN' ? 2300 : 2000;
 
   // Water: ~40ml per kg bodyweight, plus 0.5L base
-  const waterLiters = Math.round((profile.weightKg * 0.04 + 0.5) * 10) / 10;
+  const waterLiters = Math.round((profile.currentWeightKg * 0.04 + 0.5) * 10) / 10;
 
   return { calories, proteinGrams, carbsGrams, fatGrams, sodiumMg, waterLiters };
 }

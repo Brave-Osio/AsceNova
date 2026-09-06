@@ -1,21 +1,13 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getProfile } from '../../storage/profileStorage';
+import { useProfile } from '../../features/profile/hooks/useProfile';
 import { ROUTES } from '../../constants/routes';
 import DailyLogForm from '../../features/daily-log/components/DailyLogForm';
-import type { Profile } from '../../types/profile.types';
 
 export default function DailyLogPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [checkedProfile, setCheckedProfile] = useState(false);
+  const { data: profile, isLoading } = useProfile();
 
-  useEffect(() => {
-    setProfile(getProfile());
-    setCheckedProfile(true);
-  }, []);
-
-  if (!checkedProfile) return null;
+  if (isLoading) return null;
 
   if (!profile) {
     return (

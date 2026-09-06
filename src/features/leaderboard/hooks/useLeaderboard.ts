@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getLeaderboard } from '../../../storage/leaderboardStorage';
-import { getProfile } from '../../../storage/profileStorage';
+import { useProfile } from '../../profile/hooks/useProfile';
 import { useUserProgress } from '../../../context/UserProgressContext';
 import type { LeaderboardEntry } from '../../../types/leaderboard.types';
 
@@ -17,11 +17,11 @@ export interface LeaderboardRowData extends LeaderboardEntry {
  */
 export function useLeaderboard(): LeaderboardRowData[] {
   const { progress, rank } = useUserProgress();
+  const { data: profile } = useProfile();
   const [rows, setRows] = useState<LeaderboardRowData[]>([]);
 
   useEffect(() => {
     const mockEntries = getLeaderboard();
-    const profile = getProfile();
 
     const allEntries: LeaderboardRowData[] = mockEntries.map((entry) => ({
       ...entry,
@@ -31,7 +31,7 @@ export function useLeaderboard(): LeaderboardRowData[] {
     if (profile) {
       allEntries.push({
         position: 0, // recalculated below
-        name: `${profile.name} (You)`,
+        name: `${profile.fullName} (You)`,
         rank,
         xp: progress.totalXp,
         streak: progress.currentStreak,
@@ -44,8 +44,8 @@ export function useLeaderboard(): LeaderboardRowData[] {
       .map((entry, index) => ({ ...entry, position: index + 1 }));
 
     setRows(sorted);
-    // Re-run whenever progress changes so the table reflects live XP/rank/streak.
-  }, [progress, rank]);
+    // Re-run whenever progress or profile changes so the table reflects live XP/rank/streak.
+  }, [progress, rank, profile]);
 
   return rows;
 }

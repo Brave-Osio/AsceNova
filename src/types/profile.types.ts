@@ -1,20 +1,65 @@
-export type FitnessGoal = 'weight_loss' | 'muscle_gain' | 'maintain_weight';
-export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced';
-export type EquipmentAccess = 'home' | 'gym' | 'both';
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+export type FitnessGoal = 'WEIGHT_LOSS' | 'MUSCLE_GAIN' | 'MAINTAIN_WEIGHT';
+export type FitnessLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export type EquipmentAccess = 'HOME' | 'GYM' | 'BOTH';
+export type ActivityLevel =
+  | 'SEDENTARY'
+  | 'LIGHTLY_ACTIVE'
+  | 'MODERATELY_ACTIVE'
+  | 'VERY_ACTIVE'
+  | 'EXTRA_ACTIVE';
+export type WorkoutSplitStylePreference = 'PUSH_PULL_LEGS' | 'UPPER_LOWER' | 'FULL_BODY';
+export type FoodPreference =
+  | 'OMNIVORE'
+  | 'VEGETARIAN'
+  | 'VEGAN'
+  | 'PESCATARIAN'
+  | 'HALAL'
+  | 'KETO'
+  | 'OTHER';
+export type PreferredWorkoutTime = 'MORNING' | 'AFTERNOON' | 'EVENING';
 
-export interface Profile {
-  name: string;
-  age: number;
-  heightCm: number;
-  weightKg: number;
-  goal: FitnessGoal;
-  fitnessLevel: FitnessLevel;
-  equipmentAccess: EquipmentAccess;
-  createdAt: string; // ISO timestamp — set once on creation
+export interface DailySchedule {
+  preferredWorkoutTime?: PreferredWorkoutTime;
 }
 
 /**
- * Input shape for creating a profile, before createdAt is stamped.
- * Kept separate from Profile so the form layer never has to fake a timestamp.
+ * Mirrors the Prisma `Profile` model's field names and enum values 1:1
+ * (no translation layer) since this is exactly the shape the API
+ * returns as JSON.
  */
-export type ProfileInput = Omit<Profile, 'createdAt'>;
+export interface Profile {
+  id: string;
+  userId: string;
+
+  fullName: string;
+  birthday: string | null; // ISO date string
+  age: number;
+  gender: Gender | null;
+
+  heightCm: number;
+  currentWeightKg: number;
+  goalWeightKg: number | null;
+
+  goal: FitnessGoal;
+  fitnessLevel: FitnessLevel;
+  equipmentAccess: EquipmentAccess;
+  activityLevel: ActivityLevel | null;
+  workoutFrequency: number | null;
+  preferredSplitStyle: WorkoutSplitStylePreference | null;
+
+  foodPreference: FoodPreference | null;
+  foodAllergies: string[];
+  medicalRestrictions: string[];
+  dailySchedule: DailySchedule | null;
+  sleepHoursTarget: number | null;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Input shape for creating/updating a profile — only the fields the
+ * onboarding form actually collects; the server fills id/userId/timestamps.
+ */
+export type ProfileInput = Omit<Profile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProfile } from '../../../storage/profileStorage';
+import { useProfile } from '../../profile/hooks/useProfile';
 import { getPlan, savePlan } from '../../../storage/planStorage';
 import { generatePlan } from '../../../services/fitnessService';
 import type { FitnessPlan, WorkoutSplitStyle } from '../../../types/plan.types';
@@ -14,54 +14,47 @@ interface UsePlanGeneratorResult {
 }
 
 /**
- * On mount: if a profile exists, use any cached plan first (avoids
- * regenerating — and re-billing a real API later — on every page visit),
- * otherwise generate one and cache it. If no profile exists at all,
- * plan/profile stay null and the page renders an empty state rather
- * than crashing (per the no-route-guards decision from Phase 1).
+ * Once the profile query resolves: if a profile exists, use any cached
+ * plan first (avoids regenerating — and re-billing a real API later —
+ * on every page visit), otherwise generate one and cache it. If no
+ * profile exists at all, plan stays null and the page renders an empty
+ * state rather than crashing.
  */
 export function usePlanGenerator(): UsePlanGeneratorResult {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { data: profile, isLoading: isProfileLoading } = useProfile();
   const [plan, setPlan] = useState<FitnessPlan | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  async function loadOrGenerate() {
-    const currentProfile = getProfile();
-    setProfile(currentProfile);
-
-    if (!currentProfile) {
-      setPlan(null);
-      setIsLoading(false);
-      return;
-    }
-
+  async function loadOrGenerate(currentProfile: Profile) {
     const cachedPlan = getPlan();
     if (cachedPlan) {
       setPlan(cachedPlan);
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    setIsGenerating(true);
     const newPlan = await generatePlan(currentProfile);
     savePlan(newPlan);
     setPlan(newPlan);
-    setIsLoading(false);
+    setIsGenerating(false);
   }
 
   async function regenerate(splitStyle?: WorkoutSplitStyle) {
     if (!profile) return;
-    setIsLoading(true);
+    setIsGenerating(true);
     const styleToUse = splitStyle ?? plan?.splitStyle;
     const newPlan = await generatePlan(profile, styleToUse);
     savePlan(newPlan);
     setPlan(newPlan);
-    setIsLoading(false);
+    setIsGenerating(false);
   }
 
   useEffect(() => {
-    loadOrGenerate();
-  }, []);
+    if (profile) {
+      loadOrGenerate(profile);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
-  return { plan, profile, isLoading, regenerate };
+  return { plan, profile: profile ?? null, isLoading: isProfileLoading || isGenerating, regenerate };
 }
