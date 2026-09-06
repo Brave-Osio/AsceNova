@@ -1,0 +1,698 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Supabase + Vercel serverless pattern: `url` is the pooled (PgBouncer,
+// port 6543) connection used by the app at runtime; `directUrl` is the
+// direct (port 5432) connection Prisma Migrate needs for DDL, which
+// doesn't work reliably through a transaction pooler.
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ===================== ENUMS =====================
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum FitnessGoal {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  MAINTAIN_WEIGHT
+}
+
+enum FitnessLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum EquipmentAccess {
+  HOME
+  GYM
+  BOTH
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_ACTIVE
+  MODERATELY_ACTIVE
+  VERY_ACTIVE
+  EXTRA_ACTIVE
+}
+
+enum WorkoutSplitStyle {
+  PUSH_PULL_LEGS
+  UPPER_LOWER
+  FULL_BODY
+}
+
+enum PlanSource {
+  RULE_BASED_LEGACY
+  GEMINI
+}
+
+enum FoodPreference {
+  OMNIVORE
+  VEGETARIAN
+  VEGAN
+  PESCATARIAN
+  HALAL
+  KETO
+  OTHER
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum MealCategory {
+  BUDGET
+  STUDENT
+  GYM
+  HIGH_PROTEIN
+  LOW_CARB
+  LOW_SODIUM
+  VEGETARIAN
+}
+
+enum RankName {
+  IRON
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  ASCENDANT
+  IMMORTAL
+  RADIANT
+}
+
+enum XpSource {
+  DAILY_CHECK_IN
+  WORKOUT_COMPLETED
+  HIT_WATER_GOAL
+  HIT_PROTEIN_GOAL
+  SLEPT_7_PLUS_HOURS
+  REACHED_STEP_GOAL
+  SEVEN_DAY_STREAK
+  THIRTY_DAY_STREAK
+  ACHIEVEMENT_UNLOCK
+  GOAL_PROGRESS
+}
+
+enum NotificationType {
+  ACHIEVEMENT
+  STREAK
+  RANK_UP
+  PLAN_READY
+  REMINDER
+  SYSTEM
+  ADMIN
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum ReportFormat {
+  CSV
+  XLSX
+}
+
+enum ReportStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+// ===================== AUTH =====================
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String
+  role            Role          @default(USER)
+  status          AccountStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  deleted         Boolean       @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  profile             Profile?
+  workoutPlans        WorkoutPlan[]
+  workoutLogs         WorkoutLog[]
+  mealLogs            MealLog[]
+  dailyProgress       DailyProgress[]
+  weightProgress      WeightProgress[]
+  waterLogs           WaterLog[]
+  userProgress        UserProgress?
+  xpHistory           XpHistory[]
+  rankHistory         RankHistory[]
+  achievementProgress AchievementProgress[]
+  streakHistory       StreakHistory[]
+  notifications       Notification[]
+  leaderboardEntry    LeaderboardEntry?
+  chatHistory         ChatMessage[]
+  goals               Goal[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  reportsGenerated    Report[]              @relation("ReportsGeneratedBy")
+  settingsUpdated     SystemSetting[]       @relation("SettingsUpdatedBy")
+
+  @@index([status])
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdByIp String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ===================== PROFILE =====================
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  fullName        String
+  birthday        DateTime? @db.Date
+  age             Int
+  gender          Gender?
+
+  heightCm        Float
+  currentWeightKg Float
+  goalWeightKg    Float?
+
+  goal                FitnessGoal
+  fitnessLevel        FitnessLevel
+  equipmentAccess     EquipmentAccess
+  activityLevel       ActivityLevel?
+  workoutFrequency    Int?
+  preferredSplitStyle WorkoutSplitStyle?
+
+  foodPreference      FoodPreference?
+  foodAllergies       String[] @default([])
+  medicalRestrictions String[] @default([])
+  dailySchedule       Json?
+  sleepHoursTarget    Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+// ===================== WORKOUT PLAN =====================
+
+model WorkoutPlan {
+  id            String            @id @default(cuid())
+  userId        String
+  splitStyle    WorkoutSplitStyle
+  isActive      Boolean           @default(true)
+  source        PlanSource        @default(GEMINI)
+  promptVersion String?
+  generatedAt   DateTime          @default(now())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutDays   WorkoutDay[]
+  nutritionPlan NutritionPlan?
+
+  @@index([userId, isActive])
+  @@index([userId, generatedAt])
+  @@map("workout_plans")
+}
+
+model WorkoutDay {
+  id                       String   @id @default(cuid())
+  workoutPlanId            String
+  dayIndex                 Int
+  label                    String
+  focus                    String
+  workoutName              String?
+  warmUp                   String?  @db.Text
+  coolDown                 String?  @db.Text
+  estimatedDurationMinutes Int?
+  estimatedCaloriesBurned  Int?
+  coachingTips             String[] @default([])
+  progressionAdvice        String?  @db.Text
+
+  workoutPlan WorkoutPlan       @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exercises   WorkoutExercise[]
+  workoutLogs WorkoutLog[]
+
+  @@unique([workoutPlanId, dayIndex])
+  @@index([workoutPlanId])
+  @@map("workout_days")
+}
+
+model WorkoutExercise {
+  id                String        @id @default(cuid())
+  workoutDayId      String
+  order             Int
+  name              String
+  sets              Int
+  reps              String
+  restSeconds       Int
+  tempo             String?
+  targetMuscles     String[]      @default([])
+  difficulty        FitnessLevel?
+  estimatedCalories Int?
+  equipment         String?
+  notes             String?       @db.Text
+
+  workoutDay WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+
+  @@index([workoutDayId])
+  @@map("workout_exercises")
+}
+
+// ===================== NUTRITION =====================
+
+model NutritionPlan {
+  id            String @id @default(cuid())
+  workoutPlanId String @unique
+
+  calories     Int
+  proteinGrams Int
+  carbsGrams   Int
+  fatGrams     Int
+  sodiumMg     Int
+  waterLiters  Float
+
+  bmi            Float?
+  bmr            Float?
+  tdee           Float?
+  fiberGrams     Int?
+  sugarGrams     Int?
+  mealTiming     Json?
+  micronutrients Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  meals       Meal[]
+
+  @@map("nutrition_plans")
+}
+
+model MealSuggestion {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?        @db.Text
+  categories      MealCategory[] @default([])
+  mealType        MealType?
+  calories        Int
+  proteinGrams    Int
+  carbsGrams      Int
+  fatGrams        Int
+  sodiumMg        Int?
+  ingredients     String[]       @default([])
+  instructions    String?        @db.Text
+  substituteForId String?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  substituteFor MealSuggestion?  @relation("MealSubstitutes", fields: [substituteForId], references: [id])
+  substitutes   MealSuggestion[] @relation("MealSubstitutes")
+  meals         Meal[]
+
+  @@index([categories], type: Gin)
+  @@map("meal_suggestions")
+}
+
+model Meal {
+  id              String   @id @default(cuid())
+  nutritionPlanId String
+  suggestionId    String?
+  dayIndex        Int?
+  mealType        MealType
+  name            String
+  calories        Int
+  proteinGrams    Int
+  carbsGrams      Int
+  fatGrams        Int
+
+  nutritionPlan NutritionPlan   @relation(fields: [nutritionPlanId], references: [id], onDelete: Cascade)
+  suggestion    MealSuggestion? @relation(fields: [suggestionId], references: [id])
+  mealLogs      MealLog[]
+
+  @@index([nutritionPlanId])
+  @@map("meals")
+}
+
+// ===================== LOGS / PROGRESS =====================
+
+model DailyProgress {
+  id               String   @id @default(cuid())
+  userId           String
+  date             DateTime @db.Date
+  workoutCompleted Boolean  @default(false)
+  hitWaterGoal     Boolean  @default(false)
+  hitProteinGoal   Boolean  @default(false)
+  slept7PlusHours  Boolean  @default(false)
+  reachedStepGoal  Boolean  @default(false)
+  stepsCount       Int?
+  sleepHours       Float?
+  weightKg         Float
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("daily_progress")
+}
+
+model WeightProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  weightKg  Float
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("weight_progress")
+}
+
+model WaterLog {
+  id       String   @id @default(cuid())
+  userId   String
+  date     DateTime @db.Date
+  amountMl Int
+  loggedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("water_logs")
+}
+
+model WorkoutLog {
+  id                 String   @id @default(cuid())
+  userId             String
+  workoutDayId       String?
+  date               DateTime @db.Date
+  durationMinutes    Int?
+  caloriesBurned     Int?
+  completedExercises Json?
+  notes              String?  @db.Text
+  createdAt          DateTime @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutDay WorkoutDay? @relation(fields: [workoutDayId], references: [id])
+
+  @@index([userId, date])
+  @@map("workout_logs")
+}
+
+model MealLog {
+  id           String   @id @default(cuid())
+  userId       String
+  mealId       String?
+  date         DateTime @db.Date
+  mealType     MealType
+  calories     Int?
+  proteinGrams Int?
+  carbsGrams   Int?
+  fatGrams     Int?
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meal Meal? @relation(fields: [mealId], references: [id])
+
+  @@index([userId, date])
+  @@map("meal_logs")
+}
+
+// ===================== GAMIFICATION =====================
+
+model UserProgress {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  totalXp       Int       @default(0)
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastLogDate   DateTime? @db.Date
+  cachedRank    RankName  @default(IRON)
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
+
+model XpHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int
+  reason      XpSource
+  sourceRefId String?
+  occurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, occurredAt])
+  @@map("xp_history")
+}
+
+model RankHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  rank            RankName
+  totalXpAtChange Int
+  achievedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, achievedAt])
+  @@map("rank_history")
+}
+
+model Achievement {
+  id          String   @id
+  title       String
+  description String
+  icon        String
+  xpReward    Int      @default(100)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  progress AchievementProgress[]
+
+  @@map("achievements")
+}
+
+model AchievementProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@map("achievement_progress")
+}
+
+model StreakHistory {
+  id               String   @id @default(cuid())
+  userId           String
+  date             DateTime @db.Date
+  previousStreak   Int
+  newStreak        Int
+  wasReset         Boolean
+  milestoneReached Int?
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("streak_history")
+}
+
+model LeaderboardEntry {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  displayName   String
+  rank          RankName
+  totalXp       Int
+  currentStreak Int
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([totalXp(sort: Desc)])
+  @@map("leaderboard_entries")
+}
+
+// ===================== CHAT / GOALS / NOTIFICATIONS =====================
+
+model ChatMessage {
+  id              String   @id @default(cuid())
+  userId          String
+  role            ChatRole
+  message         String   @db.Text
+  contextSnapshot Json?
+  promptVersion   String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("chat_messages")
+}
+
+model Goal {
+  id           String      @id @default(cuid())
+  userId       String
+  goalType     FitnessGoal
+  targetValue  Float?
+  targetDate   DateTime?   @db.Date
+  status       GoalStatus  @default(ACTIVE)
+  progressNote String?     @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  completedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("goals")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ===================== ADMIN =====================
+
+model AdminAnalyticsSnapshot {
+  id                  String             @id @default(cuid())
+  snapshotDate        DateTime           @unique @db.Date
+  totalUsers          Int
+  newUsers            Int
+  activeUsers         Int
+  inactiveUsers       Int
+  retentionRate7d     Float
+  retentionRate30d    Float
+  avgCompletionRate   Float
+  popularGoal         FitnessGoal?
+  popularSplitStyle   WorkoutSplitStyle?
+  popularMealCategory MealCategory?
+  createdAt           DateTime           @default(now())
+
+  @@map("admin_analytics_snapshots")
+}
+
+model Report {
+  id                String       @id @default(cuid())
+  generatedByUserId String
+  type              String
+  format            ReportFormat
+  filters           Json
+  status            ReportStatus @default(PENDING)
+  fileUrl           String?
+  createdAt         DateTime     @default(now())
+
+  generatedBy User @relation("ReportsGeneratedBy", fields: [generatedByUserId], references: [id])
+
+  @@index([generatedByUserId, createdAt])
+  @@map("reports")
+}
+
+model SystemSetting {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  value           Json
+  description     String?
+  updatedByUserId String?
+  updatedAt       DateTime @updatedAt
+
+  updatedBy User? @relation("SettingsUpdatedBy", fields: [updatedByUserId], references: [id])
+
+  @@map("system_settings")
+}
