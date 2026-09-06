@@ -1,19 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
+import { NAV_LINKS } from '../../constants/navLinks';
 
 interface NavbarProps {
   onMenuToggle: () => void;
 }
-
-const NAV_LINKS: { label: string; to: string; icon: string }[] = [
-  { label: 'Home',       to: ROUTES.landing,     icon: '🏠' },
-  { label: 'Profile',    to: ROUTES.setup,        icon: '👤' },
-  { label: 'Plan',       to: ROUTES.plan,         icon: '📋' },
-  { label: 'Dashboard',  to: ROUTES.dashboard,    icon: '📊' },
-  { label: 'Daily Log',  to: ROUTES.log,          icon: '📝' },
-  { label: 'Leaderboard',to: ROUTES.leaderboard,  icon: '🏆' },
-  { label: 'Coach',      to: ROUTES.coach,        icon: '🤖' },
-];
 
 /**
  * Navbar is purely presentational: renders links and reports menu-toggle.

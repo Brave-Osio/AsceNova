@@ -13,6 +13,10 @@ export const ROUTES = {
   log: '/log',
   leaderboard: '/leaderboard',
   coach: '/coach',
+  login: '/login',
+  register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

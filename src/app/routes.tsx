@@ -8,12 +8,20 @@ import DashboardPage from '../pages/DashboardPage/DashboardPage';
 import DailyLogPage from '../pages/DailyLogPage/DailyLogPage';
 import LeaderboardPage from '../pages/LeaderboardPage/LeaderboardPage';
 import CoachChatPage from '../pages/CoachChatPage/CoachChatPage';
+import LoginPage from '../pages/LoginPage/LoginPage';
+import RegisterPage from '../pages/RegisterPage/RegisterPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
 
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
- * No route guards at this stage — see Phase 1 decision: pages handle
- * missing-profile state themselves rather than redirecting, since this
- * is a demo build and every screen should stay directly reachable.
+ *
+ * Auth screens (login/register/forgot/reset) are additive and NOT yet
+ * gated behind ProtectedRoute — per the migration plan's Phase 1, the
+ * pre-existing app routes stay exactly as reachable as before (pages
+ * still handle missing-profile state themselves) while auth is built
+ * and verified standalone. Gating happens in Phase 2, one feature at a
+ * time, once each route's data layer has actually moved off localStorage.
  */
 export const routes: RouteObject[] = [
   {
@@ -27,6 +35,10 @@ export const routes: RouteObject[] = [
       { path: ROUTES.log.slice(1), element: <DailyLogPage /> },
       { path: ROUTES.leaderboard.slice(1), element: <LeaderboardPage /> },
       { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
+      { path: ROUTES.login.slice(1), element: <LoginPage /> },
+      { path: ROUTES.register.slice(1), element: <RegisterPage /> },
+      { path: ROUTES.forgotPassword.slice(1), element: <ForgotPasswordPage /> },
+      { path: ROUTES.resetPassword.slice(1), element: <ResetPasswordPage /> },
     ],
   },
 ];
