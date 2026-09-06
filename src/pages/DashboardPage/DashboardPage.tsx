@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getProfile } from '../../storage/profileStorage';
+import { useProfile } from '../../features/profile/hooks/useProfile';
 import { ROUTES } from '../../constants/routes';
 import RankCard from '../../features/gamification/components/RankCard';
 import XpCard from '../../features/gamification/components/XpCard';
@@ -9,18 +8,17 @@ import StreakCard from '../../features/gamification/components/StreakCard';
 import AchievementCard from '../../features/gamification/components/AchievementCard';
 import SimulateProgressButton from '../../features/gamification/components/SimulateProgressButton';
 import WeightProgressCard from '../../features/dashboard/components/WeightProgressCard';
-import type { Profile } from '../../types/profile.types';
 
 const GOAL_LABEL: Record<string, string> = {
-  weight_loss: 'Weight Loss',
-  muscle_gain: 'Muscle Gain',
-  maintain_weight: 'Maintain Weight',
+  WEIGHT_LOSS: 'Weight Loss',
+  MUSCLE_GAIN: 'Muscle Gain',
+  MAINTAIN_WEIGHT: 'Maintain Weight',
 };
 
 const GOAL_ICON: Record<string, string> = {
-  weight_loss: '🔥',
-  muscle_gain: '💪',
-  maintain_weight: '⚖️',
+  WEIGHT_LOSS: '🔥',
+  MUSCLE_GAIN: '💪',
+  MAINTAIN_WEIGHT: '⚖️',
 };
 
 const cardVariant = {
@@ -29,11 +27,9 @@ const cardVariant = {
 };
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { data: profile, isLoading } = useProfile();
 
-  useEffect(() => {
-    setProfile(getProfile());
-  }, []);
+  if (isLoading) return null;
 
   if (!profile) {
     return (
@@ -69,7 +65,7 @@ export default function DashboardPage() {
         <div>
           <p className="text-sm text-gray-500 mb-1">Dashboard</p>
           <h1 className="text-3xl font-extrabold text-white sm:text-4xl">
-            Welcome back, <span className="text-gradient-violet">{profile.name}</span> 👋
+            Welcome back, <span className="text-gradient-violet">{profile.fullName}</span> 👋
           </h1>
           <div className="mt-2 flex items-center gap-2">
             <span className="text-lg">{GOAL_ICON[profile.goal] ?? '🎯'}</span>
