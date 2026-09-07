@@ -11,15 +11,13 @@ import type { WorkoutSplitStyle } from '../../types/plan.types';
 
 export default function PlanGeneratorPage() {
   const { plan, profile, isLoading, regenerate } = usePlanGenerator();
-  const [selectedStyle, setSelectedStyle] = useState<WorkoutSplitStyle>('push_pull_legs');
+  const [selectedStyle, setSelectedStyle] = useState<WorkoutSplitStyle>('PUSH_PULL_LEGS');
 
-  // Keep the picker in sync with whatever style the loaded/cached plan
+  // Keep the picker in sync with whatever style the active plan
   // actually used, so reopening the page doesn't silently show a
   // different selection than what generated the plan you're looking at.
-  // Falls back to push_pull_legs for plans saved before this feature
-  // existed, which won't have a splitStyle field in localStorage.
   useEffect(() => {
-    if (plan) setSelectedStyle(plan.splitStyle ?? 'push_pull_legs');
+    if (plan) setSelectedStyle(plan.splitStyle ?? 'PUSH_PULL_LEGS');
   }, [plan]);
 
   if (!profile) {

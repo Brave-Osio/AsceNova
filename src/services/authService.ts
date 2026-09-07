@@ -15,7 +15,7 @@ interface AuthResponse {
 
 /**
  * Thin wrapper over the auth API endpoints — mirrors the "one exported
- * function per concern" convention already used by fitnessService.ts
+ * function per concern" convention already used by planService.ts
  * and coachService.ts. AuthContext is the only intended caller.
  */
 export async function registerRequest(input: {
