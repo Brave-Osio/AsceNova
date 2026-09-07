@@ -1,33 +1,30 @@
-import type { Profile } from '../types/profile.types';
-import type { FitnessPlan, WorkoutDay, NutritionPlan, WorkoutSplitStyle } from '../types/plan.types';
+import { prisma } from '../lib/prismaClient.js';
+import { HttpError } from '../middleware/errorHandler.js';
+import type { Profile, WorkoutSplitStyle } from '@prisma/client';
 
-/**
- * generatePlan(profile, splitStyle) is the ONLY function callers ever
- * invoke from this service. Today it builds a plan from simple rules
- * based on goal/fitnessLevel/equipmentAccess AND the user-chosen split
- * style. Later, this function's body becomes an awaited Gemini API call
- * — but its signature does not change, so PlanGeneratorPage never needs
- * to know which is happening.
- *
- * splitStyle defaults to 'push_pull_legs' so existing callers that don't
- * pass one (or plans generated before this feature existed) still work.
- */
-export async function generatePlan(
-  profile: Profile,
-  splitStyle: WorkoutSplitStyle = 'push_pull_legs',
-): Promise<FitnessPlan> {
-  const workoutDays = buildWorkoutSplit(profile, splitStyle);
-  const nutrition = buildNutritionTargets(profile);
-
-  return {
-    workoutDays,
-    nutrition,
-    splitStyle,
-    generatedAt: new Date().toISOString(),
-  };
+export interface GeneratedWorkoutDay {
+  day: string;
+  focus: string;
 }
 
-function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): WorkoutDay[] {
+export interface GeneratedNutrition {
+  calories: number;
+  proteinGrams: number;
+  carbsGrams: number;
+  fatGrams: number;
+  sodiumMg: number;
+  waterLiters: number;
+}
+
+const DEFAULT_SPLIT_STYLE: WorkoutSplitStyle = 'PUSH_PULL_LEGS';
+
+/**
+ * Rule-based generator, ported from the frontend's old fitnessService.ts.
+ * Lives server-side now since GEMINI_API_KEY (its eventual replacement)
+ * is backend-only — this function's body becomes an awaited Gemini call
+ * later, but callers (generateAndSaveActivePlan) don't change.
+ */
+export function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): GeneratedWorkoutDay[] {
   const usesGym = profile.equipmentAccess === 'GYM' || profile.equipmentAccess === 'BOTH';
   const isWeightLoss = profile.goal === 'WEIGHT_LOSS';
 
@@ -37,7 +34,7 @@ function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): Wor
   // their pick) but swap the focus labels to home-friendly equivalents.
   const homeOnly = !usesGym;
 
-  if (splitStyle === 'push_pull_legs') {
+  if (splitStyle === 'PUSH_PULL_LEGS') {
     const push = homeOnly ? 'Push Day (Bodyweight)' : 'Push Day';
     const pull = homeOnly ? 'Pull Day (Bands/Bodyweight)' : 'Pull Day';
     const legs = homeOnly ? 'Leg Day (Bodyweight)' : 'Leg Day';
@@ -52,7 +49,7 @@ function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): Wor
     ];
   }
 
-  if (splitStyle === 'upper_lower') {
+  if (splitStyle === 'UPPER_LOWER') {
     const upper = homeOnly ? 'Upper Body (Bodyweight)' : 'Upper Body';
     const lower = homeOnly ? 'Lower Body (Bodyweight)' : 'Lower Body';
     return [
@@ -66,7 +63,7 @@ function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): Wor
     ];
   }
 
-  // full_body
+  // FULL_BODY
   const fullBody = homeOnly ? 'Full Body (Bodyweight)' : 'Full Body Strength';
   return [
     { day: 'Monday', focus: fullBody },
@@ -79,7 +76,7 @@ function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): Wor
   ];
 }
 
-function buildNutritionTargets(profile: Profile): NutritionPlan {
+export function buildNutritionTargets(profile: Profile): GeneratedNutrition {
   // Mifflin-St Jeor baseline, then adjusted by goal.
   const baseCalories =
     10 * profile.currentWeightKg + 6.25 * profile.heightCm - 5 * profile.age + 200;
@@ -98,7 +95,7 @@ function buildNutritionTargets(profile: Profile): NutritionPlan {
   const proteinGrams = Math.round(profile.currentWeightKg * proteinMultiplier);
 
   // Fat: 25–30% of calories (higher for muscle gain)
-  const fatCaloriePct = profile.goal === 'MUSCLE_GAIN' ? 0.30 : 0.25;
+  const fatCaloriePct = profile.goal === 'MUSCLE_GAIN' ? 0.3 : 0.25;
   const fatGrams = Math.round((calories * fatCaloriePct) / 9);
 
   // Carbs: remaining calories after protein + fat
@@ -113,4 +110,59 @@ function buildNutritionTargets(profile: Profile): NutritionPlan {
   const waterLiters = Math.round((profile.currentWeightKg * 0.04 + 0.5) * 10) / 10;
 
   return { calories, proteinGrams, carbsGrams, fatGrams, sodiumMg, waterLiters };
+}
+
+/**
+ * Deactivates any current active plan and creates a new one — plans are
+ * never updated in place, so WorkoutPlan.generatedAt/isActive naturally
+ * keeps a full history (matches the @@index([userId, generatedAt])).
+ */
+export async function generateAndSaveActivePlan(userId: string, splitStyle?: WorkoutSplitStyle) {
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  if (!profile) {
+    throw new HttpError(404, 'Set up your profile before generating a plan');
+  }
+
+  const style = splitStyle ?? DEFAULT_SPLIT_STYLE;
+  const workoutDays = buildWorkoutSplit(profile, style);
+  const nutrition = buildNutritionTargets(profile);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.workoutPlan.updateMany({
+      where: { userId, isActive: true },
+      data: { isActive: false },
+    });
+
+    return tx.workoutPlan.create({
+      data: {
+        userId,
+        splitStyle: style,
+        isActive: true,
+        source: 'RULE_BASED_LEGACY',
+        generatedAt: new Date(),
+        workoutDays: {
+          create: workoutDays.map((d, i) => ({ dayIndex: i, label: d.day, focus: d.focus })),
+        },
+        nutritionPlan: { create: nutrition },
+      },
+      include: {
+        workoutDays: { orderBy: { dayIndex: 'asc' } },
+        nutritionPlan: true,
+      },
+    });
+  });
+}
+
+export async function getActivePlan(userId: string) {
+  const plan = await prisma.workoutPlan.findFirst({
+    where: { userId, isActive: true },
+    include: {
+      workoutDays: { orderBy: { dayIndex: 'asc' } },
+      nutritionPlan: true,
+    },
+  });
+  if (!plan) {
+    throw new HttpError(404, 'No active plan');
+  }
+  return plan;
 }
