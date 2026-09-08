@@ -1,11 +1,16 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { saveLog } from '../../../storage/logStorage';
 import { useUserProgress } from '../../../context/UserProgressContext';
+import { useAuth } from '../../../context/AuthContext';
+import { upsertLog } from '../../../services/logService';
+import { queryKeys } from '../../../lib/queryKeys';
+import { showErrorToast } from '../../../lib/toast';
 import { XP_EVENTS } from '../../../engines/xpEngine';
 import { getTodayDateString } from '../../../utils/dateUtils';
 import { ACHIEVEMENTS } from '../../../constants/achievements';
 import { validateNumberInRange } from '../../../utils/validation';
-import { DEFAULT_HABITS, type DailyHabits } from '../../../types/log.types';
+import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
 
 export interface DailyLogFormState {
   weightKg: string;
@@ -35,14 +40,22 @@ const HABIT_XP_EVENTS: Record<keyof DailyHabits, () => { amount: number; reason:
 
 /**
  * Orchestrates the full daily-log write path:
- * saveLog -> recordLogDate (streak) -> gainXp (check-in + each checked habit) -> checkAchievements.
+ * upsertLog (backend) + saveLog (local) -> recordLogDate (streak) ->
+ * gainXp (check-in + each checked habit) -> checkAchievements.
  *
- * The ORDER is significant: streak and XP must update before achievements
- * are evaluated, since several achievement rules (seven_day_streak,
- * bronze_promotion) read the just-updated progress values.
+ * The ORDER of the local steps is significant: streak and XP must update
+ * before achievements are evaluated, since several achievement rules
+ * (seven_day_streak, bronze_promotion) read the just-updated progress
+ * values. XP/streak/achievements are still local-only (Gamification
+ * hasn't migrated yet) — the backend save is a parallel write to the new
+ * DailyProgress table; if it fails, the local flow still completes (this
+ * domain isn't fully cut over, so a backend hiccup shouldn't regress
+ * today's working behavior), it just surfaces an error toast.
  */
 export function useDailyLog() {
   const { recordLogDate, gainXp, checkAchievements } = useUserProgress();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<DailyLogFormState>(INITIAL_STATE);
   const [error, setError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
@@ -55,7 +68,7 @@ export function useDailyLog() {
     setForm((prev) => ({ ...prev, habits: { ...prev.habits, [habit]: checked } }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     const weightError = validateNumberInRange(Number(form.weightKg), 30, 300, 'Weight (kg)');
@@ -66,13 +79,26 @@ export function useDailyLog() {
     setError(null);
 
     const today = getTodayDateString();
-
-    saveLog({
+    const input = {
       date: today,
       weightKg: Number(form.weightKg),
       habits: form.habits,
       notes: form.notes.trim(),
-    });
+    };
+
+    try {
+      const saved = await upsertLog(input);
+      if (user) {
+        queryClient.setQueryData(queryKeys.logs.list(user.id), (prev: DailyLogEntry[] | undefined) => {
+          const withoutToday = (prev ?? []).filter((l) => l.date !== saved.date);
+          return [...withoutToday, saved].sort((a, b) => a.date.localeCompare(b.date));
+        });
+      }
+    } catch (err) {
+      showErrorToast(err);
+    }
+
+    saveLog(input);
 
     recordLogDate(today);
 
