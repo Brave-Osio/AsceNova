@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.routes.js';
 import { profileRouter } from './routes/profile.routes.js';
 import { planRouter } from './routes/plan.routes.js';
+import { dailyProgressRouter } from './routes/dailyProgress.routes.js';
 
 export const app = express();
 
@@ -25,9 +26,9 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/plans', planRouter);
+app.use('/api/daily-progress', dailyProgressRouter);
 
 // Remaining resource routers are mounted here as each domain is built
-// out (daily-progress, gamification, leaderboard, chat, goals,
-// notifications, admin).
+// out (gamification, leaderboard, chat, goals, notifications, admin).
 
 app.use(errorHandler);

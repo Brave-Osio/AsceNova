@@ -1,14 +1,8 @@
-import { useEffect, useState } from 'react';
-import { getLogs } from '../../../storage/logStorage';
+import { useLogs } from '../../daily-log/hooks/useLogs';
 import SimpleLineChart from '../../../components/charts/SimpleLineChart';
-import type { DailyLogEntry } from '../../../types/log.types';
 
 export default function WeightProgressCard() {
-  const [logs, setLogs] = useState<DailyLogEntry[]>([]);
-
-  useEffect(() => {
-    setLogs(getLogs());
-  }, []);
+  const { data: logs = [] } = useLogs();
 
   if (logs.length === 0) {
     return (
