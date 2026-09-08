@@ -1,7 +1,7 @@
 /**
  * Returns today's date as YYYY-MM-DD (local time), matching the format
  * DailyLogEntry.date is stored in. Centralizing "what counts as today"
- * here means streakEngine never constructs Date strings itself.
+ * here means callers never construct Date strings themselves.
  */
 export function getTodayDateString(): string {
   return toDateString(new Date());

@@ -1,8 +1,10 @@
-import { useUserProgress } from '../../../context/UserProgressContext';
+import { useUserProgress } from '../hooks/useUserProgress';
 import { RANK_COLOR_CLASS, RANK_ICON } from '../../../constants/rankVisuals';
 
 export default function RankCard() {
-  const { rank, rankProgress, nextRankThreshold } = useUserProgress();
+  const { rank, rankProgress, nextRankThreshold, isLoading } = useUserProgress();
+
+  if (isLoading) return null;
 
   return (
     <div className="glass rounded-2xl p-5 h-full">

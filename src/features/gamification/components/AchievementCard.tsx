@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
-import { useUserProgress } from '../../../context/UserProgressContext';
+import { useUserProgress } from '../hooks/useUserProgress';
 import { ACHIEVEMENTS } from '../../../constants/achievements';
 
 export default function AchievementCard() {
-  const { unlockedAchievementIds } = useUserProgress();
+  const { unlockedAchievementIds, isLoading } = useUserProgress();
+
+  if (isLoading) return null;
 
   const earned = ACHIEVEMENTS.filter((a) =>
     unlockedAchievementIds.includes(a.id),

@@ -13,7 +13,7 @@ const HABIT_ITEMS: { key: keyof DailyHabits; label: string; icon: string }[] = [
 ];
 
 export default function DailyLogForm() {
-  const { form, error, lastResult, updateField, toggleHabit, handleSubmit } = useDailyLog();
+  const { form, error, lastResult, isSubmitting, updateField, toggleHabit, handleSubmit } = useDailyLog();
   const checkedCount = Object.values(form.habits).filter(Boolean).length;
 
   return (
@@ -70,7 +70,7 @@ export default function DailyLogForm() {
         />
 
         <div>
-          <Button type="submit">Save Log</Button>
+          <Button type="submit" loading={isSubmitting}>Save Log</Button>
         </div>
       </form>
 

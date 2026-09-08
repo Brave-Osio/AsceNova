@@ -32,8 +32,3 @@ export interface AchievementDefinition {
   description: string;
   icon: string; // emoji or icon identifier, kept as data not markup
 }
-
-export interface XpGainEvent {
-  amount: number;
-  reason: string; // e.g. "Daily Check-In", "Workout Completed"
-}

@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { saveLog } from '../../../storage/logStorage';
-import { useUserProgress } from '../../../context/UserProgressContext';
 import { useAuth } from '../../../context/AuthContext';
 import { upsertLog } from '../../../services/logService';
+import { applyDailyLog } from '../../../services/progressService';
 import { queryKeys } from '../../../lib/queryKeys';
 import { showErrorToast } from '../../../lib/toast';
-import { XP_EVENTS } from '../../../engines/xpEngine';
 import { getTodayDateString } from '../../../utils/dateUtils';
-import { ACHIEVEMENTS } from '../../../constants/achievements';
 import { validateNumberInRange } from '../../../utils/validation';
 import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
 
@@ -29,36 +26,21 @@ const INITIAL_STATE: DailyLogFormState = {
   notes: '',
 };
 
-/** Maps each habit key to its corresponding XP_EVENTS constructor, so the submit handler can loop instead of hand-writing five if-blocks. */
-const HABIT_XP_EVENTS: Record<keyof DailyHabits, () => { amount: number; reason: string }> = {
-  workoutCompleted: XP_EVENTS.workoutCompleted,
-  hitWaterGoal: XP_EVENTS.hitWaterGoal,
-  hitProteinGoal: XP_EVENTS.hitProteinGoal,
-  slept7PlusHours: XP_EVENTS.slept7PlusHours,
-  reachedStepGoal: XP_EVENTS.reachedStepGoal,
-};
-
 /**
- * Orchestrates the full daily-log write path:
- * upsertLog (backend) + saveLog (local) -> recordLogDate (streak) ->
- * gainXp (check-in + each checked habit) -> checkAchievements.
- *
- * The ORDER of the local steps is significant: streak and XP must update
- * before achievements are evaluated, since several achievement rules
- * (seven_day_streak, bronze_promotion) read the just-updated progress
- * values. XP/streak/achievements are still local-only (Gamification
- * hasn't migrated yet) — the backend save is a parallel write to the new
- * DailyProgress table; if it fails, the local flow still completes (this
- * domain isn't fully cut over, so a backend hiccup shouldn't regress
- * today's working behavior), it just surfaces an error toast.
+ * Orchestrates the daily-log write path, now fully backend-driven:
+ * upsertLog (DailyProgress) -> applyDailyLog (streak/XP/achievements).
+ * Gamification is fully cut over as of this domain — unlike the interim
+ * dual-write period, a backend failure here means the submission's
+ * gamification effects genuinely don't happen, surfaced via the error
+ * toast, rather than silently falling back to a local computation.
  */
 export function useDailyLog() {
-  const { recordLogDate, gainXp, checkAchievements } = useUserProgress();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<DailyLogFormState>(INITIAL_STATE);
   const [error, setError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateField<K extends keyof DailyLogFormState>(field: K, value: DailyLogFormState[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -86,6 +68,7 @@ export function useDailyLog() {
       notes: form.notes.trim(),
     };
 
+    setIsSubmitting(true);
     try {
       const saved = await upsertLog(input);
       if (user) {
@@ -94,36 +77,20 @@ export function useDailyLog() {
           return [...withoutToday, saved].sort((a, b) => a.date.localeCompare(b.date));
         });
       }
+
+      const result = await applyDailyLog(today);
+      if (user) {
+        queryClient.setQueryData(queryKeys.progress.detail(user.id), result.progress);
+      }
+
+      setLastResult({ xpGained: result.xpGained, newAchievementTitles: result.newAchievementTitles });
+      setForm(INITIAL_STATE);
     } catch (err) {
       showErrorToast(err);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    saveLog(input);
-
-    recordLogDate(today);
-
-    let xpGained = XP_EVENTS.dailyCheckIn().amount;
-    gainXp(XP_EVENTS.dailyCheckIn());
-
-    for (const habitKey of Object.keys(form.habits) as (keyof DailyHabits)[]) {
-      if (form.habits[habitKey]) {
-        const event = HABIT_XP_EVENTS[habitKey]();
-        gainXp(event);
-        xpGained += event.amount;
-      }
-    }
-
-    const newlyUnlockedIds = checkAchievements();
-    const newAchievementTitles = newlyUnlockedIds.map(
-      (id) => ACHIEVEMENTS.find((a) => a.id === id)?.title ?? id,
-    );
-    if (newlyUnlockedIds.length > 0) {
-      xpGained += newlyUnlockedIds.length * 100; // matches XP_REWARDS.achievementUnlock
-    }
-
-    setLastResult({ xpGained, newAchievementTitles });
-    setForm(INITIAL_STATE);
   }
 
-  return { form, error, lastResult, updateField, toggleHabit, handleSubmit };
+  return { form, error, lastResult, isSubmitting, updateField, toggleHabit, handleSubmit };
 }

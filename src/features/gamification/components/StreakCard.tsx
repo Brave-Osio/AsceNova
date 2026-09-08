@@ -1,8 +1,10 @@
-import { useUserProgress } from '../../../context/UserProgressContext';
+import { useUserProgress } from '../hooks/useUserProgress';
 
 export default function StreakCard() {
-  const { progress } = useUserProgress();
+  const { progress, isLoading } = useUserProgress();
   const streak = progress.currentStreak;
+
+  if (isLoading) return null;
 
   return (
     <div className="glass rounded-2xl p-5 h-full">

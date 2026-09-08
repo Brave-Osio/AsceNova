@@ -1,8 +1,10 @@
-import { useUserProgress } from '../../../context/UserProgressContext';
+import { useUserProgress } from '../hooks/useUserProgress';
 
 export default function XpCard() {
-  const { progress } = useUserProgress();
+  const { progress, isLoading } = useUserProgress();
   const xp = progress.totalXp;
+
+  if (isLoading) return null;
 
   return (
     <div className="glass rounded-2xl p-5 h-full">

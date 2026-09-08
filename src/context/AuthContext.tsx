@@ -27,10 +27,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /**
- * Separate from UserProgressContext by design (see plan): auth has a
- * different consumer set (route guards, every HTTP call, navbar) and a
- * different lifecycle (must resolve before progress/profile queries can
- * even know which user to fetch for).
+ * Kept as its own context rather than folded into a React Query hook:
+ * auth has a different consumer set (route guards, every HTTP call,
+ * navbar) and a different lifecycle (must resolve before profile/
+ * progress queries can even know which user to fetch for).
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
