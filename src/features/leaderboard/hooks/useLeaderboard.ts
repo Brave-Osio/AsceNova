@@ -1,51 +1,23 @@
-import { useEffect, useState } from 'react';
-import { getLeaderboard } from '../../../storage/leaderboardStorage';
-import { useProfile } from '../../profile/hooks/useProfile';
-import { useUserProgress } from '../../gamification/hooks/useUserProgress';
-import type { LeaderboardEntry } from '../../../types/leaderboard.types';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../../context/AuthContext';
+import { getLeaderboard } from '../../../services/leaderboardService';
+import { queryKeys } from '../../../lib/queryKeys';
+import type { LeaderboardRowData } from '../../../services/leaderboardService';
 
-export interface LeaderboardRowData extends LeaderboardEntry {
-  isCurrentUser: boolean;
-}
+export type { LeaderboardRowData };
 
 /**
- * Merges the static mock leaderboard with the real signed-in user's
- * progress (if a profile exists), re-sorts by XP, and re-numbers
- * positions. This is what makes the Leaderboard feel connected to the
- * rest of the app rather than a disconnected static page — your own
- * Simulate Progress / Daily Log actions visibly move your position here.
+ * Plain read hook — the backend already computes position, rank, and
+ * isCurrentUser server-side (it knows the requesting user's id), so
+ * there's no client-side merging/sorting left to do here.
  */
-export function useLeaderboard(): LeaderboardRowData[] {
-  const { progress, rank, isLoading: isProgressLoading } = useUserProgress();
-  const { data: profile } = useProfile();
-  const [rows, setRows] = useState<LeaderboardRowData[]>([]);
+export function useLeaderboard() {
+  const { user } = useAuth();
+  const query = useQuery({
+    queryKey: queryKeys.leaderboard.list(),
+    queryFn: getLeaderboard,
+    enabled: !!user?.id,
+  });
 
-  useEffect(() => {
-    const mockEntries = getLeaderboard();
-
-    const allEntries: LeaderboardRowData[] = mockEntries.map((entry) => ({
-      ...entry,
-      isCurrentUser: false,
-    }));
-
-    if (profile && !isProgressLoading) {
-      allEntries.push({
-        position: 0, // recalculated below
-        name: `${profile.fullName} (You)`,
-        rank,
-        xp: progress.totalXp,
-        streak: progress.currentStreak,
-        isCurrentUser: true,
-      });
-    }
-
-    const sorted = allEntries
-      .sort((a, b) => b.xp - a.xp)
-      .map((entry, index) => ({ ...entry, position: index + 1 }));
-
-    setRows(sorted);
-    // Re-run whenever progress or profile changes so the table reflects live XP/rank/streak.
-  }, [progress, rank, profile, isProgressLoading]);
-
-  return rows;
+  return { rows: query.data ?? [], isLoading: query.isLoading };
 }
