@@ -3,7 +3,9 @@ import { useLeaderboard } from '../../features/leaderboard/hooks/useLeaderboard'
 import LeaderboardTable from '../../features/leaderboard/components/LeaderboardTable';
 
 export default function LeaderboardPage() {
-  const rows = useLeaderboard();
+  const { rows, isLoading } = useLeaderboard();
+
+  if (isLoading) return null;
 
   return (
     <section className="relative mx-auto max-w-3xl px-4 py-12 sm:py-16">

@@ -1,7 +1,7 @@
 /**
  * Single source of truth for TanStack Query keys, mirroring the same
  * "one constants object, never inline strings" convention already used
- * by src/constants/routes.ts and src/constants/storageKeys.ts.
+ * by src/constants/routes.ts.
  */
 export const queryKeys = {
   auth: {
