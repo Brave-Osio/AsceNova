@@ -6,8 +6,5 @@
  * are ever namespaced (e.g. prefixed with a user id after auth lands).
  */
 export const STORAGE_KEYS = {
-  logs: 'afa:logs',
-  achievements: 'afa:achievements',
-  progress: 'afa:progress',
   leaderboard: 'afa:leaderboard',
 } as const;

@@ -1,46 +1,31 @@
-import { addXp, XP_EVENTS } from './xpEngine';
-import { calculateStreak } from './streakEngine';
-import { evaluateAchievements } from './achievementEngine';
 import { toDateString } from '../utils/dateUtils';
-import type { UserProgress } from '../types/gamification.types';
-import type { DailyHabits, DailyLogEntry } from '../types/log.types';
+import type { DailyHabits } from '../types/log.types';
 
-export interface SimulatedDayResult {
+export interface SyntheticDay {
   date: string;
   weightKg: number;
   habits: DailyHabits;
-  progress: UserProgress;
-  newlyUnlockedAchievementIds: string[];
 }
 
 /**
- * Replays `days` consecutive days of activity starting the day after
- * the most recent real log (or today, if there are none), applying the
- * SAME engine functions Daily Log uses — addXp, calculateStreak,
- * evaluateAchievements. This is deliberate: the demo must exercise the
- * real rules, not a separate "looks similar" fake path, or the
- * simulation could mislead about what the app actually does.
- *
- * Returns one result per simulated day so the UI can animate through
- * them sequentially rather than jumping straight to the final state.
+ * Generates `days` consecutive synthetic day inputs starting the day
+ * after `lastLogDate` (or today if there are none) — used by the
+ * Simulate feature, which replays these through the REAL backend
+ * endpoints (logService.upsertLog + progressService.applyDailyLog) one
+ * day at a time rather than computing progress locally. This keeps a
+ * single source of truth for the gamification math instead of
+ * maintaining a parallel copy of it just for the demo.
  *
  * Each habit is independently randomized per day (70% chance) to
  * produce a believable, varied history rather than a suspiciously
  * uniform "everything checked every day" pattern.
  */
-export function simulateProgress(
-  startingProgress: UserProgress,
-  existingLogs: DailyLogEntry[],
-  days: number = 45,
-): SimulatedDayResult[] {
-  const results: SimulatedDayResult[] = [];
-
-  let progress = startingProgress;
-  let logs = [...existingLogs];
+export function generateSyntheticDays(lastLogDate: string | null, days: number = 45): SyntheticDay[] {
+  const results: SyntheticDay[] = [];
 
   const startDate = new Date();
-  if (startingProgress.lastLogDate) {
-    startDate.setTime(new Date(startingProgress.lastLogDate + 'T00:00:00').getTime());
+  if (lastLogDate) {
+    startDate.setTime(new Date(lastLogDate + 'T00:00:00').getTime());
   }
 
   for (let i = 1; i <= days; i++) {
@@ -57,43 +42,7 @@ export function simulateProgress(
     };
     const weightKg = Math.round((70 + (Math.random() - 0.5) * 4) * 10) / 10;
 
-    progress = calculateStreak(progress, dateString);
-    progress = addXp(progress, XP_EVENTS.dailyCheckIn());
-    if (habits.workoutCompleted) progress = addXp(progress, XP_EVENTS.workoutCompleted());
-    if (habits.hitWaterGoal) progress = addXp(progress, XP_EVENTS.hitWaterGoal());
-    if (habits.hitProteinGoal) progress = addXp(progress, XP_EVENTS.hitProteinGoal());
-    if (habits.slept7PlusHours) progress = addXp(progress, XP_EVENTS.slept7PlusHours());
-    if (habits.reachedStepGoal) progress = addXp(progress, XP_EVENTS.reachedStepGoal());
-
-    logs = [
-      ...logs,
-      {
-        id: `sim_${dateString}`,
-        date: dateString,
-        weightKg,
-        habits,
-        notes: 'Simulated progress',
-        createdAt: new Date().toISOString(),
-      },
-    ];
-
-    if (progress.currentStreak === 7) {
-      progress = addXp(progress, XP_EVENTS.sevenDayStreak());
-    }
-    if (progress.currentStreak === 30) {
-      progress = addXp(progress, XP_EVENTS.thirtyDayStreak());
-    }
-
-    const newlyUnlocked = evaluateAchievements(progress, logs);
-    if (newlyUnlocked.length > 0) {
-      progress = {
-        ...progress,
-        totalXp: progress.totalXp + newlyUnlocked.length * 100,
-        unlockedAchievementIds: [...progress.unlockedAchievementIds, ...newlyUnlocked],
-      };
-    }
-
-    results.push({ date: dateString, weightKg, habits, progress, newlyUnlockedAchievementIds: newlyUnlocked });
+    results.push({ date: dateString, weightKg, habits });
   }
 
   return results;

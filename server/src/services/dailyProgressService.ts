@@ -15,3 +15,15 @@ export async function listLogs(userId: string) {
     orderBy: { date: 'asc' },
   });
 }
+
+export async function countLogs(userId: string): Promise<number> {
+  return prisma.dailyProgress.count({ where: { userId } });
+}
+
+export async function hasWorkoutCompletedLog(userId: string): Promise<boolean> {
+  const found = await prisma.dailyProgress.findFirst({
+    where: { userId, workoutCompleted: true },
+    select: { id: true },
+  });
+  return found !== null;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getLeaderboard } from '../../../storage/leaderboardStorage';
 import { useProfile } from '../../profile/hooks/useProfile';
-import { useUserProgress } from '../../../context/UserProgressContext';
+import { useUserProgress } from '../../gamification/hooks/useUserProgress';
 import type { LeaderboardEntry } from '../../../types/leaderboard.types';
 
 export interface LeaderboardRowData extends LeaderboardEntry {
@@ -16,7 +16,7 @@ export interface LeaderboardRowData extends LeaderboardEntry {
  * Simulate Progress / Daily Log actions visibly move your position here.
  */
 export function useLeaderboard(): LeaderboardRowData[] {
-  const { progress, rank } = useUserProgress();
+  const { progress, rank, isLoading: isProgressLoading } = useUserProgress();
   const { data: profile } = useProfile();
   const [rows, setRows] = useState<LeaderboardRowData[]>([]);
 
@@ -28,7 +28,7 @@ export function useLeaderboard(): LeaderboardRowData[] {
       isCurrentUser: false,
     }));
 
-    if (profile) {
+    if (profile && !isProgressLoading) {
       allEntries.push({
         position: 0, // recalculated below
         name: `${profile.fullName} (You)`,
@@ -45,7 +45,7 @@ export function useLeaderboard(): LeaderboardRowData[] {
 
     setRows(sorted);
     // Re-run whenever progress or profile changes so the table reflects live XP/rank/streak.
-  }, [progress, rank, profile]);
+  }, [progress, rank, profile, isProgressLoading]);
 
   return rows;
 }

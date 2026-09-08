@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { simulateProgress } from '../../../engines/simulateProgressEngine';
-import { saveLog, getLogs } from '../../../storage/logStorage';
-import { useUserProgress } from '../../../context/UserProgressContext';
-import { ACHIEVEMENTS } from '../../../constants/achievements';
+import { useQueryClient } from '@tanstack/react-query';
+import { generateSyntheticDays } from '../../../engines/simulateProgressEngine';
+import { upsertLog } from '../../../services/logService';
+import { applyDailyLog } from '../../../services/progressService';
+import { useUserProgress } from './useUserProgress';
+import { useAuth } from '../../../context/AuthContext';
+import { queryKeys } from '../../../lib/queryKeys';
+import { showErrorToast } from '../../../lib/toast';
+import type { UserProgress } from '../../../types/gamification.types';
 
 export interface SimulationSummary {
   daysSimulated: number;
@@ -10,82 +15,58 @@ export interface SimulationSummary {
   newAchievementTitles: string[];
 }
 
+/**
+ * Replays `days` synthetic days through the REAL backend pipeline
+ * (upsertLog then applyDailyLog, sequentially) instead of computing a
+ * final state locally — slower (one round-trip pair per day) but
+ * provably identical to what a real user's history would produce, with
+ * no separate copy of the gamification math to keep in sync with the
+ * real path.
+ */
 export function useSimulateProgress() {
-  const { progress, setProgressDirectly } = useUserProgress();
+  const { user } = useAuth();
+  const { progress } = useUserProgress();
+  const queryClient = useQueryClient();
 
   const [isSimulating, setIsSimulating] = useState(false);
   const [lastResult, setLastResult] = useState<SimulationSummary | null>(null);
 
   async function simulate(days: number) {
+    const validDays = typeof days === 'number' && !Number.isNaN(days) && days > 0 ? days : 45;
+
+    setIsSimulating(true);
     try {
-      setIsSimulating(true);
+      const syntheticDays = generateSyntheticDays(progress.lastLogDate, validDays);
 
-      const validDays =
-        typeof days === 'number' && !Number.isNaN(days) && days > 0
-          ? days
-          : 45;
+      let xpGained = 0;
+      const newAchievementTitles: string[] = [];
+      let latestProgress: UserProgress = progress;
 
-      const existingLogs = getLogs();
-
-      const dayResults = simulateProgress(
-        progress,
-        existingLogs,
-        validDays,
-      );
-
-      if (!dayResults || dayResults.length === 0) {
-        console.warn('Simulation returned no results');
-        setIsSimulating(false);
-        return;
-      }
-
-      dayResults.forEach((result) => {
-        saveLog({
-          date: result.date,
-          weightKg: result.weightKg,
-          habits: result.habits,
+      for (const day of syntheticDays) {
+        await upsertLog({
+          date: day.date,
+          weightKg: day.weightKg,
+          habits: day.habits,
           notes: 'Simulated entry',
         });
-      });
-
-      const startXp = progress.totalXp;
-
-      const lastDay = dayResults[dayResults.length - 1];
-
-      if (!lastDay || !lastDay.progress) {
-        console.error('Last simulation result is invalid');
-        setIsSimulating(false);
-        return;
+        const result = await applyDailyLog(day.date);
+        xpGained += result.xpGained;
+        newAchievementTitles.push(...result.newAchievementTitles);
+        latestProgress = result.progress;
       }
 
-      const finalProgress = lastDay.progress;
+      if (user) {
+        queryClient.setQueryData(queryKeys.progress.detail(user.id), latestProgress);
+        queryClient.invalidateQueries({ queryKey: queryKeys.logs.list(user.id) });
+      }
 
-      setProgressDirectly(finalProgress);
-
-      const allNewIds = dayResults.flatMap(
-        (r) => r.newlyUnlockedAchievementIds,
-      );
-
-      const newAchievementTitles = allNewIds.map(
-        (id) =>
-          ACHIEVEMENTS.find((a) => a.id === id)?.title ?? id,
-      );
-
-      setLastResult({
-        daysSimulated: validDays,
-        xpGained: finalProgress.totalXp - startXp,
-        newAchievementTitles,
-      });
+      setLastResult({ daysSimulated: validDays, xpGained, newAchievementTitles });
     } catch (error) {
-      console.error('Simulation failed:', error);
+      showErrorToast(error);
     } finally {
       setIsSimulating(false);
     }
   }
 
-  return {
-    simulate,
-    isSimulating,
-    lastResult,
-  };
+  return { simulate, isSimulating, lastResult };
 }
