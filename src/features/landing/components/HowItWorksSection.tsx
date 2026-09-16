@@ -12,7 +12,7 @@ const STEPS = [
     number: '02',
     icon: '📋',
     title: 'Get your AI plan',
-    description: 'Receive a full workout split and personalized nutrition targets — calories, protein, carbs, fat, sodium.',
+    description: 'Receive a full workout split with exercises, sets, and reps, plus personalized calorie and macro targets.',
     color: 'text-cyan-400',
   },
   {

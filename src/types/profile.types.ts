@@ -9,14 +9,6 @@ export type ActivityLevel =
   | 'VERY_ACTIVE'
   | 'EXTRA_ACTIVE';
 export type WorkoutSplitStylePreference = 'PUSH_PULL_LEGS' | 'UPPER_LOWER' | 'FULL_BODY';
-export type FoodPreference =
-  | 'OMNIVORE'
-  | 'VEGETARIAN'
-  | 'VEGAN'
-  | 'PESCATARIAN'
-  | 'HALAL'
-  | 'KETO'
-  | 'OTHER';
 export type PreferredWorkoutTime = 'MORNING' | 'AFTERNOON' | 'EVENING';
 
 export interface DailySchedule {
@@ -48,9 +40,6 @@ export interface Profile {
   workoutFrequency: number | null;
   preferredSplitStyle: WorkoutSplitStylePreference | null;
 
-  foodPreference: FoodPreference | null;
-  foodAllergies: string[];
-  medicalRestrictions: string[];
   dailySchedule: DailySchedule | null;
   sleepHoursTarget: number | null;
 

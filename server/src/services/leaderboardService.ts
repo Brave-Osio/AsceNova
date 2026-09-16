@@ -15,7 +15,7 @@ export interface LeaderboardRow {
  * applyDailyLog updates UserProgress on every log), so there's no
  * separate cache to keep in sync or risk drifting. The unused Prisma
  * LeaderboardEntry model stays modeled-but-unused, same as
- * WorkoutExercise/MealSuggestion were left for the Plan domain.
+ * WorkoutExercise was left unpopulated for a while in the Plan domain.
  */
 export async function getLeaderboard(requestingUserId: string): Promise<LeaderboardRow[]> {
   const rows = await prisma.userProgress.findMany({

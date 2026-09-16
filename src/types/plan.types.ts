@@ -77,8 +77,7 @@ export interface NutritionPlan {
 /**
  * Mirrors the WorkoutPlan API response shape (server/src/services/planService.ts).
  * workoutDays carries exercise-level detail when the plan was Gemini-generated
- * (see WorkoutDay above); nutrition's richer optional fields (bmi/bmr/tdee, etc.)
- * still aren't populated yet — that's Phase 3.
+ * (see WorkoutDay above).
  */
 export interface FitnessPlan {
   id: string;

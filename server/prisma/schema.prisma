@@ -69,33 +69,6 @@ enum PlanSource {
   GEMINI
 }
 
-enum FoodPreference {
-  OMNIVORE
-  VEGETARIAN
-  VEGAN
-  PESCATARIAN
-  HALAL
-  KETO
-  OTHER
-}
-
-enum MealType {
-  BREAKFAST
-  LUNCH
-  DINNER
-  SNACK
-}
-
-enum MealCategory {
-  BUDGET
-  STUDENT
-  GYM
-  HIGH_PROTEIN
-  LOW_CARB
-  LOW_SODIUM
-  VEGETARIAN
-}
-
 enum RankName {
   IRON
   BRONZE
@@ -170,7 +143,6 @@ model User {
   profile             Profile?
   workoutPlans        WorkoutPlan[]
   workoutLogs         WorkoutLog[]
-  mealLogs            MealLog[]
   dailyProgress       DailyProgress[]
   weightProgress      WeightProgress[]
   waterLogs           WaterLog[]
@@ -244,9 +216,6 @@ model Profile {
   workoutFrequency    Int?
   preferredSplitStyle WorkoutSplitStyle?
 
-  foodPreference      FoodPreference?
-  foodAllergies       String[] @default([])
-  medicalRestrictions String[] @default([])
   dailySchedule       Json?
   sleepHoursTarget    Float?
 
@@ -278,6 +247,27 @@ model WorkoutPlan {
   @@index([userId, isActive])
   @@index([userId, generatedAt])
   @@map("workout_plans")
+}
+
+// Calories/macros/water only — meal suggestions and BMI/BMR/TDEE depth are
+// out of scope (see docs/ROADMAP.md).
+model NutritionPlan {
+  id            String @id @default(cuid())
+  workoutPlanId String @unique
+
+  calories     Int
+  proteinGrams Int
+  carbsGrams   Int
+  fatGrams     Int
+  sodiumMg     Int
+  waterLiters  Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition_plans")
 }
 
 model WorkoutDay {
@@ -322,82 +312,6 @@ model WorkoutExercise {
 
   @@index([workoutDayId])
   @@map("workout_exercises")
-}
-
-// ===================== NUTRITION =====================
-
-model NutritionPlan {
-  id            String @id @default(cuid())
-  workoutPlanId String @unique
-
-  calories     Int
-  proteinGrams Int
-  carbsGrams   Int
-  fatGrams     Int
-  sodiumMg     Int
-  waterLiters  Float
-
-  bmi            Float?
-  bmr            Float?
-  tdee           Float?
-  fiberGrams     Int?
-  sugarGrams     Int?
-  mealTiming     Json?
-  micronutrients Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
-  meals       Meal[]
-
-  @@map("nutrition_plans")
-}
-
-model MealSuggestion {
-  id              String         @id @default(cuid())
-  name            String
-  description     String?        @db.Text
-  categories      MealCategory[] @default([])
-  mealType        MealType?
-  calories        Int
-  proteinGrams    Int
-  carbsGrams      Int
-  fatGrams        Int
-  sodiumMg        Int?
-  ingredients     String[]       @default([])
-  instructions    String?        @db.Text
-  substituteForId String?
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  substituteFor MealSuggestion?  @relation("MealSubstitutes", fields: [substituteForId], references: [id])
-  substitutes   MealSuggestion[] @relation("MealSubstitutes")
-  meals         Meal[]
-
-  @@index([categories], type: Gin)
-  @@map("meal_suggestions")
-}
-
-model Meal {
-  id              String   @id @default(cuid())
-  nutritionPlanId String
-  suggestionId    String?
-  dayIndex        Int?
-  mealType        MealType
-  name            String
-  calories        Int
-  proteinGrams    Int
-  carbsGrams      Int
-  fatGrams        Int
-
-  nutritionPlan NutritionPlan   @relation(fields: [nutritionPlanId], references: [id], onDelete: Cascade)
-  suggestion    MealSuggestion? @relation(fields: [suggestionId], references: [id])
-  mealLogs      MealLog[]
-
-  @@index([nutritionPlanId])
-  @@map("meals")
 }
 
 // ===================== LOGS / PROGRESS =====================
@@ -467,26 +381,6 @@ model WorkoutLog {
 
   @@index([userId, date])
   @@map("workout_logs")
-}
-
-model MealLog {
-  id           String   @id @default(cuid())
-  userId       String
-  mealId       String?
-  date         DateTime @db.Date
-  mealType     MealType
-  calories     Int?
-  proteinGrams Int?
-  carbsGrams   Int?
-  fatGrams     Int?
-  notes        String?  @db.Text
-  createdAt    DateTime @default(now())
-
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  meal Meal? @relation(fields: [mealId], references: [id])
-
-  @@index([userId, date])
-  @@map("meal_logs")
 }
 
 // ===================== GAMIFICATION =====================
@@ -662,7 +556,6 @@ model AdminAnalyticsSnapshot {
   avgCompletionRate   Float
   popularGoal         FitnessGoal?
   popularSplitStyle   WorkoutSplitStyle?
-  popularMealCategory MealCategory?
   createdAt           DateTime           @default(now())
 
   @@map("admin_analytics_snapshots")

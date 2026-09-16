@@ -66,7 +66,7 @@ Mutation hooks follow one of two conventions depending on need: `useMutation` (R
 Structured-output responses are validated with a Zod schema **in addition to** the Gemini `responseSchema` before ever touching the database — never trust raw LLM JSON as pre-validated.
 
 ### Data model
-`server/prisma/schema.prisma` has 26 models and already anticipates most of this app's planned feature set (e.g. `Notification`, `Goal`, `MealSuggestion`, `AdminAnalyticsSnapshot`, `SystemSetting`, `StreakHistory`, `LeaderboardEntry` all exist but several are currently unwired to any service/route/UI). Check `docs/ROADMAP.md` before assuming a new feature needs a schema migration — it usually doesn't.
+`server/prisma/schema.prisma` already anticipates most of this app's planned feature set (e.g. `Notification`, `Goal`, `AdminAnalyticsSnapshot`, `SystemSetting`, `StreakHistory`, `LeaderboardEntry` all exist but several are currently unwired to any service/route/UI). Check `docs/ROADMAP.md` before assuming a new feature needs a schema migration — it usually doesn't. Note: meal suggestions and food-preference/allergy data collection are deliberately out of scope — `NutritionPlan` only carries calories/macros/water (`buildNutritionTargets` in `planService.ts`); don't reintroduce `Meal`/`MealSuggestion`/`Profile.foodPreference` without checking with the team first.
 
 ### Testing gotchas
 - Backend tests need `server/vitest.config.ts`'s `dotenv/config` setup to load `.env` before any test that transitively imports `config/env.ts` (e.g. via `lib/gemini.ts`).

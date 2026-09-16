@@ -204,5 +204,18 @@ export async function getActivePlan(userId: string) {
   if (!plan) {
     throw new HttpError(404, 'No active plan');
   }
+
+  if (!plan.nutritionPlan) {
+    // Backfill: plans generated while NutritionPlan briefly didn't exist in
+    // the schema (see docs/ROADMAP.md "Phase 3") have no nutrition row yet.
+    const profile = await prisma.profile.findUnique({ where: { userId } });
+    if (profile) {
+      const nutritionPlan = await prisma.nutritionPlan.create({
+        data: { workoutPlanId: plan.id, ...buildNutritionTargets(profile) },
+      });
+      return { ...plan, nutritionPlan };
+    }
+  }
+
   return plan;
 }

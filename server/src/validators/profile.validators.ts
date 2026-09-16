@@ -6,7 +6,6 @@ import {
   EquipmentAccess,
   ActivityLevel,
   WorkoutSplitStyle,
-  FoodPreference,
 } from '@prisma/client';
 
 const dailyScheduleSchema = z
@@ -39,9 +38,6 @@ export const upsertProfileSchema = z.object({
   workoutFrequency: optionalNumber(1, 7, 'Workout frequency'),
   preferredSplitStyle: z.nativeEnum(WorkoutSplitStyle).optional(),
 
-  foodPreference: z.nativeEnum(FoodPreference).optional(),
-  foodAllergies: z.array(z.string().trim().min(1)).default([]),
-  medicalRestrictions: z.array(z.string().trim().min(1)).default([]),
   dailySchedule: dailyScheduleSchema,
   sleepHoursTarget: optionalNumber(0, 24, 'Sleep hours'),
 });

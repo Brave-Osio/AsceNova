@@ -32,9 +32,6 @@ export function toFormValues(profile: Profile): ProfileFormValues {
     activityLevel: profile.activityLevel ?? 'MODERATELY_ACTIVE',
     workoutFrequency: toOptionalNumberString(profile.workoutFrequency),
     preferredSplitStyle: profile.preferredSplitStyle ?? 'PUSH_PULL_LEGS',
-    foodPreference: profile.foodPreference ?? 'OMNIVORE',
-    foodAllergies: profile.foodAllergies,
-    medicalRestrictions: profile.medicalRestrictions,
     preferredWorkoutTime: profile.dailySchedule?.preferredWorkoutTime ?? 'MORNING',
     sleepHoursTarget: toOptionalNumberString(profile.sleepHoursTarget),
   };
@@ -55,9 +52,6 @@ function toProfileInput(values: ProfileFormValues): ProfileInput {
     activityLevel: values.activityLevel,
     workoutFrequency: toOptionalNumber(values.workoutFrequency),
     preferredSplitStyle: values.preferredSplitStyle,
-    foodPreference: values.foodPreference,
-    foodAllergies: values.foodAllergies,
-    medicalRestrictions: values.medicalRestrictions,
     dailySchedule: values.preferredWorkoutTime
       ? { preferredWorkoutTime: values.preferredWorkoutTime }
       : null,

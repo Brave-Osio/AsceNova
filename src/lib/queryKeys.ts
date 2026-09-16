@@ -14,11 +14,6 @@ export const queryKeys = {
     active: (userId: string) => ['plan', 'active', userId] as const,
     history: (userId: string) => ['plan', 'history', userId] as const,
   },
-  nutrition: {
-    active: (userId: string) => ['nutrition', 'active', userId] as const,
-    mealSuggestions: (category?: string, mealType?: string) =>
-      ['nutrition', 'meal-suggestions', category ?? null, mealType ?? null] as const,
-  },
   logs: {
     list: (userId: string, range?: string) => ['logs', userId, range ?? null] as const,
     byDate: (userId: string, date: string) => ['logs', userId, date] as const,
