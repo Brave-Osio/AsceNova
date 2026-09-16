@@ -12,9 +12,6 @@ export interface CoachContext {
     fitnessLevel: string;
     equipmentAccess: string;
     activityLevel: string | null;
-    foodPreference: string | null;
-    foodAllergies: string[];
-    medicalRestrictions: string[];
   } | null;
   activePlan: {
     splitStyle: string;
@@ -104,9 +101,6 @@ export async function getUserContext(userId: string): Promise<CoachContext> {
           fitnessLevel: profile.fitnessLevel,
           equipmentAccess: profile.equipmentAccess,
           activityLevel: profile.activityLevel,
-          foodPreference: profile.foodPreference,
-          foodAllergies: profile.foodAllergies,
-          medicalRestrictions: profile.medicalRestrictions,
         }
       : null,
     activePlan: activePlan
@@ -166,9 +160,6 @@ export function formatContextAsPromptText(context: CoachContext): string {
     );
     lines.push(`- Goal: ${p.goal}, Fitness level: ${p.fitnessLevel}, Equipment: ${p.equipmentAccess}`);
     if (p.activityLevel) lines.push(`- Activity level: ${p.activityLevel}`);
-    if (p.foodPreference) lines.push(`- Food preference: ${p.foodPreference}`);
-    if (p.foodAllergies.length) lines.push(`- Food allergies: ${p.foodAllergies.join(', ')}`);
-    if (p.medicalRestrictions.length) lines.push(`- Medical restrictions: ${p.medicalRestrictions.join(', ')}`);
   } else {
     lines.push('USER PROFILE: not set up yet — encourage them to complete onboarding for personalized advice.');
   }

@@ -3,7 +3,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import TextField from '../../../components/ui/TextField';
 import OptionSelector from '../../../components/ui/OptionSelector';
-import TagInput from '../../../components/ui/TagInput';
 import Button from '../../../components/ui/Button';
 import { getErrorMessage } from '../../../lib/errors';
 import {
@@ -14,7 +13,6 @@ import {
   equipmentAccessOptions,
   activityLevelOptions,
   splitStyleOptions,
-  foodPreferenceOptions,
   preferredWorkoutTimeOptions,
   type ProfileFormValues,
 } from '../schemas';
@@ -60,16 +58,6 @@ const SPLIT_STYLE_LABELS: Record<(typeof splitStyleOptions)[number], string> = {
   FULL_BODY: 'Full Body',
 };
 
-const FOOD_PREFERENCE_LABELS: Record<(typeof foodPreferenceOptions)[number], string> = {
-  OMNIVORE: 'Omnivore',
-  VEGETARIAN: 'Vegetarian',
-  VEGAN: 'Vegan',
-  PESCATARIAN: 'Pescatarian',
-  HALAL: 'Halal',
-  KETO: 'Keto',
-  OTHER: 'Other',
-};
-
 const WORKOUT_TIME_LABELS: Record<(typeof preferredWorkoutTimeOptions)[number], string> = {
   MORNING: 'Morning',
   AFTERNOON: 'Afternoon',
@@ -86,7 +74,6 @@ const FITNESS_LEVEL_UI_OPTIONS = toOptions(fitnessLevelOptions, FITNESS_LEVEL_LA
 const EQUIPMENT_UI_OPTIONS = toOptions(equipmentAccessOptions, EQUIPMENT_LABELS);
 const ACTIVITY_LEVEL_UI_OPTIONS = toOptions(activityLevelOptions, ACTIVITY_LEVEL_LABELS);
 const SPLIT_STYLE_UI_OPTIONS = toOptions(splitStyleOptions, SPLIT_STYLE_LABELS);
-const FOOD_PREFERENCE_UI_OPTIONS = toOptions(foodPreferenceOptions, FOOD_PREFERENCE_LABELS);
 const WORKOUT_TIME_UI_OPTIONS = toOptions(preferredWorkoutTimeOptions, WORKOUT_TIME_LABELS);
 
 const DEFAULT_VALUES: ProfileFormValues = {
@@ -103,9 +90,6 @@ const DEFAULT_VALUES: ProfileFormValues = {
   activityLevel: 'MODERATELY_ACTIVE',
   workoutFrequency: '',
   preferredSplitStyle: 'PUSH_PULL_LEGS',
-  foodPreference: 'OMNIVORE',
-  foodAllergies: [],
-  medicalRestrictions: [],
   preferredWorkoutTime: 'MORNING',
   sleepHoursTarget: '',
 };
@@ -223,27 +207,6 @@ export default function ProfileSetupForm() {
               <div className="max-w-xs">
                 <TextField label="Workout Days / Week" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="4" helperText="Optional" error={errors.workoutFrequency?.message} />
               </div>
-            )}
-          />
-        </div>
-      </section>
-
-      <section>
-        <SectionHeading>Nutrition</SectionHeading>
-        <div className="flex flex-col gap-4">
-          <Controller name="foodPreference" control={control} render={({ field }) => <OptionSelector label="Food Preference" value={field.value} options={FOOD_PREFERENCE_UI_OPTIONS} onChange={field.onChange} />} />
-          <Controller
-            name="foodAllergies"
-            control={control}
-            render={({ field }) => (
-              <TagInput label="Food Allergies" value={field.value} onChange={field.onChange} placeholder="Type an allergy and press Enter" />
-            )}
-          />
-          <Controller
-            name="medicalRestrictions"
-            control={control}
-            render={({ field }) => (
-              <TagInput label="Medical Restrictions" value={field.value} onChange={field.onChange} placeholder="Type a restriction and press Enter" />
             )}
           />
         </div>

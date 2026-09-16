@@ -38,15 +38,6 @@ export const activityLevelOptions = [
   'EXTRA_ACTIVE',
 ] as const;
 export const splitStyleOptions = ['PUSH_PULL_LEGS', 'UPPER_LOWER', 'FULL_BODY'] as const;
-export const foodPreferenceOptions = [
-  'OMNIVORE',
-  'VEGETARIAN',
-  'VEGAN',
-  'PESCATARIAN',
-  'HALAL',
-  'KETO',
-  'OTHER',
-] as const;
 export const preferredWorkoutTimeOptions = ['MORNING', 'AFTERNOON', 'EVENING'] as const;
 
 export const profileSchema = z.object({
@@ -66,9 +57,6 @@ export const profileSchema = z.object({
   workoutFrequency: optionalNumberString(1, 7, 'Workout frequency'),
   preferredSplitStyle: z.enum(splitStyleOptions),
 
-  foodPreference: z.enum(foodPreferenceOptions),
-  foodAllergies: z.array(z.string()),
-  medicalRestrictions: z.array(z.string()),
   preferredWorkoutTime: z.enum(preferredWorkoutTimeOptions),
   sleepHoursTarget: optionalNumberString(0, 24, 'Sleep hours'),
 });

@@ -19,9 +19,9 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 | Tech stack | ✅ Mostly matches | React 19/Vite/TS/Tailwind v4/Framer Motion/RHF/Zod/TanStack Query/React Router/Recharts/react-hot-toast all present. Express/TS/Prisma/Postgres/bcrypt/JWT present. Zod v4 (client) vs v3 (server) — version mismatch, not itself a bug but worth aligning. |
 | Database (remove localStorage → Postgres/Prisma) | ✅ Done | Zero live `localStorage` calls anywhere in `src/`. Fully on Prisma/Postgres (Supabase), one migration, seed script exists. All 26 requested-ish models already exist in schema. |
 | Authentication | ✅ Mostly done | Register/login/logout/refresh/forgot-password/reset-password all implemented, JWT access + rotating opaque refresh tokens (httpOnly cookie), bcrypt hashing, `requireAuth` middleware. **Gaps:** password-reset emails aren't actually sent (dev-only token echo); no email verification flow though `emailVerifiedAt` field exists; `requireRole` (RBAC) middleware exists but is **wired into zero routes** — no admin-only endpoint exists yet; no account-suspend endpoint despite `AccountStatus.SUSPENDED` existing. |
-| User profile / onboarding | ✅ Done | `ProfileSetupForm` collects effectively everything the brief lists (identity, body/goals, training, nutrition prefs, schedule) and persists to `Profile` via a real API. |
+| User profile / onboarding | ✅ Done | `ProfileSetupForm` collects identity, body/goals, training, and schedule and persists to `Profile` via a real API. Food-preference/allergy fields were deliberately removed (see "Nutrition planner" below) — onboarding has no diet section. |
 | Workout generator | ✅ Implemented (Phase 2 done) | `planService` calls Gemini to populate real `WorkoutExercise` rows (sets/reps/rest/tempo/target muscles/difficulty/equipment) plus per-day warm-up/cooldown/coaching tips/progression advice, with a rule-based fallback if Gemini is unavailable. See "Phase 2" below. |
-| Nutrition planner | 🟡 Partial | Real BMR/goal-adjusted macro math exists (`buildNutritionTargets`), but `bmi`/`bmr`/`tdee`/`fiberGrams`/`sugarGrams`/`mealTiming`/`micronutrients` fields on `NutritionPlan` are defined but never populated. **Meal suggestions are entirely unbuilt** — `MealSuggestion`/`Meal` models exist, `MealCategory` enum already has BUDGET/STUDENT/GYM/HIGH_PROTEIN/LOW_CARB/LOW_SODIUM/VEGETARIAN — but no seed data, no service, no route, no UI reads/writes them. |
+| Nutrition planner | 🟡 Narrowed — calories/macros only | The PM cut the nutrition-planner *feature* (meal suggestions, food-preference collection) from scope, but confirmed the calorie/macro/water targets on the Plan page should stay. Current state: `NutritionPlan` (lean — calories/protein/carbs/fat/sodium/water only) generated per plan and shown in `NutritionPanel`; `MealSuggestion`/`Meal`/`MealLog` and `Profile.foodPreference`/`foodAllergies`/`medicalRestrictions` are removed for good. See "Phase 3" below for the full iteration history. |
 | AI Fitness Coach | ✅ Implemented (Phase 1 done) | Real Gemini-backed chat: `server/src/lib/gemini.ts`, `coachContextService.ts`, `chatService.ts`, `/api/chat` routes; frontend `coachService.ts`/`useCoachChat.ts` rewritten to hit the real API; `/coach` gated behind `ProtectedRoute`. See "Phase 1" below. |
 | Gamification | ✅ Mostly done | XP, 9-tier ranks (Iron→Radiant), streaks, 9 achievement rules, live leaderboard — all real, backend-computed, Prisma-backed, already migrated off mock/localStorage. **Gaps:** `StreakHistory` and `LeaderboardEntry` models are defined but unused (leaderboard is computed live instead of precomputed — a legitimate design choice, not necessarily a bug); no daily/weekly/monthly "missions," no badges/titles beyond achievements, no season resets, no level-up confetti/animation. |
 | User dashboard | 🟡 Partial | Shows rank/XP/streak/weight/achievements cards + link to plan. **Missing:** today's calories/protein/carbs/fat/water breakdown, workout calendar, weekly/monthly summaries, "next workout," coach recommendations on the dashboard. |
@@ -49,7 +49,7 @@ The following categories of work need **explicit, separate sign-off before imple
 
 1. **Phase 1 — AI Coach (Gemini) + real chat backend.** ✅ Done. Highest-impact, most-visible gap. Gemini SDK server-side, a `chat` service/controller/route backed by `ChatMessage`, fed real user context (profile, active plan, recent logs, XP/rank/streak), mocked `coachService.askCoach` replaced, `/coach` gated behind auth.
 2. **Phase 2 — Workout generator depth.** ✅ Done. `planService` populates `WorkoutExercise` rows (sets/reps/rest/tempo/target muscles/difficulty), warm-up/cooldown/coaching tips/progression advice on `WorkoutDay`, via Gemini with a rule-based fallback. `WorkoutTable` UI renders exercise-level detail.
-3. **Phase 3 — Nutrition depth + meal suggestions.** Not started. Populate `bmi`/`bmr`/`tdee`/fiber/sugar/`mealTiming`/`micronutrients`; seed `MealSuggestion` data (Filipino meals, per `MealCategory`); build a meal-suggestion service/route + UI panel with substitutions.
+3. **Phase 3 — Nutrition scope narrowed.** ✅ Done. The nutrition-planner *feature* (meal suggestions, food-preference collection) was cut per the PM, but calorie/macro/water targets stay. See "Phase 3" below for the full iteration history and final state.
 4. **Phase 4 — Notifications.** Not started. Persist gamification/reminder events into `Notification` instead of (or in addition to) inline API responses; build a notification-center UI.
 5. **Phase 5 — Dashboard expansion.** Not started. Today's macros/water, workout calendar, weekly/monthly summaries, next workout, coach recommendation surfaced on dashboard.
 6. **Phase 6 — Admin panel + analytics (flagged for auth sign-off).** Not started. Wire `requireRole`/`AdminRoute` into real admin routes/pages; build analytics aggregation into `AdminAnalyticsSnapshot`; user management (view/suspend/delete-soft) with CSV/Excel export.
@@ -146,3 +146,22 @@ Code complete, all automated checks clean (server: build + 28/28 tests; frontend
 - `server/tsconfig.json` now excludes `*.test.ts` from the build (it was compiling tests into `dist/`, causing Vitest to run every backend test twice).
 - Added `server/vitest.config.ts` (loads `.env` via `dotenv/config`) so backend tests don't depend on bubbling up to the frontend's Vite config.
 - Root `vite.config.ts` now scopes `test.include` to `src/**` — it was previously also picking up and running `server/`'s tests.
+
+---
+
+# Phase 3: Nutrition scope narrowed (not fully removed)
+
+The PM omitted the nutrition-planner *feature* (meal suggestions, food-preference collection) from project scope, but the basic calorie/macro/water targets on the Plan page were confirmed as still wanted. This went through a few iterations — documented here so the history is clear, with the **final state** summarized last.
+
+**Iteration 1 — removed everything nutrition-related**, including a real migration dropping `NutritionPlan`, `MealSuggestion`, `Meal`, `MealLog`, `MealType`, `MealCategory`.
+
+**Iteration 2 — also removed `Profile.foodPreference`/`foodAllergies`/`medicalRestrictions`** and the `FoodPreference` enum (a second migration), deleting the "Diet & Restrictions" onboarding section entirely.
+
+**Iteration 3 (final) — calories/macros/water restored**, everything else stays removed. A third migration re-added a **leaner** `NutritionPlan` model — only `calories`/`proteinGrams`/`carbsGrams`/`fatGrams`/`sodiumMg`/`waterLiters` (no BMI/BMR/TDEE/fiber/sugar/meal-timing/micronutrient fields — those were never part of the original brief's ask here, just unused placeholders, so they weren't brought back). `buildNutritionTargets` (deterministic Mifflin-St-Jeor-ish formula) is back in `planService.ts`, `NutritionPanel.tsx` and the "Nutrition Targets" section on `/plan` are back, and the AI coach knows the user's daily nutrition targets again.
+
+**Current (final) state:**
+- ✅ **Kept**: calorie/protein/carb/fat/sodium/water targets, generated per plan, shown on `/plan`, known to the AI coach.
+- ❌ **Removed for good**: `MealSuggestion`/`Meal`/`MealLog` (meal suggestions feature — never built, and not coming back), `Profile.foodPreference`/`foodAllergies`/`medicalRestrictions` (no food-preference/allergy data collected anywhere, including onboarding).
+- The AI coach can still discuss nutrition conversationally in general (chat topic chip, welcome message) — that was never tied to any of the removed/restored models either way.
+
+Verified after the final iteration: backend build clean, 28/28 tests; frontend build clean, 21/21 tests.
