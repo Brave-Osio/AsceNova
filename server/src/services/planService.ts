@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
-import type { Profile, WorkoutSplitStyle } from '@prisma/client';
+import { generateExerciseDetail, WORKOUT_PROMPT_VERSION, type EnrichedWorkoutDay } from './workoutGenerationService.js';
+import type { Profile, WorkoutSplitStyle, PlanSource } from '@prisma/client';
 
 export interface GeneratedWorkoutDay {
   day: string;
@@ -124,8 +125,48 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
   }
 
   const style = splitStyle ?? DEFAULT_SPLIT_STYLE;
-  const workoutDays = buildWorkoutSplit(profile, style);
+  const skeleton = buildWorkoutSplit(profile, style);
   const nutrition = buildNutritionTargets(profile);
+
+  const previousPlan = await prisma.workoutPlan.findFirst({
+    where: { userId, isActive: true },
+    include: { workoutDays: { include: { exercises: true } } },
+  });
+  const priorExerciseNames = [
+    ...new Set(previousPlan?.workoutDays.flatMap((d) => d.exercises.map((e) => e.name)) ?? []),
+  ].slice(0, 20);
+
+  let source: PlanSource = 'RULE_BASED_LEGACY';
+  let promptVersion: string | null = null;
+  let enrichedDays: EnrichedWorkoutDay[] | null = null;
+
+  try {
+    enrichedDays = await generateExerciseDetail(profile, skeleton, priorExerciseNames);
+    source = 'GEMINI';
+    promptVersion = WORKOUT_PROMPT_VERSION;
+  } catch (err) {
+    // Fall back to the rule-based skeleton (no exercises) — a real,
+    // already-tested plan rather than failing the request. `source`
+    // stays RULE_BASED_LEGACY so this is fully visible in the data.
+    console.error('Workout exercise generation failed, falling back to rule-based plan:', err);
+  }
+
+  const workoutDaysCreate = enrichedDays
+    ? enrichedDays.map((d, i) => ({
+        dayIndex: i,
+        label: d.day,
+        focus: d.focus,
+        workoutName: d.workoutName,
+        warmUp: d.warmUp,
+        coolDown: d.coolDown,
+        estimatedDurationMinutes: d.estimatedDurationMinutes,
+        estimatedCaloriesBurned: d.estimatedCaloriesBurned,
+        coachingTips: d.coachingTips,
+        progressionAdvice: d.progressionAdvice,
+        exercises:
+          d.exercises.length > 0 ? { create: d.exercises.map((e, order) => ({ ...e, order })) } : undefined,
+      }))
+    : skeleton.map((d, i) => ({ dayIndex: i, label: d.day, focus: d.focus }));
 
   return prisma.$transaction(async (tx) => {
     await tx.workoutPlan.updateMany({
@@ -138,15 +179,14 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
         userId,
         splitStyle: style,
         isActive: true,
-        source: 'RULE_BASED_LEGACY',
+        source,
+        promptVersion,
         generatedAt: new Date(),
-        workoutDays: {
-          create: workoutDays.map((d, i) => ({ dayIndex: i, label: d.day, focus: d.focus })),
-        },
+        workoutDays: { create: workoutDaysCreate },
         nutritionPlan: { create: nutrition },
       },
       include: {
-        workoutDays: { orderBy: { dayIndex: 'asc' } },
+        workoutDays: { orderBy: { dayIndex: 'asc' }, include: { exercises: { orderBy: { order: 'asc' } } } },
         nutritionPlan: true,
       },
     });
@@ -157,7 +197,7 @@ export async function getActivePlan(userId: string) {
   const plan = await prisma.workoutPlan.findFirst({
     where: { userId, isActive: true },
     include: {
-      workoutDays: { orderBy: { dayIndex: 'asc' } },
+      workoutDays: { orderBy: { dayIndex: 'asc' }, include: { exercises: { orderBy: { order: 'asc' } } } },
       nutritionPlan: true,
     },
   });

@@ -9,7 +9,8 @@ const envSchema = z.object({
   DIRECT_URL: z.string().min(1),
 
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
-  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  // Optional: when unset, access tokens never expire (see lib/jwt.ts).
+  JWT_ACCESS_EXPIRES_IN: z.string().optional(),
   REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().default(30),
   BCRYPT_SALT_ROUNDS: z.coerce.number().default(12),
 
@@ -17,6 +18,7 @@ const envSchema = z.object({
   ADMIN_SEED_PASSWORD: z.string().optional(),
 
   GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
   ENABLE_SIMULATE_PROGRESS: z
     .string()
     .default('false')

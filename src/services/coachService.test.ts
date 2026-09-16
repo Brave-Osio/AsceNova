@@ -1,34 +1,45 @@
-import { describe, it, expect } from 'vitest';
-import { askCoach } from './coachService';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { httpClient } from '../lib/httpClient';
+import { getChatHistory, sendCoachMessage } from './coachService';
 
-describe('coachService.askCoach', () => {
-  it('matches workout frequency questions', async () => {
-    const response = await askCoach('Can I workout every day?');
-    expect(response.toLowerCase()).toContain('recover');
+vi.mock('../lib/httpClient', () => ({
+  httpClient: { get: vi.fn(), post: vi.fn() },
+}));
+
+describe('coachService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('matches protein questions', async () => {
-    const response = await askCoach('How much protein should I eat?');
-    expect(response.toLowerCase()).toContain('protein');
+  it('maps chat history from USER/ASSISTANT roles to user/coach senders', async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({
+      data: {
+        messages: [
+          { id: '1', role: 'USER', message: 'Hi', createdAt: '2026-01-01T00:00:00.000Z' },
+          { id: '2', role: 'ASSISTANT', message: 'Hello!', createdAt: '2026-01-01T00:00:01.000Z' },
+        ],
+      },
+    });
+
+    const result = await getChatHistory();
+
+    expect(httpClient.get).toHaveBeenCalledWith('/api/chat/history');
+    expect(result).toEqual([
+      { id: '1', sender: 'user', text: 'Hi' },
+      { id: '2', sender: 'coach', text: 'Hello!' },
+    ]);
   });
 
-  it('matches fat loss questions', async () => {
-    const response = await askCoach('How do I lose fat?');
-    expect(response.toLowerCase()).toContain('deficit');
-  });
+  it('sends a message and maps the assistant reply', async () => {
+    vi.mocked(httpClient.post).mockResolvedValue({
+      data: {
+        message: { id: '3', role: 'ASSISTANT', message: 'Great question!', createdAt: '2026-01-01T00:00:02.000Z' },
+      },
+    });
 
-  it('matches muscle gain questions', async () => {
-    const response = await askCoach('How do I gain muscle?');
-    expect(response.toLowerCase()).toContain('surplus');
-  });
+    const result = await sendCoachMessage('How much protein should I eat?');
 
-  it('is case-insensitive when matching keywords', async () => {
-    const response = await askCoach('HOW MUCH PROTEIN SHOULD I EAT');
-    expect(response.toLowerCase()).toContain('protein');
-  });
-
-  it('falls back to a generic response for unmatched questions', async () => {
-    const response = await askCoach('What is the meaning of life?');
-    expect(response).toContain('Great question');
+    expect(httpClient.post).toHaveBeenCalledWith('/api/chat', { message: 'How much protein should I eat?' });
+    expect(result).toEqual({ id: '3', sender: 'coach', text: 'Great question!' });
   });
 });

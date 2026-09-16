@@ -1,6 +1,37 @@
+export type ExerciseDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+
+export interface WorkoutExercise {
+  id: string;
+  order: number;
+  name: string;
+  sets: number;
+  reps: string; // e.g. "8-10", "12", "Failure"
+  restSeconds: number;
+  tempo?: string | null;
+  targetMuscles: string[];
+  difficulty?: ExerciseDifficulty | null;
+  estimatedCalories?: number | null;
+  equipment?: string | null;
+  notes?: string | null;
+}
+
 export interface WorkoutDay {
   day: string; // e.g. "Monday"
   focus: string; // e.g. "Push Day", "Rest"
+  /**
+   * Populated when the active plan's source is Gemini-generated
+   * (server/src/services/workoutGenerationService.ts). Rule-based
+   * fallback plans omit these — WorkoutTable renders the simple pill
+   * view in that case.
+   */
+  workoutName?: string | null;
+  warmUp?: string | null;
+  coolDown?: string | null;
+  estimatedDurationMinutes?: number | null;
+  estimatedCaloriesBurned?: number | null;
+  coachingTips?: string[];
+  progressionAdvice?: string | null;
+  exercises?: WorkoutExercise[];
 }
 
 export type WorkoutSplitStyle = 'PUSH_PULL_LEGS' | 'UPPER_LOWER' | 'FULL_BODY';
@@ -45,10 +76,9 @@ export interface NutritionPlan {
 
 /**
  * Mirrors the WorkoutPlan API response shape (server/src/services/planService.ts).
- * workoutDays/nutrition keep the flat shapes the UI already renders —
- * the richer optional Prisma fields (exercises, warm-up/cooldown, bmi/
- * bmr/tdee, etc.) aren't populated by the rule-based generator yet, so
- * they're not surfaced here until something actually produces them.
+ * workoutDays carries exercise-level detail when the plan was Gemini-generated
+ * (see WorkoutDay above); nutrition's richer optional fields (bmi/bmr/tdee, etc.)
+ * still aren't populated yet — that's Phase 3.
  */
 export interface FitnessPlan {
   id: string;
