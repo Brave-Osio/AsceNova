@@ -8,6 +8,11 @@ import StreakCard from '../../features/gamification/components/StreakCard';
 import AchievementCard from '../../features/gamification/components/AchievementCard';
 import SimulateProgressButton from '../../features/gamification/components/SimulateProgressButton';
 import WeightProgressCard from '../../features/dashboard/components/WeightProgressCard';
+import NextWorkoutCard from '../../features/dashboard/components/NextWorkoutCard';
+import TodayTargetsCard from '../../features/dashboard/components/TodayTargetsCard';
+import WeeklySummaryCard from '../../features/dashboard/components/WeeklySummaryCard';
+import WorkoutCalendarCard from '../../features/dashboard/components/WorkoutCalendarCard';
+import CoachTeaserCard from '../../features/dashboard/components/CoachTeaserCard';
 
 const GOAL_LABEL: Record<string, string> = {
   WEIGHT_LOSS: 'Weight Loss',
@@ -90,11 +95,16 @@ export default function DashboardPage() {
         variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
       >
         {[
+          <NextWorkoutCard key="next-workout" />,
+          <TodayTargetsCard key="today-targets" />,
           <RankCard key="rank" />,
           <XpCard key="xp" />,
           <StreakCard key="streak" />,
           <WeightProgressCard key="weight" />,
+          <WorkoutCalendarCard key="calendar" />,
           <AchievementCard key="achievements" />,
+          <CoachTeaserCard key="coach" />,
+          <WeeklySummaryCard key="weekly" />,
           <SimulateProgressButton key="simulate" />,
         ].map((card) => (
           <motion.div key={card.key} variants={cardVariant} className="card-hover">
