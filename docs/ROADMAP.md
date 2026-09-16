@@ -24,7 +24,7 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 | Nutrition planner | 🟡 Narrowed — calories/macros only | The PM cut the nutrition-planner *feature* (meal suggestions, food-preference collection) from scope, but confirmed the calorie/macro/water targets on the Plan page should stay. Current state: `NutritionPlan` (lean — calories/protein/carbs/fat/sodium/water only) generated per plan and shown in `NutritionPanel`; `MealSuggestion`/`Meal`/`MealLog` and `Profile.foodPreference`/`foodAllergies`/`medicalRestrictions` are removed for good. See "Phase 3" below for the full iteration history. |
 | AI Fitness Coach | ✅ Implemented (Phase 1 done) | Real Gemini-backed chat: `server/src/lib/gemini.ts`, `coachContextService.ts`, `chatService.ts`, `/api/chat` routes; frontend `coachService.ts`/`useCoachChat.ts` rewritten to hit the real API; `/coach` gated behind `ProtectedRoute`. See "Phase 1" below. |
 | Gamification | ✅ Mostly done | XP, 9-tier ranks (Iron→Radiant), streaks, 9 achievement rules, live leaderboard — all real, backend-computed, Prisma-backed, already migrated off mock/localStorage. **Gaps:** `StreakHistory` and `LeaderboardEntry` models are defined but unused (leaderboard is computed live instead of precomputed — a legitimate design choice, not necessarily a bug); no daily/weekly/monthly "missions," no badges/titles beyond achievements, no season resets, no level-up confetti/animation. |
-| User dashboard | 🟡 Partial | Shows rank/XP/streak/weight/achievements cards + link to plan. **Missing:** today's calories/protein/carbs/fat/water breakdown, workout calendar, weekly/monthly summaries, "next workout," coach recommendations on the dashboard. |
+| User dashboard | ✅ Implemented (Phase 5 done) | Now shows next workout, today's nutrition targets + habit-goal badges, a 28-day workout calendar strip, a weekly summary, and an AI-coach teaser (last message), alongside the existing rank/XP/streak/weight/achievements cards. All frontend-only, reusing existing endpoints — no new backend/migration. See "Phase 5" below. |
 | Admin panel | ❌ Not built | Zero admin UI/pages. `AdminRoute` guard component exists but is wired into no route. `requireRole` middleware exists but wired into no backend route. Schema fully supports it (`AdminAnalyticsSnapshot`, `Report`, `Role.ADMIN`) but nothing reads/writes it. |
 | Analytics | ❌ Not built | Same as admin — schema ready (`AdminAnalyticsSnapshot`), zero implementation. |
 | Notifications | ✅ Implemented (Phase 4 done) | Achievement unlocks and rank-ups now persist as `Notification` rows (in addition to the existing inline `apply-log` response fields, unchanged). Notification bell in the navbar with unread badge, dropdown, mark-read/mark-all-read. Reminders and admin/system notification types are out of scope (no scheduler/admin panel yet). See "Phase 4" below. |
@@ -51,7 +51,7 @@ The following categories of work need **explicit, separate sign-off before imple
 2. **Phase 2 — Workout generator depth.** ✅ Done. `planService` populates `WorkoutExercise` rows (sets/reps/rest/tempo/target muscles/difficulty), warm-up/cooldown/coaching tips/progression advice on `WorkoutDay`, via Gemini with a rule-based fallback. `WorkoutTable` UI renders exercise-level detail.
 3. **Phase 3 — Nutrition scope narrowed.** ✅ Done. The nutrition-planner *feature* (meal suggestions, food-preference collection) was cut per the PM, but calorie/macro/water targets stay. See "Phase 3" below for the full iteration history and final state.
 4. **Phase 4 — Notifications.** ✅ Done. Achievement/rank-up events now persist as `Notification` rows; notification bell UI added to the navbar. See "Phase 4" below.
-5. **Phase 5 — Dashboard expansion.** Not started. Today's macros/water, workout calendar, weekly/monthly summaries, next workout, coach recommendation surfaced on dashboard.
+5. **Phase 5 — Dashboard expansion.** ✅ Done. Five new cards added, all frontend-only. See "Phase 5" below.
 6. **Phase 6 — Admin panel + analytics (flagged for auth sign-off).** Not started. Wire `requireRole`/`AdminRoute` into real admin routes/pages; build analytics aggregation into `AdminAnalyticsSnapshot`; user management (view/suspend/delete-soft) with CSV/Excel export.
 7. **Phase 7 — Settings + auth hardening (flagged for auth sign-off).** Not started. Settings page (profile/security/theme/notification prefs), real password-reset email delivery, optional email verification.
 8. **Phase 8 — Gamification expansion.** Not started. Missions (daily/weekly/monthly), badges/titles, season resets, level-up animation polish — additive, lowest risk to existing systems.
@@ -183,3 +183,22 @@ A couple of bugs surfaced during manual testing after this, both fixed: (1) plan
 **Out of scope:** reminders (`REMINDER` type) — needs a scheduler/cron, real infra work, not just wiring; `SYSTEM`/`ADMIN`/`PLAN_READY` types — no sender for them yet (no admin panel, plan generation is synchronous).
 
 **Verified live** against the real Supabase DB: triggered the `first_workout` achievement via a real daily-log submission, confirmed the matching notification was persisted with correct title/body/metadata, confirmed unread-count tracked correctly, confirmed mark-as-read works and 404s on an invalid id, confirmed unauthenticated requests get 401. Backend build clean (28/28 tests unaffected — no new tests added, since the only new logic is thin Prisma wrappers + string templates, no new pure functions to unit-test). Frontend build clean, 21/21 tests, lint shows only the same 3 pre-existing unrelated errors.
+
+A follow-up bug was found and fixed after this shipped: the "Simulate 45 Days Progress" dev tool replays real days through `applyDailyLog` (so it *was* creating notifications correctly server-side) but never invalidated the notification query caches on completion, so the bell silently stayed stale after using it. Fixed by adding the same cache invalidation `useDailyLog.ts` already had.
+
+---
+
+# Phase 5: Dashboard expansion
+
+Five new cards added to `/dashboard`, all **frontend-only** — zero new backend routes, services, or migrations. Everything needed already existed behind existing endpoints (active plan, daily-log history, chat history).
+
+**What shipped:**
+- `NextWorkoutCard` — maps today's weekday to the matching day in the active plan (skips ahead past rest days).
+- `TodayTargetsCard` — the active plan's calorie/protein/carb/fat/water targets, plus today's water/protein goal-hit badges if today's already logged.
+- `WeeklySummaryCard` — days logged, workouts completed, goal hit-rates, and weight change over the last 7 days.
+- `WorkoutCalendarCard` — a compact 28-day grid (GitHub-contribution-strip style) showing logged days and which ones included a completed workout.
+- `CoachTeaserCard` — shows the most recent AI Coach message (reusing the same query-cache key `/coach` uses) with a "Continue chatting" link — deliberately **not** a new Gemini call on every dashboard load, to avoid ongoing API cost/latency for a page that loads far more often than the coach is actually used.
+
+**Two honesty constraints that shaped this:** there's no calorie/macro *consumption* logging anywhere in the app (out of scope per the Phase 3 nutrition decision), so "today's targets" means the plan's targets, not "consumed vs. target." Similarly, `WaterLog`/`WorkoutLog` are schema-only models nothing ever writes to — the calendar reflects `DailyProgress` history (which is real and populated), not those unused tables.
+
+**Verified:** frontend build clean, lint unchanged (same 3 pre-existing errors), 21/21 tests. Spot-checked the real active plan's data directly against the database to confirm weekday-label matching and rest-day detection work exactly as the components assume.
