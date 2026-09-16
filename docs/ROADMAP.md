@@ -27,7 +27,7 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 | User dashboard | 🟡 Partial | Shows rank/XP/streak/weight/achievements cards + link to plan. **Missing:** today's calories/protein/carbs/fat/water breakdown, workout calendar, weekly/monthly summaries, "next workout," coach recommendations on the dashboard. |
 | Admin panel | ❌ Not built | Zero admin UI/pages. `AdminRoute` guard component exists but is wired into no route. `requireRole` middleware exists but wired into no backend route. Schema fully supports it (`AdminAnalyticsSnapshot`, `Report`, `Role.ADMIN`) but nothing reads/writes it. |
 | Analytics | ❌ Not built | Same as admin — schema ready (`AdminAnalyticsSnapshot`), zero implementation. |
-| Notifications | ❌ Not built | `Notification` model + `NotificationType` enum exist; gamification events (rank-up, achievement) are returned inline in API responses instead of persisted as notifications. No notification center UI, no reminders. |
+| Notifications | ✅ Implemented (Phase 4 done) | Achievement unlocks and rank-ups now persist as `Notification` rows (in addition to the existing inline `apply-log` response fields, unchanged). Notification bell in the navbar with unread badge, dropdown, mark-read/mark-all-read. Reminders and admin/system notification types are out of scope (no scheduler/admin panel yet). See "Phase 4" below. |
 | Settings | ❌ Not built | No settings page/route/service exists at all (profile editing exists via the setup form, but no dedicated account/security/theme/notification-prefs page). |
 | UI/UX redesign | 🟡 Partial | Already dark-themed with glassmorphism (`.glass`/`.glass-strong`), purple/violet accents, Framer Motion animations, custom Tailwind v4 theme tokens — closer to the brief's aesthetic goal than a typical capstone UI. Hand-rolled component primitives (no shadcn/Radix). No light mode (not requested elsewhere). No loading skeletons/empty-state system audited yet at the per-page level. |
 | Code quality | 🟡 Partial | Feature-sliced architecture, typed services, Zod validation, React Query caching already in place — genuinely good bones. Known debt: `requireRole` dead code, `StreakHistory`/`LeaderboardEntry` unused models, zod v3/v4 split, no CI pipeline at all. |
@@ -50,7 +50,7 @@ The following categories of work need **explicit, separate sign-off before imple
 1. **Phase 1 — AI Coach (Gemini) + real chat backend.** ✅ Done. Highest-impact, most-visible gap. Gemini SDK server-side, a `chat` service/controller/route backed by `ChatMessage`, fed real user context (profile, active plan, recent logs, XP/rank/streak), mocked `coachService.askCoach` replaced, `/coach` gated behind auth.
 2. **Phase 2 — Workout generator depth.** ✅ Done. `planService` populates `WorkoutExercise` rows (sets/reps/rest/tempo/target muscles/difficulty), warm-up/cooldown/coaching tips/progression advice on `WorkoutDay`, via Gemini with a rule-based fallback. `WorkoutTable` UI renders exercise-level detail.
 3. **Phase 3 — Nutrition scope narrowed.** ✅ Done. The nutrition-planner *feature* (meal suggestions, food-preference collection) was cut per the PM, but calorie/macro/water targets stay. See "Phase 3" below for the full iteration history and final state.
-4. **Phase 4 — Notifications.** Not started. Persist gamification/reminder events into `Notification` instead of (or in addition to) inline API responses; build a notification-center UI.
+4. **Phase 4 — Notifications.** ✅ Done. Achievement/rank-up events now persist as `Notification` rows; notification bell UI added to the navbar. See "Phase 4" below.
 5. **Phase 5 — Dashboard expansion.** Not started. Today's macros/water, workout calendar, weekly/monthly summaries, next workout, coach recommendation surfaced on dashboard.
 6. **Phase 6 — Admin panel + analytics (flagged for auth sign-off).** Not started. Wire `requireRole`/`AdminRoute` into real admin routes/pages; build analytics aggregation into `AdminAnalyticsSnapshot`; user management (view/suspend/delete-soft) with CSV/Excel export.
 7. **Phase 7 — Settings + auth hardening (flagged for auth sign-off).** Not started. Settings page (profile/security/theme/notification prefs), real password-reset email delivery, optional email verification.
@@ -165,3 +165,21 @@ The PM omitted the nutrition-planner *feature* (meal suggestions, food-preferenc
 - The AI coach can still discuss nutrition conversationally in general (chat topic chip, welcome message) — that was never tied to any of the removed/restored models either way.
 
 Verified after the final iteration: backend build clean, 28/28 tests; frontend build clean, 21/21 tests.
+
+A couple of bugs surfaced during manual testing after this, both fixed: (1) plans generated while `NutritionPlan` was briefly out of the schema had no nutrition row — `getActivePlan` now self-heals by backfilling one on the fly instead of crashing; (2) the AI coach's Markdown-formatted replies (bold, bullet lists) were rendering as raw text in the chat UI — added `react-markdown` with theme-matched styling, applied only to coach messages.
+
+---
+
+# Phase 4: Notifications
+
+`Notification`/`NotificationType` already existed in the schema but nothing created or read them — achievement unlocks and rank-ups only ever surfaced as one-shot fields in `apply-log`'s response, with no persisted history.
+
+**What shipped:**
+- `server/src/services/notificationService.ts` — CRUD-ish helpers (`createNotification` is transaction-scoped so it can fire atomically alongside whatever triggered it; `getRecent`, `getUnreadCount`, `markAsRead`, `markAllAsRead`).
+- `progressService.applyDailyLog` now creates a `RANK_UP` notification on rank change and an `ACHIEVEMENT` notification per newly-unlocked achievement, inside its existing transaction. **Additive only** — the inline `xpGained`/`newAchievementTitles` response is unchanged, so the existing Daily Log celebration UX still works.
+- `GET/PATCH/POST /api/notifications*` routes (list, unread-count, mark-one-read, mark-all-read), all `requireAuth`-gated.
+- Frontend: a self-contained `NotificationBell` component (checks its own auth state, renders nothing when logged out) in the navbar — unread badge, dropdown list, click-to-mark-read, mark-all-read. `useDailyLog` invalidates the notification queries after a successful log submission so the bell updates immediately.
+
+**Out of scope:** reminders (`REMINDER` type) — needs a scheduler/cron, real infra work, not just wiring; `SYSTEM`/`ADMIN`/`PLAN_READY` types — no sender for them yet (no admin panel, plan generation is synchronous).
+
+**Verified live** against the real Supabase DB: triggered the `first_workout` achievement via a real daily-log submission, confirmed the matching notification was persisted with correct title/body/metadata, confirmed unread-count tracked correctly, confirmed mark-as-read works and 404s on an invalid id, confirmed unauthenticated requests get 401. Backend build clean (28/28 tests unaffected — no new tests added, since the only new logic is thin Prisma wrappers + string templates, no new pure functions to unit-test). Frontend build clean, 21/21 tests, lint shows only the same 3 pre-existing unrelated errors.

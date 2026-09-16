@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import * as dailyProgressService from './dailyProgressService.js';
+import * as notificationService from './notificationService.js';
 import type { RankName, XpSource } from '@prisma/client';
 
 /** Ported from src/constants/xpRules.ts XP_REWARDS (achievementUnlock only — the
@@ -212,6 +213,12 @@ export async function applyDailyLog(userId: string, date: Date) {
 
     if (rankChanged) {
       await tx.rankHistory.create({ data: { userId, rank: newRank, totalXpAtChange: totalXp } });
+      await notificationService.createNotification(tx, {
+        userId,
+        type: 'RANK_UP',
+        title: 'Rank Up!',
+        body: `You've reached ${newRank} rank — keep up the momentum!`,
+      });
     }
 
     if (newlyUnlockedIds.length > 0) {
@@ -225,6 +232,18 @@ export async function applyDailyLog(userId: string, date: Date) {
     const newAchievementTitles = newlyUnlockedIds.map(
       (id) => unlockedAchievements.find((a) => a.id === id)?.title ?? id,
     );
+
+    if (unlockedAchievements.length > 0) {
+      await tx.notification.createMany({
+        data: unlockedAchievements.map((a) => ({
+          userId,
+          type: 'ACHIEVEMENT' as const,
+          title: 'Achievement Unlocked!',
+          body: `You unlocked "${a.title}"!`,
+          metadata: { achievementId: a.id },
+        })),
+      });
+    }
     const xpGained = xpGrants.reduce((sum, g) => sum + g.amount, 0);
 
     return {

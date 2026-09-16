@@ -81,6 +81,10 @@ export function useDailyLog() {
       const result = await applyDailyLog(today);
       if (user) {
         queryClient.setQueryData(queryKeys.progress.detail(user.id), result.progress);
+        // applyDailyLog may have unlocked achievements or a rank-up, which
+        // now also persist as Notification rows — refresh the bell.
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(user.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount(user.id) });
       }
 
       setLastResult({ xpGained: result.xpGained, newAchievementTitles: result.newAchievementTitles });
