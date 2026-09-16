@@ -17,10 +17,10 @@ import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
  *
- * Phase 2 gating has begun: setup/plan/dashboard/log/leaderboard all
- * read profile data, which now lives on the backend, so they sit
- * behind ProtectedRoute. Coach chat doesn't consume profile data yet
- * and stays ungated until its own domain migrates.
+ * setup/plan/dashboard/log/leaderboard/coach all read backend-persisted,
+ * per-user data, so they sit behind ProtectedRoute. Coach chat moved in
+ * once its backend (Gemini-backed, real profile/plan/progress context)
+ * replaced the old ungated demo mock.
  */
 export const routes: RouteObject[] = [
   {
@@ -36,9 +36,9 @@ export const routes: RouteObject[] = [
           { path: ROUTES.dashboard.slice(1), element: <DashboardPage /> },
           { path: ROUTES.log.slice(1), element: <DailyLogPage /> },
           { path: ROUTES.leaderboard.slice(1), element: <LeaderboardPage /> },
+          { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
         ],
       },
-      { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
       { path: ROUTES.login.slice(1), element: <LoginPage /> },
       { path: ROUTES.register.slice(1), element: <RegisterPage /> },
       { path: ROUTES.forgotPassword.slice(1), element: <ForgotPasswordPage /> },

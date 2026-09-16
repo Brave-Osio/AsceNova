@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { askCoach } from '../../../services/coachService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../../context/AuthContext';
+import { getChatHistory, sendCoachMessage } from '../../../services/coachService';
+import { queryKeys } from '../../../lib/queryKeys';
+import { showErrorToast } from '../../../lib/toast';
 import type { ChatMessage } from '../types';
 
 const WELCOME_MESSAGE: ChatMessage = {
@@ -8,27 +12,50 @@ const WELCOME_MESSAGE: ChatMessage = {
   text: "Hi! I'm your AI Fitness Coach. Ask me about workouts, nutrition, or how XP and ranks work.",
 };
 
+/**
+ * Backend-driven chat: history is loaded from GET /api/chat/history and
+ * cached under queryKeys.coach.history; sending a message optimistically
+ * shows the user's text immediately (held in local `pendingMessages`
+ * until the real history is refetched into cache), following the same
+ * manual-async pattern as useDailyLog.ts rather than useMutation, since
+ * this needs a per-message "thinking" state rather than a form-submit one.
+ */
 export function useCoachChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+
+  const historyQuery = useQuery({
+    queryKey: queryKeys.coach.history(user?.id ?? ''),
+    queryFn: getChatHistory,
+    enabled: !!user?.id,
+  });
+
+  const history = historyQuery.data ?? [];
+  const messages = history.length > 0 || pendingMessages.length > 0 ? [...history, ...pendingMessages] : [WELCOME_MESSAGE];
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || !user) return;
 
-    const userMessage: ChatMessage = { id: `user_${Date.now()}`, sender: 'user', text: trimmed };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessage: ChatMessage = { id: `pending-user-${Date.now()}`, sender: 'user', text: trimmed };
+    setPendingMessages((prev) => [...prev, userMessage]);
     setIsThinking(true);
 
-    const response = await askCoach(trimmed);
-
-    const coachMessage: ChatMessage = {
-      id: `coach_${Date.now()}`,
-      sender: 'coach',
-      text: response,
-    };
-    setMessages((prev) => [...prev, coachMessage]);
-    setIsThinking(false);
+    try {
+      const coachMessage = await sendCoachMessage(trimmed);
+      queryClient.setQueryData<ChatMessage[]>(queryKeys.coach.history(user.id), (prev) => [
+        ...(prev ?? []),
+        userMessage,
+        coachMessage,
+      ]);
+      setPendingMessages([]);
+    } catch (err) {
+      showErrorToast(err);
+    } finally {
+      setIsThinking(false);
+    }
   }
 
   return { messages, isThinking, sendMessage };
