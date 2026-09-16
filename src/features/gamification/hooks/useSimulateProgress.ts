@@ -58,6 +58,10 @@ export function useSimulateProgress() {
       if (user) {
         queryClient.setQueryData(queryKeys.progress.detail(user.id), latestProgress);
         queryClient.invalidateQueries({ queryKey: queryKeys.logs.list(user.id) });
+        // Each simulated day runs through the real applyDailyLog, which may
+        // have persisted RANK_UP/ACHIEVEMENT notifications — refresh the bell.
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(user.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount(user.id) });
       }
 
       setLastResult({ daysSimulated: validDays, xpGained, newAchievementTitles });

@@ -10,6 +10,7 @@ import { dailyProgressRouter } from './routes/dailyProgress.routes.js';
 import { progressRouter } from './routes/progress.routes.js';
 import { leaderboardRouter } from './routes/leaderboard.routes.js';
 import { chatRouter } from './routes/chat.routes.js';
+import { notificationRouter } from './routes/notification.routes.js';
 
 export const app = express();
 
@@ -33,8 +34,9 @@ app.use('/api/daily-progress', dailyProgressRouter);
 app.use('/api/progress', progressRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/notifications', notificationRouter);
 
 // Remaining resource routers are mounted here as each domain is built
-// out (goals, notifications, admin).
+// out (goals, admin).
 
 app.use(errorHandler);
