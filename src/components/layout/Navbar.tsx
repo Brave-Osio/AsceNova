@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { NAV_LINKS } from '../../constants/navLinks';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
+import AuthNavControls from '../../features/auth/components/AuthNavControls';
 import { useAuth } from '../../context/AuthContext';
 
 interface NavbarProps {
@@ -56,6 +57,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
 
           <div className="flex items-center gap-2">
             <NotificationBell />
+            <AuthNavControls />
 
             {/* Mobile menu button */}
             <button

@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { NAV_LINKS } from '../../constants/navLinks';
 import { useAuth } from '../../context/AuthContext';
+import AuthNavControls from '../../features/auth/components/AuthNavControls';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -65,6 +66,10 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             </li>
           ))}
         </ul>
+
+        <div className="border-t border-white/8 p-4">
+          <AuthNavControls onNavigate={onClose} />
+        </div>
       </nav>
     </div>
   );

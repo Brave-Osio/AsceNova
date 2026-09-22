@@ -18,7 +18,7 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 |---|---|---|
 | Tech stack | ✅ Mostly matches | React 19/Vite/TS/Tailwind v4/Framer Motion/RHF/Zod/TanStack Query/React Router/Recharts/react-hot-toast all present. Express/TS/Prisma/Postgres/bcrypt/JWT present. Zod v4 (client) vs v3 (server) — version mismatch, not itself a bug but worth aligning. |
 | Database (remove localStorage → Postgres/Prisma) | ✅ Done | Zero live `localStorage` calls anywhere in `src/`. Fully on Prisma/Postgres (Supabase), one migration, seed script exists. All 26 requested-ish models already exist in schema. |
-| Authentication | ✅ Mostly done | Register/login/logout/refresh/forgot-password/reset-password all implemented, JWT access + rotating opaque refresh tokens (httpOnly cookie), bcrypt hashing, `requireAuth` middleware. **Gaps:** password-reset emails aren't actually sent (dev-only token echo); no email verification flow though `emailVerifiedAt` field exists; `requireRole` (RBAC) middleware exists but is **wired into zero routes** — no admin-only endpoint exists yet; no account-suspend endpoint despite `AccountStatus.SUSPENDED` existing. |
+| Authentication | ✅ Mostly done | Register/login/logout/refresh/forgot-password/reset-password/change-password all implemented, JWT access + rotating opaque refresh tokens (httpOnly cookie), bcrypt hashing, `requireAuth`/`requireRole('ADMIN')` middleware, rate limiting on register/login/forgot-password (Phase 7). **Gaps:** password-reset emails aren't actually sent (dev-only token echo — Phase 7 explicitly deferred this, needs a third-party email provider decision); no email verification flow though `emailVerifiedAt` field exists. |
 | User profile / onboarding | ✅ Done | `ProfileSetupForm` collects identity, body/goals, training, and schedule and persists to `Profile` via a real API. Food-preference/allergy fields were deliberately removed (see "Nutrition planner" below) — onboarding has no diet section. |
 | Workout generator | ✅ Implemented (Phase 2 done) | `planService` calls Gemini to populate real `WorkoutExercise` rows (sets/reps/rest/tempo/target muscles/difficulty/equipment) plus per-day warm-up/cooldown/coaching tips/progression advice, with a rule-based fallback if Gemini is unavailable. See "Phase 2" below. |
 | Nutrition planner | 🟡 Narrowed — calories/macros only | The PM cut the nutrition-planner *feature* (meal suggestions, food-preference collection) from scope, but confirmed the calorie/macro/water targets on the Plan page should stay. Current state: `NutritionPlan` (lean — calories/protein/carbs/fat/sodium/water only) generated per plan and shown in `NutritionPanel`; `MealSuggestion`/`Meal`/`MealLog` and `Profile.foodPreference`/`foodAllergies`/`medicalRestrictions` are removed for good. See "Phase 3" below for the full iteration history. |
@@ -28,7 +28,7 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 | Admin panel | ✅ Implemented (Phase 6 done) | `requireRole('ADMIN')` now gates real `/api/admin/*` routes; `AdminRoute` gates a real `/admin` UI (user table with search/filter/pagination, user detail view, suspend/reactivate/soft-delete, CSV export). "Admin" nav link shown only to admins. See "Phase 6" below. |
 | Analytics | ✅ Implemented (Phase 6 done) | Live-computed stats (user counts, signups, avg XP/streak, workout-completion rate, goal distribution) via Prisma aggregates — `AdminAnalyticsSnapshot` stays intentionally unused (no scheduler/cron in this codebase, same reasoning as `LeaderboardEntry`). See "Phase 6" below. |
 | Notifications | ✅ Implemented (Phase 4 done) | Achievement unlocks and rank-ups now persist as `Notification` rows (in addition to the existing inline `apply-log` response fields, unchanged). Notification bell in the navbar with unread badge, dropdown, mark-read/mark-all-read. Reminders and admin/system notification types are out of scope (no scheduler/admin panel yet). See "Phase 4" below. |
-| Settings | ❌ Not built | No settings page/route/service exists at all (profile editing exists via the setup form, but no dedicated account/security/theme/notification-prefs page). |
+| Settings | ✅ Implemented (Phase 7 done) | `/settings` shows account info, an edit-profile section (reuses the onboarding form/endpoint, no redirect), and change-password-while-logged-in. Theme/notification-prefs deferred — see "Phase 7" below. |
 | UI/UX redesign | 🟡 Partial | Already dark-themed with glassmorphism (`.glass`/`.glass-strong`), purple/violet accents, Framer Motion animations, custom Tailwind v4 theme tokens — closer to the brief's aesthetic goal than a typical capstone UI. Hand-rolled component primitives (no shadcn/Radix). No light mode (not requested elsewhere). No loading skeletons/empty-state system audited yet at the per-page level. |
 | Code quality | 🟡 Partial | Feature-sliced architecture, typed services, Zod validation, React Query caching already in place — genuinely good bones. Known debt: `requireRole` dead code, `StreakHistory`/`LeaderboardEntry` unused models, zod v3/v4 split, no CI pipeline at all. |
 
@@ -52,7 +52,7 @@ The following categories of work need **explicit, separate sign-off before imple
 4. **Phase 4 — Notifications.** ✅ Done. Achievement/rank-up events now persist as `Notification` rows; notification bell UI added to the navbar. See "Phase 4" below.
 5. **Phase 5 — Dashboard expansion.** ✅ Done. Five new cards added, all frontend-only. See "Phase 5" below.
 6. **Phase 6 — Admin panel + analytics.** ✅ Done. `requireRole`/`AdminRoute` wired into real admin routes/pages; live-computed analytics; user management (view/suspend/reactivate/soft-delete) with CSV export. See "Phase 6" below.
-7. **Phase 7 — Settings + auth hardening (flagged for auth sign-off).** Not started. Settings page (profile/security/theme/notification prefs), real password-reset email delivery, optional email verification.
+7. **Phase 7 — Settings + auth hardening.** ✅ Done. Settings page (edit profile + account info + change password), rate limiting on register/login/forgot-password. Real email delivery, email verification, theme toggle, and notification preferences explicitly deferred — see "Phase 7" below for why.
 8. **Phase 8 — Gamification expansion.** ✅ Done (schema-free slice — more achievements, an equippable title, level-up confetti). Missions and Season resets deferred — see "Phase 8" below.
 9. **Ongoing — code quality / hygiene.** Add CI (typecheck + lint + test on PR), reconcile zod versions, decide fate of unused `StreakHistory`/`LeaderboardEntry` models (populate them or remove).
 
@@ -218,6 +218,22 @@ The roadmap's Phase 8 bundles four things: missions, badges/titles, season reset
 **Verified live** against Supabase: seeded the 6 new achievements into the DB (confirmed 15 total). Registered a test user with a `WEIGHT_LOSS` goal and a goal weight, logged today's weight at/below that goal plus a real AI Coach message, then called `apply-log` — both `goal_crusher` and `ask_the_coach` unlocked correctly (the two rules unit tests can't cover, since they need real `Profile`/`ChatMessage` data). Backend build clean, 34/34 tests (28 + 6 new). Frontend build clean, lint unchanged, 21/21 tests.
 
 **Not independently exercised live:** the 14–20-day-threshold achievements (impractical to grind out manually — covered by unit tests instead) and the confetti animation itself (needs a browser to see).
+
+---
+
+# Phase 7: Settings + auth hardening
+
+The original roadmap line for Phase 7 also listed real password-reset email delivery, email verification, a theme toggle, and notification preferences. Scoped down to the three pieces below — the rest each pull in something bigger than "add a settings page": real email needs a paid third-party provider decision, email verification needs that plus a new schema table, a theme toggle means auditing ~39 files of hardcoded dark-mode Tailwind classes with zero existing theming infrastructure, and notification preferences would need a schema change to control channels (there's only the in-app bell today) that don't otherwise exist.
+
+**What shipped:**
+- **Settings page** (`/settings`) — account info panel (email/role/status/joined date, from the existing `/api/auth/me`-populated `AuthContext`), an edit-profile section, and a change-password form.
+- **Profile editing reused, not rebuilt** — `PUT /api/profile` was already an upsert, not create-only. `useProfileForm`/`ProfileSetupForm` got two small optional additions (a `redirect` option, a `submitLabel` prop) so the exact same onboarding form/schema/endpoint works in Settings without duplicating ~140 lines of form fields, and the onboarding call site needed zero changes.
+- **Change password while logged in** — new `POST /api/auth/change-password` (verifies current password via the existing `comparePassword`, then revokes all active refresh tokens exactly like the token-based reset flow already does — forces re-login everywhere, same security posture).
+- **Rate limiting** — `express-rate-limit` on `/register`, `/login`, `/forgot-password` (20 requests/15min per IP, shared limiter). Also added `app.set('trust proxy', 1)` in `app.ts`, required for correct per-IP limiting behind Vercel's proxy (was missing entirely before this).
+
+**Verified live** against the real Supabase DB: change-password rejects a wrong current password (401) and succeeds with the right one; old password then fails login, new one works; refresh-token revocation confirmed with a real cookie (a token captured before the change fails after it); rate limiting confirmed by hammering `/login` past the shared budget and getting clean `429`s. Backend build clean, 34/34 tests. Frontend build clean, lint unchanged, 21/21 tests.
+
+**Not independently exercised in-browser:** the `/settings` page UI itself — needs the user's own visual confirmation, same as every phase's frontend work.
 
 ---
 

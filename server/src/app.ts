@@ -15,6 +15,10 @@ import { adminRouter } from './routes/admin.routes.js';
 
 export const app = express();
 
+// Deploys behind Vercel's proxy — without this, req.ip reflects the proxy,
+// not the real client, making per-IP rate limiting meaningless.
+app.set('trust proxy', 1);
+
 app.use(
   cors({
     origin: env.CORS_ORIGIN.split(',').map((o) => o.trim()),

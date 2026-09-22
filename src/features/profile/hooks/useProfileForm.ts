@@ -64,7 +64,7 @@ function toProfileInput(values: ProfileFormValues): ProfileInput {
  * write) and seeds the query cache with the response so the dashboard/
  * plan/log/leaderboard pages see it immediately without an extra fetch.
  */
-export function useProfileForm() {
+export function useProfileForm(options?: { redirect?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -76,7 +76,9 @@ export function useProfileForm() {
         queryClient.setQueryData(queryKeys.profile.detail(user.id), profile);
       }
       showSuccessToast('Profile saved!');
-      navigate(ROUTES.plan);
+      if (options?.redirect !== false) {
+        navigate(ROUTES.plan);
+      }
     },
   });
 }

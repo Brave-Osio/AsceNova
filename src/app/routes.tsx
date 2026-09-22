@@ -16,6 +16,7 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
 import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPage';
+import SettingsPage from '../pages/SettingsPage/SettingsPage';
 
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
@@ -40,6 +41,7 @@ export const routes: RouteObject[] = [
           { path: ROUTES.log.slice(1), element: <DailyLogPage /> },
           { path: ROUTES.leaderboard.slice(1), element: <LeaderboardPage /> },
           { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
+          { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
         ],
       },
       {
