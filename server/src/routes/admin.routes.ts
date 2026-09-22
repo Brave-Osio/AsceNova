@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import * as adminController from '../controllers/admin.controller.js';
+import { requireAuth } from '../middleware/requireAuth.js';
+import { requireRole } from '../middleware/requireRole.js';
+
+export const adminRouter = Router();
+
+adminRouter.use(requireAuth, requireRole('ADMIN'));
+
+adminRouter.get('/stats', adminController.getStats);
+adminRouter.get('/users/export', adminController.exportUsersCsv); // before /:id — avoids route collision
+adminRouter.get('/users/:id', adminController.getUserDetail);
+adminRouter.get('/users', adminController.listUsers);
+adminRouter.post('/users/:id/suspend', adminController.suspendUser);
+adminRouter.post('/users/:id/reactivate', adminController.reactivateUser);
+adminRouter.delete('/users/:id', adminController.deleteUser);

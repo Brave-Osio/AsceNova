@@ -52,12 +52,12 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const input = req.body as LoginInput;
-    const { accessToken, refreshToken, refreshExpiresAt, userId } = await authService.login(
+    const { accessToken, refreshToken, refreshExpiresAt, userId, role } = await authService.login(
       input,
       requestMeta(req),
     );
     setRefreshCookie(res, refreshToken, refreshExpiresAt);
-    res.json({ user: { id: userId, email: input.email }, accessToken });
+    res.json({ user: { id: userId, email: input.email, role }, accessToken });
   } catch (err) {
     next(err);
   }
