@@ -4,7 +4,12 @@ import { signAccessToken } from '../lib/jwt.js';
 import { generateOpaqueToken, sha256Hex } from '../lib/crypto.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
-import type { RegisterInput, LoginInput, ResetPasswordInput } from '../validators/auth.validators.js';
+import type {
+  RegisterInput,
+  LoginInput,
+  ResetPasswordInput,
+  ChangePasswordInput,
+} from '../validators/auth.validators.js';
 
 interface RequestMeta {
   ip?: string;
@@ -166,6 +171,29 @@ export async function forgotPassword(email: string): Promise<{ devResetToken?: s
     return { devResetToken: rawToken };
   }
   return {};
+}
+
+export async function changePassword(userId: string, input: ChangePasswordInput): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new HttpError(404, 'User not found');
+  }
+
+  const valid = await comparePassword(input.currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new HttpError(401, 'Current password is incorrect');
+  }
+
+  const passwordHash = await hashPassword(input.newPassword);
+
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+    // Force re-login on every device, same as a token-based reset.
+    prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
 }
 
 export async function resetPassword(input: ResetPasswordInput): Promise<void> {

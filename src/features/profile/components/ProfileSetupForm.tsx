@@ -98,7 +98,15 @@ function SectionHeading({ children }: { children: string }) {
   return <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-violet-300">{children}</h2>;
 }
 
-export default function ProfileSetupForm() {
+interface ProfileSetupFormProps {
+  submitLabel?: string;
+  redirectOnSave?: boolean;
+}
+
+export default function ProfileSetupForm({
+  submitLabel = 'Generate My Plan',
+  redirectOnSave = true,
+}: ProfileSetupFormProps = {}) {
   const { data: existingProfile, isLoading: isProfileLoading } = useProfile();
   const {
     control,
@@ -109,7 +117,7 @@ export default function ProfileSetupForm() {
     resolver: zodResolver(profileSchema),
     defaultValues: DEFAULT_VALUES,
   });
-  const { mutate, isPending, error } = useProfileForm();
+  const { mutate, isPending, error } = useProfileForm({ redirect: redirectOnSave });
 
   // Prefill when editing an existing profile — without this, resubmitting
   // would overwrite real data with the form's blank defaults.
@@ -232,7 +240,7 @@ export default function ProfileSetupForm() {
 
       <div className="pt-2">
         <Button type="submit" loading={isPending}>
-          Generate My Plan
+          {submitLabel}
         </Button>
       </div>
     </form>

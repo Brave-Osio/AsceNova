@@ -8,6 +8,7 @@ import type {
   LoginInput,
   ForgotPasswordInput,
   ResetPasswordInput,
+  ChangePasswordInput,
 } from '../validators/auth.validators.js';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
@@ -118,6 +119,16 @@ export async function resetPassword(req: Request, res: Response, next: NextFunct
     const input = req.body as ResetPasswordInput;
     await authService.resetPassword(input);
     res.json({ message: 'Password has been reset. Please log in again.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = req.body as ChangePasswordInput;
+    await authService.changePassword(req.user!.id, input);
+    res.json({ message: 'Password changed successfully.' });
   } catch (err) {
     next(err);
   }

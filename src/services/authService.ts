@@ -67,3 +67,11 @@ export async function resetPasswordRequest(input: {
   const res = await httpClient.post<{ message: string }>('/api/auth/reset-password', input);
   return res.data;
 }
+
+export async function changePasswordRequest(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ message: string }> {
+  const res = await httpClient.post<{ message: string }>('/api/auth/change-password', input);
+  return res.data;
+}

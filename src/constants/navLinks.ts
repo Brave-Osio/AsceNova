@@ -21,5 +21,6 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'Daily Log', to: ROUTES.log, icon: '📝' },
   { label: 'Leaderboard', to: ROUTES.leaderboard, icon: '🏆' },
   { label: 'Coach', to: ROUTES.coach, icon: '🤖' },
+  { label: 'Settings', to: ROUTES.settings, icon: '⚙️' },
   { label: 'Admin', to: ROUTES.admin, icon: '🛠️', adminOnly: true },
 ];
