@@ -17,6 +17,12 @@ export const ROUTES = {
   register: '/register',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  admin: '/admin',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+
+/** No other route in this app is id-based yet, so this stays a standalone helper rather than a ROUTES entry. */
+export function adminUserDetailPath(userId: string): string {
+  return `/admin/users/${userId}`;
+}

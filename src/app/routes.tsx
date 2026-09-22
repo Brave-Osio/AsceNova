@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from './router/ProtectedRoute';
+import AdminRoute from './router/AdminRoute';
 import { ROUTES } from '../constants/routes';
 import LandingPage from '../pages/LandingPage/LandingPage';
 import ProfileSetupPage from '../pages/ProfileSetupPage/ProfileSetupPage';
@@ -13,6 +14,8 @@ import LoginPage from '../pages/LoginPage/LoginPage';
 import RegisterPage from '../pages/RegisterPage/RegisterPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
+import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
+import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPage';
 
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
@@ -37,6 +40,13 @@ export const routes: RouteObject[] = [
           { path: ROUTES.log.slice(1), element: <DailyLogPage /> },
           { path: ROUTES.leaderboard.slice(1), element: <LeaderboardPage /> },
           { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
+        ],
+      },
+      {
+        element: <AdminRoute />,
+        children: [
+          { path: ROUTES.admin.slice(1), element: <AdminDashboardPage /> },
+          { path: `${ROUTES.admin.slice(1)}/users/:userId`, element: <AdminUserDetailPage /> },
         ],
       },
       { path: ROUTES.login.slice(1), element: <LoginPage /> },

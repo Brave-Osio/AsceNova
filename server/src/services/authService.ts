@@ -59,7 +59,10 @@ export async function register(input: RegisterInput, meta: RequestMeta): Promise
   return { ...tokens, userId: user.id };
 }
 
-export async function login(input: LoginInput, meta: RequestMeta): Promise<TokenPair & { userId: string }> {
+export async function login(
+  input: LoginInput,
+  meta: RequestMeta,
+): Promise<TokenPair & { userId: string; role: 'USER' | 'ADMIN' }> {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
 
   if (!user || user.deleted) {
@@ -75,7 +78,7 @@ export async function login(input: LoginInput, meta: RequestMeta): Promise<Token
   }
 
   const tokens = await issueTokenPair(user.id, user.role, input.rememberMe, meta);
-  return { ...tokens, userId: user.id };
+  return { ...tokens, userId: user.id, role: user.role };
 }
 
 export async function refresh(rawRefreshToken: string, meta: RequestMeta): Promise<TokenPair> {

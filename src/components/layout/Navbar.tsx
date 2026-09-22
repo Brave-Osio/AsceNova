@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { NAV_LINKS } from '../../constants/navLinks';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -11,6 +12,9 @@ interface NavbarProps {
  * Navbar is purely presentational: renders links and reports menu-toggle.
  */
 export default function Navbar({ onMenuToggle }: NavbarProps) {
+  const { isAdmin } = useAuth();
+  const visibleLinks = NAV_LINKS.filter((link) => !link.adminOnly || isAdmin);
+
   return (
     <header className="sticky top-0 z-40">
       {/* Blurred glass bar */}
@@ -32,7 +36,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-1 md:flex">
-            {NAV_LINKS.map((link) => (
+            {visibleLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}

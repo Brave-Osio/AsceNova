@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { NAV_LINKS } from '../../constants/navLinks';
+import { useAuth } from '../../context/AuthContext';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -7,6 +8,9 @@ interface MobileDrawerProps {
 }
 
 export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
+  const { isAdmin } = useAuth();
+  const visibleLinks = NAV_LINKS.filter((link) => !link.adminOnly || isAdmin);
+
   return (
     <div
       className={`fixed inset-0 z-50 md:hidden ${isOpen ? '' : 'pointer-events-none'}`}
@@ -42,7 +46,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
         {/* Links */}
         <ul className="flex flex-col gap-1 p-4">
-          {NAV_LINKS.map((link) => (
+          {visibleLinks.map((link) => (
             <li key={link.to}>
               <NavLink
                 to={link.to}

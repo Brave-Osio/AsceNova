@@ -11,6 +11,7 @@ import { progressRouter } from './routes/progress.routes.js';
 import { leaderboardRouter } from './routes/leaderboard.routes.js';
 import { chatRouter } from './routes/chat.routes.js';
 import { notificationRouter } from './routes/notification.routes.js';
+import { adminRouter } from './routes/admin.routes.js';
 
 export const app = express();
 
@@ -35,8 +36,9 @@ app.use('/api/progress', progressRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/admin', adminRouter);
 
 // Remaining resource routers are mounted here as each domain is built
-// out (goals, admin).
+// out (goals).
 
 app.use(errorHandler);

@@ -25,8 +25,8 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 | AI Fitness Coach | ✅ Implemented (Phase 1 done) | Real Gemini-backed chat: `server/src/lib/gemini.ts`, `coachContextService.ts`, `chatService.ts`, `/api/chat` routes; frontend `coachService.ts`/`useCoachChat.ts` rewritten to hit the real API; `/coach` gated behind `ProtectedRoute`. See "Phase 1" below. |
 | Gamification | ✅ Mostly done (Phase 8 slice done) | XP, 9-tier ranks (Iron→Radiant), streaks, 15 achievement rules (6 added in Phase 8), an equippable title derived from your best achievement, level-up/achievement confetti, live leaderboard — all real, backend-computed, Prisma-backed. **Gaps:** `StreakHistory` and `LeaderboardEntry` models are defined but unused (leaderboard is computed live instead of precomputed — a legitimate design choice, not necessarily a bug); no daily/weekly/monthly "missions," no season resets — both need new Prisma models, deferred to a future phase with its own migration sign-off. |
 | User dashboard | ✅ Implemented (Phase 5 done) | Now shows next workout, today's nutrition targets + habit-goal badges, a 28-day workout calendar strip, a weekly summary, and an AI-coach teaser (last message), alongside the existing rank/XP/streak/weight/achievements cards. All frontend-only, reusing existing endpoints — no new backend/migration. See "Phase 5" below. |
-| Admin panel | ❌ Not built | Zero admin UI/pages. `AdminRoute` guard component exists but is wired into no route. `requireRole` middleware exists but wired into no backend route. Schema fully supports it (`AdminAnalyticsSnapshot`, `Report`, `Role.ADMIN`) but nothing reads/writes it. |
-| Analytics | ❌ Not built | Same as admin — schema ready (`AdminAnalyticsSnapshot`), zero implementation. |
+| Admin panel | ✅ Implemented (Phase 6 done) | `requireRole('ADMIN')` now gates real `/api/admin/*` routes; `AdminRoute` gates a real `/admin` UI (user table with search/filter/pagination, user detail view, suspend/reactivate/soft-delete, CSV export). "Admin" nav link shown only to admins. See "Phase 6" below. |
+| Analytics | ✅ Implemented (Phase 6 done) | Live-computed stats (user counts, signups, avg XP/streak, workout-completion rate, goal distribution) via Prisma aggregates — `AdminAnalyticsSnapshot` stays intentionally unused (no scheduler/cron in this codebase, same reasoning as `LeaderboardEntry`). See "Phase 6" below. |
 | Notifications | ✅ Implemented (Phase 4 done) | Achievement unlocks and rank-ups now persist as `Notification` rows (in addition to the existing inline `apply-log` response fields, unchanged). Notification bell in the navbar with unread badge, dropdown, mark-read/mark-all-read. Reminders and admin/system notification types are out of scope (no scheduler/admin panel yet). See "Phase 4" below. |
 | Settings | ❌ Not built | No settings page/route/service exists at all (profile editing exists via the setup form, but no dedicated account/security/theme/notification-prefs page). |
 | UI/UX redesign | 🟡 Partial | Already dark-themed with glassmorphism (`.glass`/`.glass-strong`), purple/violet accents, Framer Motion animations, custom Tailwind v4 theme tokens — closer to the brief's aesthetic goal than a typical capstone UI. Hand-rolled component primitives (no shadcn/Radix). No light mode (not requested elsewhere). No loading skeletons/empty-state system audited yet at the per-page level. |
@@ -35,9 +35,8 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 ## Technical debt / risks noted (not yet fixed)
 
 1. **No CI** — no `.github/workflows` or any CI config; typecheck/lint/test only run locally.
-2. **`requireRole` middleware unused** — built, untested in production, zero call sites. Wiring it up is an auth/permission change (see policy note below).
-3. **Zod version split** — server on v3, client on v4. Not urgent, but worth aligning before either side does more schema-sharing work.
-4. **Password reset has no real email delivery** — currently dev-only token echo; needs a transactional email provider before this is production-safe.
+2. **Zod version split** — server on v3, client on v4. Not urgent, but worth aligning before either side does more schema-sharing work.
+3. **Password reset has no real email delivery** — currently dev-only token echo; needs a transactional email provider before this is production-safe.
 
 ## Org-policy flags for later phases
 
@@ -52,7 +51,7 @@ The following categories of work need **explicit, separate sign-off before imple
 3. **Phase 3 — Nutrition scope narrowed.** ✅ Done. The nutrition-planner *feature* (meal suggestions, food-preference collection) was cut per the PM, but calorie/macro/water targets stay. See "Phase 3" below for the full iteration history and final state.
 4. **Phase 4 — Notifications.** ✅ Done. Achievement/rank-up events now persist as `Notification` rows; notification bell UI added to the navbar. See "Phase 4" below.
 5. **Phase 5 — Dashboard expansion.** ✅ Done. Five new cards added, all frontend-only. See "Phase 5" below.
-6. **Phase 6 — Admin panel + analytics (flagged for auth sign-off).** Not started. Wire `requireRole`/`AdminRoute` into real admin routes/pages; build analytics aggregation into `AdminAnalyticsSnapshot`; user management (view/suspend/delete-soft) with CSV/Excel export.
+6. **Phase 6 — Admin panel + analytics.** ✅ Done. `requireRole`/`AdminRoute` wired into real admin routes/pages; live-computed analytics; user management (view/suspend/reactivate/soft-delete) with CSV export. See "Phase 6" below.
 7. **Phase 7 — Settings + auth hardening (flagged for auth sign-off).** Not started. Settings page (profile/security/theme/notification prefs), real password-reset email delivery, optional email verification.
 8. **Phase 8 — Gamification expansion.** ✅ Done (schema-free slice — more achievements, an equippable title, level-up confetti). Missions and Season resets deferred — see "Phase 8" below.
 9. **Ongoing — code quality / hygiene.** Add CI (typecheck + lint + test on PR), reconcile zod versions, decide fate of unused `StreakHistory`/`LeaderboardEntry` models (populate them or remove).
@@ -219,3 +218,24 @@ The roadmap's Phase 8 bundles four things: missions, badges/titles, season reset
 **Verified live** against Supabase: seeded the 6 new achievements into the DB (confirmed 15 total). Registered a test user with a `WEIGHT_LOSS` goal and a goal weight, logged today's weight at/below that goal plus a real AI Coach message, then called `apply-log` — both `goal_crusher` and `ask_the_coach` unlocked correctly (the two rules unit tests can't cover, since they need real `Profile`/`ChatMessage` data). Backend build clean, 34/34 tests (28 + 6 new). Frontend build clean, lint unchanged, 21/21 tests.
 
 **Not independently exercised live:** the 14–20-day-threshold achievements (impractical to grind out manually — covered by unit tests instead) and the confetti animation itself (needs a browser to see).
+
+---
+
+# Phase 6: Admin panel + analytics
+
+`requireRole` (backend RBAC middleware) and `AdminRoute` (frontend guard) both existed but were wired into zero routes. `authService.login()` already rejected non-`ACTIVE` accounts with a 403 — suspension enforcement was pre-existing; this phase only needed an endpoint to *set* `SUSPENDED`. Scope was narrowed up front: user management is **suspend + soft-delete only** (no role promotion/demotion — declined as too sensitive), export is **CSV only** (no new .xlsx dependency). Zero Prisma migration required — every field this phase touches already existed on the schema.
+
+**Analytics design decision:** stats are computed **live** via Prisma aggregate queries rather than populating the unused `AdminAnalyticsSnapshot` model — this codebase has no scheduler/cron (Vercel serverless deploy target), so nothing would ever refresh a snapshot table. Same reasoning already applied to why `LeaderboardEntry`/`StreakHistory` stay unused.
+
+**What shipped:**
+- `server/src/services/adminService.ts` — `getStats()` (user counts by status, 7d/30d signups, avg XP/streak, workout-completion rate, goal distribution, all via `Promise.all`), `listUsers()` (search + status filter + pagination), `getUserDetail()`, `suspendUser`/`reactivateUser` (toggle `AccountStatus`), `softDeleteUser` (an `update` setting `deleted: true`/`deletedAt`/`status: 'DELETED'` — never `prisma.user.delete()`), `exportUsersCsv()` (manual CSV string, zero new dependency). All mutating actions guard against an admin acting on their own account.
+- `/api/admin/*` routes, all behind `requireAuth` + `requireRole('ADMIN')`.
+- Frontend: `/admin` (stat cards + user table) and `/admin/users/:userId` (detail view), both behind `AdminRoute`; an "Admin" nav link shown only when `useAuth().isAdmin`; suspend/delete actions confirm via `window.confirm()` (no modal component exists yet in this codebase, so this was the pragmatic choice over building one for a single feature).
+
+**Bug found and fixed during verification:** the initial Prisma `include` queries for `User` didn't exclude `passwordHash`, so the bcrypt hash was leaking in admin API responses. Fixed with `omit: { passwordHash: true }` on every `User` query in `adminService.ts`.
+
+**Verified live** against the real Supabase DB: promoted a test account to `Role.ADMIN` directly via Prisma (no role-change endpoint exists, by design), confirmed stats/list/search/filter/detail all return real data with no `passwordHash` leak, confirmed suspend → blocked login (existing 403) → reactivate → login works again, confirmed the self-suspend guard (400), confirmed soft-delete sets `deleted`/`deletedAt` without removing the row and excludes it from the list, confirmed 401 unauthenticated / 403 non-admin, confirmed CSV export returns correct headers and rows. Backend build clean, 34/34 tests unaffected. Frontend build clean, lint unchanged (same 3 pre-existing errors), 21/21 tests unaffected.
+
+**Not independently exercised in-browser:** the "Admin" nav link's conditional visibility and the CSV download's client-side blob trigger — covered by direct API verification and code review; needs visual confirmation in-browser.
+
+Out of scope, explicitly: role promotion/demotion, Excel/.xlsx export, charts/graphs for analytics (stat cards + a distribution list cover it for now), populating `AdminAnalyticsSnapshot`/`Report`/`SystemSetting`.
