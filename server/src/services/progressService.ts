@@ -82,6 +82,11 @@ interface AchievementContext {
   totalXp: number;
   logCount: number;
   hasWorkoutLog: boolean;
+  workoutCount: number;
+  waterGoalCount: number;
+  proteinGoalCount: number;
+  weightGoalReached: boolean;
+  hasChatted: boolean;
 }
 
 /** Ported from src/engines/achievementEngine.ts ACHIEVEMENT_RULES, DB-dependent
@@ -103,6 +108,13 @@ const ACHIEVEMENT_RULES: Record<string, (ctx: AchievementContext) => boolean> = 
     ),
   consistency_master: (ctx) => ctx.logCount >= 50,
   discipline_champion: (ctx) => ctx.currentStreak >= 100,
+  hydration_hero: (ctx) => ctx.waterGoalCount >= 14,
+  protein_pro: (ctx) => ctx.proteinGoalCount >= 14,
+  twenty_workouts: (ctx) => ctx.workoutCount >= 20,
+  goal_crusher: (ctx) => ctx.weightGoalReached,
+  ask_the_coach: (ctx) => ctx.hasChatted,
+  platinum_promotion: (ctx) =>
+    (['PLATINUM', 'DIAMOND', 'ASCENDANT', 'IMMORTAL', 'RADIANT'] as RankName[]).includes(getRankForXp(ctx.totalXp)),
 };
 
 export function evaluateAchievements(ctx: AchievementContext, alreadyUnlockedIds: string[]): string[] {
@@ -178,13 +190,35 @@ export async function applyDailyLog(userId: string, date: Date) {
 
     const totalXpBeforeAchievements = current.totalXp + xpGrants.reduce((sum, g) => sum + g.amount, 0);
 
-    const [logCount, hasWorkoutLog] = await Promise.all([
-      dailyProgressService.countLogs(userId),
-      dailyProgressService.hasWorkoutCompletedLog(userId),
-    ]);
+    const [logCount, hasWorkoutLog, workoutCount, waterGoalCount, proteinGoalCount, hasChatted, profile] =
+      await Promise.all([
+        dailyProgressService.countLogs(userId),
+        dailyProgressService.hasWorkoutCompletedLog(userId),
+        dailyProgressService.countWorkoutCompletedLogs(userId),
+        dailyProgressService.countWaterGoalHits(userId),
+        dailyProgressService.countProteinGoalHits(userId),
+        prisma.chatMessage.count({ where: { userId, role: 'USER' } }).then((count) => count > 0),
+        prisma.profile.findUnique({ where: { userId } }),
+      ]);
+
+    let weightGoalReached = false;
+    if (profile?.goalWeightKg != null) {
+      if (profile.goal === 'WEIGHT_LOSS') weightGoalReached = dailyLog.weightKg <= profile.goalWeightKg;
+      else if (profile.goal === 'MUSCLE_GAIN') weightGoalReached = dailyLog.weightKg >= profile.goalWeightKg;
+    }
 
     const newlyUnlockedIds = evaluateAchievements(
-      { currentStreak: streak.currentStreak, totalXp: totalXpBeforeAchievements, logCount, hasWorkoutLog },
+      {
+        currentStreak: streak.currentStreak,
+        totalXp: totalXpBeforeAchievements,
+        logCount,
+        hasWorkoutLog,
+        workoutCount,
+        waterGoalCount,
+        proteinGoalCount,
+        weightGoalReached,
+        hasChatted,
+      },
       existingAchievementIds,
     );
 

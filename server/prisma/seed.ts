@@ -16,6 +16,12 @@ const ACHIEVEMENTS = [
   { id: 'gold_promotion', title: 'Gold Promotion', description: 'Reach Gold rank.', icon: '🏅' },
   { id: 'consistency_master', title: 'Consistency Master', description: 'Log 50 days total.', icon: '🏅' },
   { id: 'discipline_champion', title: 'Discipline Champion', description: 'Reach a 100-day streak.', icon: '🏅' },
+  { id: 'hydration_hero', title: 'Hydration Hero', description: 'Hit your water goal on 14 logged days.', icon: '💧' },
+  { id: 'protein_pro', title: 'Protein Pro', description: 'Hit your protein goal on 14 logged days.', icon: '🍗' },
+  { id: 'twenty_workouts', title: 'Twenty Workouts', description: 'Complete 20 workouts.', icon: '💪' },
+  { id: 'goal_crusher', title: 'Goal Crusher', description: 'Reach your goal weight.', icon: '🎯' },
+  { id: 'ask_the_coach', title: 'Ask the Coach', description: 'Send your first message to the AI Coach.', icon: '🤖' },
+  { id: 'platinum_promotion', title: 'Platinum Promotion', description: 'Reach Platinum rank.', icon: '💠' },
 ];
 
 async function seedAchievements() {

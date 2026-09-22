@@ -27,3 +27,15 @@ export async function hasWorkoutCompletedLog(userId: string): Promise<boolean> {
   });
   return found !== null;
 }
+
+export async function countWorkoutCompletedLogs(userId: string): Promise<number> {
+  return prisma.dailyProgress.count({ where: { userId, workoutCompleted: true } });
+}
+
+export async function countWaterGoalHits(userId: string): Promise<number> {
+  return prisma.dailyProgress.count({ where: { userId, hitWaterGoal: true } });
+}
+
+export async function countProteinGoalHits(userId: string): Promise<number> {
+  return prisma.dailyProgress.count({ where: { userId, hitProteinGoal: true } });
+}

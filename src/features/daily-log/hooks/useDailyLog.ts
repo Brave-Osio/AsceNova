@@ -5,9 +5,12 @@ import { upsertLog } from '../../../services/logService';
 import { applyDailyLog } from '../../../services/progressService';
 import { queryKeys } from '../../../lib/queryKeys';
 import { showErrorToast } from '../../../lib/toast';
+import { fireConfetti } from '../../../lib/confetti';
+import { getRankForXp } from '../../../engines/rankEngine';
 import { getTodayDateString } from '../../../utils/dateUtils';
 import { validateNumberInRange } from '../../../utils/validation';
 import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
+import type { UserProgress } from '../../../types/gamification.types';
 
 export interface DailyLogFormState {
   weightKg: string;
@@ -78,6 +81,10 @@ export function useDailyLog() {
         });
       }
 
+      const previousXp = user
+        ? queryClient.getQueryData<UserProgress>(queryKeys.progress.detail(user.id))?.totalXp ?? 0
+        : 0;
+
       const result = await applyDailyLog(today);
       if (user) {
         queryClient.setQueryData(queryKeys.progress.detail(user.id), result.progress);
@@ -85,6 +92,11 @@ export function useDailyLog() {
         // now also persist as Notification rows — refresh the bell.
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(user.id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount(user.id) });
+      }
+
+      const rankedUp = getRankForXp(previousXp) !== getRankForXp(result.progress.totalXp);
+      if (rankedUp || result.newAchievementTitles.length > 0) {
+        fireConfetti();
       }
 
       setLastResult({ xpGained: result.xpGained, newAchievementTitles: result.newAchievementTitles });

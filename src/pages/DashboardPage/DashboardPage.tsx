@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useProfile } from '../../features/profile/hooks/useProfile';
+import { useUserProgress } from '../../features/gamification/hooks/useUserProgress';
+import { getEquippedTitle } from '../../constants/titles';
 import { ROUTES } from '../../constants/routes';
 import RankCard from '../../features/gamification/components/RankCard';
 import XpCard from '../../features/gamification/components/XpCard';
@@ -33,6 +35,8 @@ const cardVariant = {
 
 export default function DashboardPage() {
   const { data: profile, isLoading } = useProfile();
+  const { unlockedAchievementIds } = useUserProgress();
+  const equippedTitle = getEquippedTitle(unlockedAchievementIds);
 
   if (isLoading) return null;
 
@@ -72,6 +76,11 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-extrabold text-white sm:text-4xl">
             Welcome back, <span className="text-gradient-violet">{profile.fullName}</span> 👋
           </h1>
+          {equippedTitle && (
+            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+              ✨ {equippedTitle}
+            </span>
+          )}
           <div className="mt-2 flex items-center gap-2">
             <span className="text-lg">{GOAL_ICON[profile.goal] ?? '🎯'}</span>
             <span className="text-sm text-gray-400">
