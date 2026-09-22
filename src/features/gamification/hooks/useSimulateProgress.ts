@@ -7,6 +7,8 @@ import { useUserProgress } from './useUserProgress';
 import { useAuth } from '../../../context/AuthContext';
 import { queryKeys } from '../../../lib/queryKeys';
 import { showErrorToast } from '../../../lib/toast';
+import { fireConfetti } from '../../../lib/confetti';
+import { getRankForXp } from '../../../engines/rankEngine';
 import type { UserProgress } from '../../../types/gamification.types';
 
 export interface SimulationSummary {
@@ -37,6 +39,7 @@ export function useSimulateProgress() {
     setIsSimulating(true);
     try {
       const syntheticDays = generateSyntheticDays(progress.lastLogDate, validDays);
+      const startingXp = progress.totalXp;
 
       let xpGained = 0;
       const newAchievementTitles: string[] = [];
@@ -62,6 +65,13 @@ export function useSimulateProgress() {
         // have persisted RANK_UP/ACHIEVEMENT notifications — refresh the bell.
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(user.id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount(user.id) });
+      }
+
+      // Fired once for the whole batch, not per simulated day — 45 rapid
+      // confetti bursts would be obnoxious, not delightful.
+      const rankedUp = getRankForXp(startingXp) !== getRankForXp(latestProgress.totalXp);
+      if (rankedUp || newAchievementTitles.length > 0) {
+        fireConfetti();
       }
 
       setLastResult({ daysSimulated: validDays, xpGained, newAchievementTitles });

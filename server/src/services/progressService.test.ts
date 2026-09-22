@@ -45,7 +45,17 @@ describe('progressService.calculateStreak', () => {
 });
 
 describe('progressService.evaluateAchievements (rank/streak-based rules only — no DB)', () => {
-  const baseCtx = { currentStreak: 0, totalXp: 0, logCount: 0, hasWorkoutLog: false };
+  const baseCtx = {
+    currentStreak: 0,
+    totalXp: 0,
+    logCount: 0,
+    hasWorkoutLog: false,
+    workoutCount: 0,
+    waterGoalCount: 0,
+    proteinGoalCount: 0,
+    weightGoalReached: false,
+    hasChatted: false,
+  };
 
   it('unlocks seven_day_streak once currentStreak reaches 7', () => {
     const unlocked = evaluateAchievements({ ...baseCtx, currentStreak: 7 }, []);
@@ -71,5 +81,36 @@ describe('progressService.evaluateAchievements (rank/streak-based rules only —
   it('unlocks first_workout only when hasWorkoutLog is true', () => {
     expect(evaluateAchievements({ ...baseCtx, hasWorkoutLog: true }, [])).toContain('first_workout');
     expect(evaluateAchievements(baseCtx, [])).not.toContain('first_workout');
+  });
+
+  it('unlocks hydration_hero once waterGoalCount reaches 14', () => {
+    expect(evaluateAchievements({ ...baseCtx, waterGoalCount: 14 }, [])).toContain('hydration_hero');
+    expect(evaluateAchievements({ ...baseCtx, waterGoalCount: 13 }, [])).not.toContain('hydration_hero');
+  });
+
+  it('unlocks protein_pro once proteinGoalCount reaches 14', () => {
+    expect(evaluateAchievements({ ...baseCtx, proteinGoalCount: 14 }, [])).toContain('protein_pro');
+    expect(evaluateAchievements({ ...baseCtx, proteinGoalCount: 13 }, [])).not.toContain('protein_pro');
+  });
+
+  it('unlocks twenty_workouts once workoutCount reaches 20', () => {
+    expect(evaluateAchievements({ ...baseCtx, workoutCount: 20 }, [])).toContain('twenty_workouts');
+    expect(evaluateAchievements({ ...baseCtx, workoutCount: 19 }, [])).not.toContain('twenty_workouts');
+  });
+
+  it('unlocks goal_crusher only when weightGoalReached is true', () => {
+    expect(evaluateAchievements({ ...baseCtx, weightGoalReached: true }, [])).toContain('goal_crusher');
+    expect(evaluateAchievements(baseCtx, [])).not.toContain('goal_crusher');
+  });
+
+  it('unlocks ask_the_coach only when hasChatted is true', () => {
+    expect(evaluateAchievements({ ...baseCtx, hasChatted: true }, [])).toContain('ask_the_coach');
+    expect(evaluateAchievements(baseCtx, [])).not.toContain('ask_the_coach');
+  });
+
+  it('unlocks platinum_promotion once XP crosses the Platinum threshold', () => {
+    const unlocked = evaluateAchievements({ ...baseCtx, totalXp: 5000 }, []);
+    expect(unlocked).toContain('platinum_promotion');
+    expect(evaluateAchievements({ ...baseCtx, totalXp: 4999 }, [])).not.toContain('platinum_promotion');
   });
 });
