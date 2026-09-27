@@ -61,7 +61,7 @@ Everything previously deferred (real email delivery, email verification, theme t
 
 9. **Phase 9 — Challenges (gamification).** ✅ Done. Includes peer/social challenges (invite a friend) — see "Phase 9" below.
 10. **Phase 10 — Mobile app (React Native / Expo).** 🟡 Feature-complete pending a fresh device pass — all 7 tabs (Dashboard, Plan, Log, Leaderboard, Challenges, Coach, Settings) plus Profile Setup now have real content, all backend integrations live-verified. Real installable app (not a responsive web view), full end-user feature parity with the web app; admin stays web-only. See "Phase 10" below — by far the largest phase in this roadmap.
-11. **Phase 11 — Admin achievement management.** 🔲 Planned, not started. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
+11. **Phase 11 — Admin achievement management.** ✅ Done. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
 12. **Phase 12 — Goal CRUD.** 🔲 Planned, not started. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
 13. **Phase 13 — Activity-aware recommendations.** 🔲 Planned, not started. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
 14. **Phase 14 — Code quality / hygiene (moved to last, per instruction).** 🔲 Planned, not started. CI pipeline, Zod version reconciliation, backend ESLint config fix, documented decision on unused schema models. See "Phase 14" below.
@@ -399,7 +399,7 @@ Two honest simplifications from the web (not functional gaps): no confetti anima
 
 ---
 
-# Phase 11 (detailed): Admin achievement management — 🔲 PLANNED, NOT YET IMPLEMENTED
+# Phase 11 (detailed): Admin achievement management — ✅ DONE
 
 ## Context
 
@@ -429,6 +429,16 @@ No schema migration.
 1. `server`: build, test (34/34 + a new test case for the `isActive` check).
 2. Frontend: build/lint/test.
 3. Manual, live: edit an achievement's title/icon via the admin panel, confirm it reflects immediately on `AchievementCard`. Deactivate an achievement a test account hasn't unlocked yet, trigger its condition, confirm it does **not** unlock while inactive; reactivate and confirm it unlocks going forward.
+
+## Status: implemented and verified end-to-end
+
+Code complete exactly per plan — zero migration. `evaluateAchievements` gained an optional third `activeIds` parameter (defaults to "no filtering" when omitted, so all 18 existing unit tests needed zero changes) — only the real `applyDailyLog` call site passes the live active-id set, fetched via one more query in the same `Promise.all` that already gathers achievement-context data. Backend build clean, 37/37 tests (34 + 3 new: backward-compat, skips an inactive rule, still unlocks an active one). Frontend build clean, lint unchanged (same 4 pre-existing errors), 21/21 tests.
+
+**Live-verified against the real Supabase DB**: listed all 15 achievements as the seeded admin, edited one's metadata via `PATCH`, confirmed it persisted. Deactivated `first_workout` on a fresh test account that had just logged a qualifying workout — confirmed `apply-log` correctly returned `newAchievementTitles: []` (did **not** unlock) despite the condition being met. Reactivated it and re-ran `apply-log` for the same date — confirmed it now unlocked correctly (`newAchievementTitles: ["First Workout"]`, XP granted). Confirmed 401 unauthenticated on the achievements endpoints. Test account cleaned up, seed data (`first_workout`'s title/icon/active state) restored to original, dev server stopped.
+
+Not independently exercised in-browser: the `AchievementEditor` UI itself on the admin panel — needs visual confirmation, same as every phase's frontend work.
+
+Phase 11 is done.
 
 ---
 

@@ -113,4 +113,20 @@ describe('progressService.evaluateAchievements (rank/streak-based rules only —
     expect(unlocked).toContain('platinum_promotion');
     expect(evaluateAchievements({ ...baseCtx, totalXp: 4999 }, [])).not.toContain('platinum_promotion');
   });
+
+  it('omitting activeIds evaluates every rule, unaffected (backward compatible)', () => {
+    expect(evaluateAchievements({ ...baseCtx, currentStreak: 7 }, [])).toContain('seven_day_streak');
+  });
+
+  it('skips a rule for an achievement not in the given activeIds set, even if its condition is met', () => {
+    const activeIds = new Set(['bronze_promotion']); // deliberately excludes seven_day_streak
+    const unlocked = evaluateAchievements({ ...baseCtx, currentStreak: 7 }, [], activeIds);
+    expect(unlocked).not.toContain('seven_day_streak');
+  });
+
+  it('still unlocks a rule that IS in the given activeIds set', () => {
+    const activeIds = new Set(['seven_day_streak']);
+    const unlocked = evaluateAchievements({ ...baseCtx, currentStreak: 7 }, [], activeIds);
+    expect(unlocked).toContain('seven_day_streak');
+  });
 });

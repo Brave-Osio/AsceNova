@@ -44,6 +44,7 @@ export const queryKeys = {
     stats: () => ['admin', 'stats'] as const,
     users: (filters: Record<string, unknown>) => ['admin', 'users', filters] as const,
     userDetail: (id: string) => ['admin', 'user', id] as const,
+    achievements: () => ['admin', 'achievements'] as const,
   },
   challenges: {
     catalog: () => ['challenges', 'catalog'] as const,
