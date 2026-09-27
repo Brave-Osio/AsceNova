@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AccountStatus } from '@prisma/client';
 import * as adminService from '../services/adminService.js';
+import type { UpdateAchievementInput } from '../validators/admin.validators.js';
 
 const VALID_STATUSES: AccountStatus[] = ['ACTIVE', 'SUSPENDED', 'DELETED'];
 
@@ -72,6 +73,25 @@ export async function exportUsersCsv(_req: Request, res: Response, next: NextFun
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="users.csv"');
     res.send(csv);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listAchievements(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const achievements = await adminService.listAchievements();
+    res.json({ achievements });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateAchievement(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = req.body as UpdateAchievementInput;
+    const achievement = await adminService.updateAchievement(req.params.id, input);
+    res.json({ achievement });
   } catch (err) {
     next(err);
   }

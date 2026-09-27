@@ -118,9 +118,21 @@ const ACHIEVEMENT_RULES: Record<string, (ctx: AchievementContext) => boolean> = 
     (['PLATINUM', 'DIAMOND', 'ASCENDANT', 'IMMORTAL', 'RADIANT'] as RankName[]).includes(getRankForXp(ctx.totalXp)),
 };
 
-export function evaluateAchievements(ctx: AchievementContext, alreadyUnlockedIds: string[]): string[] {
+/**
+ * activeIds is optional so every existing call site (and every existing
+ * unit test) that doesn't pass it keeps working unchanged — omit it to
+ * evaluate all rules, same as before. applyDailyLog is the one real
+ * caller that now passes the live active-id set, so a deactivated
+ * achievement (via the admin panel) stops unlocking going forward.
+ */
+export function evaluateAchievements(
+  ctx: AchievementContext,
+  alreadyUnlockedIds: string[],
+  activeIds?: Set<string>,
+): string[] {
   const newlyUnlocked: string[] = [];
   for (const [id, rule] of Object.entries(ACHIEVEMENT_RULES)) {
+    if (activeIds && !activeIds.has(id)) continue;
     if (!alreadyUnlockedIds.includes(id) && rule(ctx)) {
       newlyUnlocked.push(id);
     }
@@ -191,7 +203,7 @@ export async function applyDailyLog(userId: string, date: Date) {
 
     const totalXpBeforeAchievements = current.totalXp + xpGrants.reduce((sum, g) => sum + g.amount, 0);
 
-    const [logCount, hasWorkoutLog, workoutCount, waterGoalCount, proteinGoalCount, hasChatted, profile] =
+    const [logCount, hasWorkoutLog, workoutCount, waterGoalCount, proteinGoalCount, hasChatted, profile, activeAchievements] =
       await Promise.all([
         dailyProgressService.countLogs(userId),
         dailyProgressService.hasWorkoutCompletedLog(userId),
@@ -200,7 +212,9 @@ export async function applyDailyLog(userId: string, date: Date) {
         dailyProgressService.countProteinGoalHits(userId),
         prisma.chatMessage.count({ where: { userId, role: 'USER' } }).then((count) => count > 0),
         prisma.profile.findUnique({ where: { userId } }),
+        tx.achievement.findMany({ where: { isActive: true }, select: { id: true } }),
       ]);
+    const activeAchievementIds = new Set(activeAchievements.map((a) => a.id));
 
     let weightGoalReached = false;
     if (profile?.goalWeightKg != null) {
@@ -221,6 +235,7 @@ export async function applyDailyLog(userId: string, date: Date) {
         hasChatted,
       },
       existingAchievementIds,
+      activeAchievementIds,
     );
 
     for (const id of newlyUnlockedIds) {

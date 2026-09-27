@@ -60,3 +60,22 @@ export interface AdminUserFilters {
   page: number;
   pageSize: number;
 }
+
+export interface AdminAchievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  xpReward: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateAchievementInput {
+  title?: string;
+  description?: string;
+  icon?: string;
+  xpReward?: number;
+  isActive?: boolean;
+}

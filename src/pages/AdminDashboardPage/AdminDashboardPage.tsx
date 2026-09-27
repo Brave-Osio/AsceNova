@@ -1,5 +1,6 @@
 import { useAdminStats } from '../../features/admin/hooks/useAdminStats';
 import UserTable from '../../features/admin/components/UserTable';
+import AchievementEditor from '../../features/admin/components/AchievementEditor';
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -56,6 +57,10 @@ export default function AdminDashboardPage() {
 
       <div className="mt-8">
         <UserTable />
+      </div>
+
+      <div className="mt-8">
+        <AchievementEditor />
       </div>
     </section>
   );

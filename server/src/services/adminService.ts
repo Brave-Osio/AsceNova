@@ -143,6 +143,26 @@ export async function softDeleteUser(actingAdminId: string, userId: string) {
   });
 }
 
+export async function listAchievements() {
+  return prisma.achievement.findMany({ orderBy: { createdAt: 'asc' } });
+}
+
+export interface UpdateAchievementInput {
+  title?: string;
+  description?: string;
+  icon?: string;
+  xpReward?: number;
+  isActive?: boolean;
+}
+
+export async function updateAchievement(id: string, input: UpdateAchievementInput) {
+  const achievement = await prisma.achievement.findUnique({ where: { id } });
+  if (!achievement) {
+    throw new HttpError(404, 'Achievement not found');
+  }
+  return prisma.achievement.update({ where: { id }, data: input });
+}
+
 function csvEscape(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;

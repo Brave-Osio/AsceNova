@@ -1,5 +1,12 @@
 import { httpClient } from '../lib/httpClient';
-import type { AdminStats, AdminUserDetail, AdminUserFilters, AdminUserListResult } from '../types/admin.types';
+import type {
+  AdminStats,
+  AdminUserDetail,
+  AdminUserFilters,
+  AdminUserListResult,
+  AdminAchievement,
+  UpdateAchievementInput,
+} from '../types/admin.types';
 
 /**
  * Thin wrapper over the /api/admin endpoints, mirroring notificationService.ts's
@@ -37,6 +44,16 @@ export async function deleteUser(userId: string): Promise<void> {
  * endpoint requires the Authorization header the axios interceptor
  * attaches, so a plain <a href> can't carry it.
  */
+export async function getAdminAchievements(): Promise<AdminAchievement[]> {
+  const res = await httpClient.get<{ achievements: AdminAchievement[] }>('/api/admin/achievements');
+  return res.data.achievements;
+}
+
+export async function updateAdminAchievement(id: string, input: UpdateAchievementInput): Promise<AdminAchievement> {
+  const res = await httpClient.patch<{ achievement: AdminAchievement }>(`/api/admin/achievements/${id}`, input);
+  return res.data.achievement;
+}
+
 export async function exportUsersCsv(): Promise<void> {
   const res = await httpClient.get('/api/admin/users/export', { responseType: 'blob' });
   const url = window.URL.createObjectURL(new Blob([res.data]));
