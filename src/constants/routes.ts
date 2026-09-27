@@ -20,6 +20,7 @@ export const ROUTES = {
   admin: '/admin',
   settings: '/settings',
   challenges: '/challenges',
+  goals: '/goals',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

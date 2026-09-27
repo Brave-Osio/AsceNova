@@ -18,6 +18,7 @@ import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
 import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPage';
 import SettingsPage from '../pages/SettingsPage/SettingsPage';
 import ChallengesPage from '../pages/ChallengesPage/ChallengesPage';
+import GoalsPage from '../pages/GoalsPage/GoalsPage';
 
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
@@ -44,6 +45,7 @@ export const routes: RouteObject[] = [
           { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
           { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
           { path: ROUTES.challenges.slice(1), element: <ChallengesPage /> },
+          { path: ROUTES.goals.slice(1), element: <GoalsPage /> },
         ],
       },
       {

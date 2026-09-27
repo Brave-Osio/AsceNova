@@ -62,7 +62,7 @@ Everything previously deferred (real email delivery, email verification, theme t
 9. **Phase 9 — Challenges (gamification).** ✅ Done. Includes peer/social challenges (invite a friend) — see "Phase 9" below.
 10. **Phase 10 — Mobile app (React Native / Expo).** 🟡 Feature-complete pending a fresh device pass — all 7 tabs (Dashboard, Plan, Log, Leaderboard, Challenges, Coach, Settings) plus Profile Setup now have real content, all backend integrations live-verified. Real installable app (not a responsive web view), full end-user feature parity with the web app; admin stays web-only. See "Phase 10" below — by far the largest phase in this roadmap.
 11. **Phase 11 — Admin achievement management.** ✅ Done. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
-12. **Phase 12 — Goal CRUD.** 🔲 Planned, not started. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
+12. **Phase 12 — Goal CRUD.** ✅ Done. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
 13. **Phase 13 — Activity-aware recommendations.** 🔲 Planned, not started. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
 14. **Phase 14 — Code quality / hygiene (moved to last, per instruction).** 🔲 Planned, not started. CI pipeline, Zod version reconciliation, backend ESLint config fix, documented decision on unused schema models. See "Phase 14" below.
 
@@ -442,7 +442,7 @@ Phase 11 is done.
 
 ---
 
-# Phase 12 (detailed): Goal CRUD — 🔲 PLANNED, NOT YET IMPLEMENTED
+# Phase 12 (detailed): Goal CRUD — ✅ DONE
 
 ## Context
 
@@ -472,6 +472,16 @@ The `Goal` model (`targetValue`, `targetDate`, `status`, `progressNote`) exists 
 1. `server`: build, test.
 2. Frontend: build/lint/test.
 3. Manual, live: create a goal, confirm it appears in the coach's context, mark it complete, confirm XP is granted.
+
+## Status: implemented and verified end-to-end
+
+Code complete exactly per plan — zero migration. One correctness addition beyond the plan's literal wording: `completeGoal` also recomputes and updates `UserProgress.cachedRank` when the XP grant crosses a rank threshold (not just increments XP) — otherwise the displayed rank would go stale until the next daily log recalculated it. Kept deliberately "light touch" as scoped: no `RankHistory` row or rank-up notification for this event, unlike `applyDailyLog`'s handling. Backend build clean, 37/37 tests unaffected (no new pure logic to unit-test beyond thin Prisma wrappers, matching convention). Frontend build clean, lint unchanged (same 4 pre-existing errors), 21/21 tests.
+
+**Live-verified against the real Supabase DB**: created a goal, updated its target value and note, confirmed persistence via a fresh `GET`. Asked the AI coach "What are my current goals?" and confirmed it correctly referenced the real goal's type and updated target — the first real exercise of `coachContextService.ts`'s pre-existing goal-reading code with actual data. Completed the goal — confirmed `+100 XP` landed on `UserProgress`, confirmed attempting to complete it again correctly 404s (no longer `ACTIVE`). Abandoned a second goal — confirmed it worked. Confirmed cross-user ownership scoping: a second test account got 404 trying to abandon the first user's goal, and its own goal list correctly showed empty (no leakage). Test accounts cleaned up, dev server stopped.
+
+Not independently exercised in-browser: the `GoalsPage` UI itself (form, cards, complete/abandon buttons, nav link) — needs visual confirmation.
+
+Phase 12 is done.
 
 ---
 
