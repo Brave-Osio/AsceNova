@@ -13,6 +13,7 @@ import { chatRouter } from './routes/chat.routes.js';
 import { notificationRouter } from './routes/notification.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { challengeRouter } from './routes/challenge.routes.js';
+import { goalRouter } from './routes/goal.routes.js';
 
 export const app = express();
 
@@ -43,8 +44,6 @@ app.use('/api/chat', chatRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/challenges', challengeRouter);
-
-// Remaining resource routers are mounted here as each domain is built
-// out (goals).
+app.use('/api/goals', goalRouter);
 
 app.use(errorHandler);
