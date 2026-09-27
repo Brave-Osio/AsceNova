@@ -54,7 +54,17 @@ The following categories of work need **explicit, separate sign-off before imple
 6. **Phase 6 — Admin panel + analytics.** ✅ Done. `requireRole`/`AdminRoute` wired into real admin routes/pages; live-computed analytics; user management (view/suspend/reactivate/soft-delete) with CSV export. See "Phase 6" below.
 7. **Phase 7 — Settings + auth hardening.** ✅ Done. Settings page (edit profile + account info + change password), rate limiting on register/login/forgot-password. Real email delivery, email verification, theme toggle, and notification preferences explicitly deferred — see "Phase 7" below for why.
 8. **Phase 8 — Gamification expansion.** ✅ Done (schema-free slice — more achievements, an equippable title, level-up confetti). Missions and Season resets deferred — see "Phase 8" below.
-9. **Ongoing — code quality / hygiene.** Add CI (typecheck + lint + test on PR), reconcile zod versions, decide fate of unused `StreakHistory`/`LeaderboardEntry` models (populate them or remove).
+
+### New phases (added after a thesis-requirements audit — separate from the original SaaS-upgrade brief above)
+
+Everything previously deferred (real email delivery, email verification, theme toggle, notification preferences, Missions/Season resets) **stays deferred**, per explicit instruction — not part of this batch.
+
+9. **Phase 9 — Challenges (gamification).** ✅ Done. Includes peer/social challenges (invite a friend) — see "Phase 9" below.
+10. **Phase 10 — Mobile app (React Native / Expo).** 🔲 Planned, not started. Real installable app (not a responsive web view), full end-user feature parity with the web app; admin stays web-only. See "Phase 10" below — by far the largest phase in this roadmap.
+11. **Phase 11 — Admin achievement management.** 🔲 Planned, not started. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
+12. **Phase 12 — Goal CRUD.** 🔲 Planned, not started. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
+13. **Phase 13 — Activity-aware recommendations.** 🔲 Planned, not started. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
+14. **Phase 14 — Code quality / hygiene (moved to last, per instruction).** 🔲 Planned, not started. CI pipeline, Zod version reconciliation, backend ESLint config fix, documented decision on unused schema models. See "Phase 14" below.
 
 Each phase lands as its own PR/set of PRs, preserving all currently-working features, with `npm run build`/`test` green on both the frontend and `server/` before merging.
 
@@ -255,3 +265,230 @@ The original roadmap line for Phase 7 also listed real password-reset email deli
 **Not independently exercised in-browser:** the "Admin" nav link's conditional visibility and the CSV download's client-side blob trigger — covered by direct API verification and code review; needs visual confirmation in-browser.
 
 Out of scope, explicitly: role promotion/demotion, Excel/.xlsx export, charts/graphs for analytics (stat cards + a distribution list cover it for now), populating `AdminAnalyticsSnapshot`/`Report`/`SystemSetting`.
+
+---
+
+# Phase 9 (detailed): Challenges (gamification, incl. peer/social) — ✅ DONE
+
+## Context
+
+The thesis requirement list is "points, achievements, **challenges**, streaks, and leaderboards" — everything else in that list is real and live; Challenges is the one clean, unambiguous gap (confirmed via a thesis-compliance audit: no `Challenge` model, no route/service/UI anywhere). Scoped to include peer/social challenges (invite a friend to join the same challenge), not just system-defined solo ones — meaningfully bigger than Achievements, because a social challenge needs a real, joinable, shared entity (who's in it, who's accepted, shared progress) rather than something silently derived per-user the way achievements/streaks are.
+
+**Schema migration required.**
+
+## Backend (`server/`)
+
+**`prisma/schema.prisma`** — new models/enums:
+- `enum ChallengeMetric { WORKOUTS_COMPLETED, WATER_GOAL_HITS, PROTEIN_GOAL_HITS, LOG_STREAK }` — maps directly onto fields already tracked by `DailyProgress`/`UserProgress`, no new tracking needed.
+- `model Challenge` — the system-defined **template** (seeded/code-defined, not admin-editable this round, per the Phase 11 scoping decision): `id, title, description, icon, metric: ChallengeMetric, targetValue: Int, periodDays: Int (7 for weekly), xpReward: Int`. ~4-5 seeded rows (e.g. "Weekly Warrior" = 4 workouts/7 days, "Hydration Squad" = 5 water-goal days/7 days, "Protein Pact" = 5 protein-goal days/7 days, "Streak Squad" = maintain streak all 7 days).
+- `model ChallengeInvite` — one specific run of a challenge, created by a user: `id, challengeId, createdByUserId, periodStart, periodEnd, status: ChallengeInviteStatus (ACTIVE/EXPIRED)`.
+- `model ChallengeParticipant` — one row per invitee (including the creator, auto-accepted): `id, challengeInviteId, userId, status: ChallengeParticipantStatus (INVITED/ACCEPTED/DECLINED), progressValue: Int @default(0), completedAt: DateTime?`. `@@unique([challengeInviteId, userId])`.
+- Add `CHALLENGE_COMPLETE` to `XpSource`; add `CHALLENGE_INVITE`/`CHALLENGE_COMPLETED` to `NotificationType`.
+
+**`prisma/seed.ts`** — add the ~4-5 `Challenge` template rows, same `upsert`-by-id pattern as `ACHIEVEMENTS`.
+
+**`src/services/dailyProgressService.ts`** — add a period-scoped counter (achievements use lifetime totals; challenges need "this period only"): `countMetricSince(userId, field: 'workoutCompleted' | 'hitWaterGoal' | 'hitProteinGoal', since: Date)`.
+
+**`src/services/challengeService.ts`** (new):
+- `getCatalog()` — list active `Challenge` templates.
+- `createInvite(userId, challengeId, inviteeEmails[])` — looks up each invitee by email (silently skips unknown emails — no account enumeration via error messages, same anti-enumeration posture as `forgotPassword`), creates `ChallengeInvite` (`periodStart = now`, `periodEnd = now + periodDays`), a `ChallengeParticipant` for the creator (`ACCEPTED`), and one per found invitee (`INVITED`) — fires a `CHALLENGE_INVITE` notification to each invitee via the existing `notificationService.createNotification`.
+- `respondToInvite(userId, inviteId, accept: boolean)` — updates the caller's own `ChallengeParticipant` row only (`updateMany` scoped to `userId` + `challengeInviteId`, same ownership-scoping pattern as `notificationService.markAsRead`).
+- `getMyChallenges(userId)` — all invites the user participates in; lazily flips `status` to `EXPIRED` on read if `periodEnd < now` (no scheduler exists in this codebase — same "compute live, no cron" reasoning already established for `AdminAnalyticsSnapshot`/leaderboard).
+- Progress isn't a separate endpoint — it updates automatically.
+
+**`src/services/progressService.ts`** — inside the existing `applyDailyLog` transaction, after computing achievements: fetch the user's `ACCEPTED` participant rows on still-`ACTIVE` invites, recompute `progressValue` via `countMetricSince` (or streak length for `LOG_STREAK`) for each, and for any that just crossed `targetValue` and aren't already `completedAt`: set `completedAt`, grant `CHALLENGE_COMPLETE` XP, fire a `CHALLENGE_COMPLETED` notification. Same transaction, same `tx` client — no new transaction.
+
+**`src/controllers/challenge.controller.ts`** + **`src/routes/challenge.routes.ts`** — `GET /catalog`, `GET /mine`, `POST /` (create+invite), `POST /:inviteId/respond`, all `requireAuth`. Mounted at `/api/challenges`.
+
+## Frontend (`src`)
+
+**`src/features/challenges/`** (new slice) — types, service (`getChallengeCatalog`, `getMyChallenges`, `createChallenge`, `respondToChallengeInvite`), `useChallenges`/`useCreateChallenge`/`useRespondToChallenge` hooks (React Query, new `queryKeys.challenges.*`), components: `ChallengeCard` (participants + progress bars, accept/decline for pending invites), `CreateChallengeForm` (pick a template from the catalog + enter friend email(s)).
+
+**`src/pages/ChallengesPage/ChallengesPage.tsx`** (new) + `ROUTES.challenges`/nav link — inside `ProtectedRoute`.
+
+**`NotificationBell`** needs no changes — it already renders whatever `Notification` rows exist generically; the two new types just need a small icon/label mapping if one exists per-type.
+
+## Out of scope
+
+- Admin management of challenge templates (achievements only this round, per the Phase 11 scoping decision).
+- In-app friend/contacts list — invites are by typing a friend's email directly, not a friend-graph feature.
+- Push notifications for invites — uses the existing in-app bell only, same channel as everything else.
+
+## Verification
+
+1. `server`: migration applied, `npm run build`, `npm test`.
+2. Frontend: build/lint/test.
+3. Manual, live: create a challenge inviting a second real test account, confirm the invitee gets a notification, accept it, log daily progress on both accounts until the target is crossed, confirm both participants' progress updates and the completing account gets XP + a completion notification. Confirm declining an invite removes it from the invitee's "mine" list without affecting the creator's. Confirm an expired invite shows as `EXPIRED` on next read.
+
+**What shipped:** `Challenge`/`ChallengeInvite`/`ChallengeParticipant` models (migration `20260927161918_add_challenges`), 4 seeded weekly templates (Weekly Warrior, Hydration Squad, Protein Pact, Streak Squad), full invite/accept/decline flow with email-based friend invites, progress auto-tracked inside the existing `applyDailyLog` transaction, XP + notification on completion, lazy expiry (no scheduler, matches this codebase's established "compute live" convention). `/challenges` page + nav link.
+
+**Verified live** against the real Supabase DB: created an invite, confirmed the invitee got a real `CHALLENGE_INVITE` notification, accepted it, logged 5 days within the challenge's forward-looking window, confirmed progress tracked per-participant and completion fired exactly on crossing the target (+100 XP, `CHALLENGE_COMPLETED` notification). Confirmed a bad challenge id 404s, decline doesn't affect the creator, and the lazy-expiry flip actually persists to the DB (not just the response). Backend 34/34 tests, frontend 21/21 tests, both builds clean.
+
+Not independently exercised in-browser: the `ChallengesPage` UI itself — needs visual confirmation.
+
+Phase 9 is done.
+
+---
+
+# Phase 10 (detailed): Mobile app (React Native / Expo) — 🔲 PLANNED, NOT YET IMPLEMENTED
+
+## Context
+
+By far the largest of the new phases — the thesis explicitly requires **"Mobile: React Native"** / **"React Native mobile application for end-users"**, and the codebase today is web-only (confirmed: no `react-native` anywhere, no `ios`/`android` dirs). This is a real, installable native/cross-platform app (built with **Expo**, producing an actual installable build via Expo Go or EAS Build) — explicitly **not** a responsive redesign of the existing web app, which already adapts to phone screens but would not satisfy this thesis requirement. **Full end-user feature parity** with the web app. The admin panel stays web-only — that's not a gap, it's what the thesis itself specifies ("Web Admin: React").
+
+This is genuinely comparable in size to the rest of this roadmap combined. It's written here as one coherent phase (one roadmap entry), but should be **built incrementally** (see "Suggested build order" below) rather than attempted as one giant PR.
+
+## The one real backend change this requires (and why)
+
+The web app's refresh-token flow relies on an **httpOnly cookie** (`server/src/controllers/auth.controller.ts`'s `setRefreshCookie`) — this doesn't work the same way for a React Native app. RN's networking layer doesn't maintain a persistent, domain-bound cookie jar across app restarts the way a browser does, so a cookie-only refresh flow would silently break on every app relaunch.
+
+**Fix (additive, zero web-behavior change):** `authService.login()`/`register()`/`refresh()` already return the raw refresh token internally — the controllers just need to **also** include it in the JSON response body (alongside still setting the cookie, which browsers keep using unaffected). `POST /api/auth/refresh` accepts the token from **either** the cookie (web, unchanged) **or** a `{ refreshToken }` body field (mobile) — whichever is present. The mobile app stores this token itself via `expo-secure-store` (encrypted at-rest — the correct RN equivalent of "not casually readable," matching the security intent of an httpOnly cookie as closely as the platform allows) and sends it explicitly on refresh.
+
+This is an auth-mechanism change, flagged per policy — needs explicit sign-off before implementation, consistent with every other auth-touching phase.
+
+## New package: `/mobile`
+
+A **third independent package** (matches this repo's existing "independent packages, not a monorepo/workspace" philosophy — `CLAUDE.md` gets updated from "two" to "three" packages once this lands). Expo + TypeScript, its own `package.json`/lockfile/`node_modules`, run via `npx expo start` from `/mobile`.
+
+- **Navigation**: React Navigation — a bottom-tab navigator for the authenticated app (Dashboard, Plan, Daily Log, Leaderboard, Coach, Settings — mirrors `NAV_LINKS`), with a separate auth stack (Login/Register/ForgotPassword/ResetPassword) shown when unauthenticated, and Profile Setup as a modal/stack screen — same guarding logic as the web's `ProtectedRoute`/profile-empty-state checks, just expressed via React Navigation instead of React Router.
+- **Data layer**: same TanStack Query + axios pattern as the web app — an `httpClient.ts` equivalent (axios instance, `Authorization` header interceptor, refresh-on-401 interceptor) ported directly, with the one change above (SecureStore-backed refresh token instead of a cookie). Query keys, service-call shapes, and API response mapping are duplicated into the mobile package (not shared via a monorepo package — a bigger, separate architectural change not requested), following the exact same "one service file per API domain" convention already established.
+- **UI**: React Native core components with a `StyleSheet`-based theme module mirroring the web's existing dark violet/cyan tokens (can't reuse Tailwind directly in RN), so the app is visually recognizable as the same product, not restyled from scratch.
+- **Storage**: access token in memory only (same posture as web); refresh token via `expo-secure-store`; zero use of plain `AsyncStorage` for anything auth-related.
+- **Screens** (one per existing web page, same feature scope): Login, Register, Forgot/Reset Password, Profile Setup, Dashboard, Plan (workout + nutrition), Daily Log, Leaderboard, Coach Chat, Settings (account info, edit profile, change password), plus Challenges and Goals once Phases 9/12 exist.
+
+## Suggested build order (within this one phase)
+
+1. Project scaffold + theme module + navigation shell (auth stack vs. tab navigator) + the backend refresh-token change.
+2. Auth flow end-to-end (login/register/logout/silent-refresh) — proves the whole plumbing works before any feature screens.
+3. Profile setup + Dashboard.
+4. Daily Log + Plan (the core loop).
+5. Leaderboard, Coach Chat, Settings.
+6. Whatever Phases 9/12 have landed by then (Challenges, Goals).
+
+## Out of scope
+
+- Native push notifications (the in-app bell/list pattern is reused; no APNs/FCM integration).
+- Offline support / local caching beyond what TanStack Query does by default.
+- App store submission/signing (EAS Build config gets set up enough to produce an installable build for demo purposes; actual store listing is out of scope).
+- Any redesign of the web app to match — the web stays as-is.
+
+## Verification
+
+1. `npx expo start`, run in Expo Go (or a simulator/emulator) — full login→dashboard→daily-log→plan-view round trip against the real backend.
+2. Force-quit and relaunch the app — confirm the silent-refresh flow using the SecureStore-persisted refresh token still logs the user back in without re-entering credentials.
+3. Confirm the web app is completely unaffected — `npm run build`/`test` on both existing packages still green, log in via the browser and confirm the refresh cookie flow still works exactly as before.
+
+---
+
+# Phase 11 (detailed): Admin achievement management — 🔲 PLANNED, NOT YET IMPLEMENTED
+
+## Context
+
+Scoped to achievements only — metadata (title/description/icon/XP reward/active toggle), not a new exercise-content library (no such library exists to manage, and building one is a separable, bigger feature). Important scope clarity: `Achievement.id` is a hand-chosen string (e.g. `"first_workout"`) referenced directly by hardcoded keys in `progressService.ts`'s `ACHIEVEMENT_RULES` — the **unlock logic** stays code-defined. Admins can edit how an achievement is *presented* and *rewarded*, and turn it on/off, but can't define new unlock criteria through the UI — so this phase supports **edit + activate/deactivate on the existing 15 rows**, not free-form creation of new achievements.
+
+No schema migration.
+
+## Backend (`server/src`)
+
+**`src/services/adminService.ts`** — add `listAchievements()`, `updateAchievement(id, { title?, description?, icon?, xpReward?, isActive? })`.
+
+**`src/controllers/admin.controller.ts`** + **`src/routes/admin.routes.ts`** — `GET /api/admin/achievements`, `PATCH /api/admin/achievements/:id`, both already covered by the router-level `requireAuth`/`requireRole('ADMIN')`.
+
+**`src/services/progressService.ts`** — `evaluateAchievements` needs one small change: skip rules for achievements where `isActive === false` — otherwise deactivating one in the admin panel wouldn't actually stop it from unlocking.
+
+## Frontend (`src`)
+
+**`src/features/admin/hooks/useAdminAchievements.ts`** + **`components/AchievementEditor.tsx`** (new) — a simple list/edit-in-place form (reuses `TextField`/`TextArea`/`Checkbox`/`Button`), added as a new section on `AdminDashboardPage.tsx` (or its own tab/page if that gets crowded).
+
+## Out of scope
+
+- Creating brand-new achievements with custom unlock logic through the UI.
+- Admin management of Challenges (Phase 9).
+
+## Verification
+
+1. `server`: build, test (34/34 + a new test case for the `isActive` check).
+2. Frontend: build/lint/test.
+3. Manual, live: edit an achievement's title/icon via the admin panel, confirm it reflects immediately on `AchievementCard`. Deactivate an achievement a test account hasn't unlocked yet, trigger its condition, confirm it does **not** unlock while inactive; reactivate and confirm it unlocks going forward.
+
+---
+
+# Phase 12 (detailed): Goal CRUD — 🔲 PLANNED, NOT YET IMPLEMENTED
+
+## Context
+
+The `Goal` model (`targetValue`, `targetDate`, `status`, `progressNote`) exists and is already *read* by the AI coach for context (`coachContextService.ts`), but nothing ever writes to it. No schema migration needed.
+
+## Backend (`server/src`)
+
+**`src/services/goalService.ts`** (new) — `createGoal(userId, { goalType, targetValue?, targetDate?, progressNote? })`, `listGoals(userId)`, `updateGoal(userId, goalId, { targetValue?, targetDate?, progressNote? })` (ownership-scoped), `completeGoal(userId, goalId)` / `abandonGoal(userId, goalId)` (sets `status`/`completedAt` — this **is** the "delete," matching the org's soft-state convention: no hard delete on this model, `status` transitions instead).
+
+**`src/validators/goal.validators.ts`**, **`src/controllers/goal.controller.ts`**, **`src/routes/goal.routes.ts`** — standard trio matching every other domain. Mounted at `/api/goals`.
+
+**`src/services/progressService.ts`** — optional light touch: grant `GOAL_PROGRESS` XP (already an unused, anticipated `XpSource` value) when `completeGoal` fires.
+
+## Frontend (`src`)
+
+**`src/features/goals/`** (new slice) — types, service, `useGoals`/`useCreateGoal`/`useUpdateGoal` hooks (`queryKeys.goals.list` already reserved, unused), `GoalCard` + `GoalForm` components.
+
+**`src/pages/GoalsPage/GoalsPage.tsx`** (new) + `ROUTES.goals` + nav link — a dedicated page.
+
+## Out of scope
+
+- Automatic goal-progress tracking beyond the existing weight-goal check already in `progressService.ts`.
+- Surfacing goals on the Dashboard as a new card.
+
+## Verification
+
+1. `server`: build, test.
+2. Frontend: build/lint/test.
+3. Manual, live: create a goal, confirm it appears in the coach's context, mark it complete, confirm XP is granted.
+
+---
+
+# Phase 13 (detailed): Activity-aware recommendations — 🔲 PLANNED, NOT YET IMPLEMENTED
+
+## Context
+
+Confirmed via direct code read: the workout-generation prompt (`workoutGenerationService.ts`'s `buildPrompt`) only uses static profile fields plus a list of previous exercise *names* to avoid repeating — it does not know adherence rate or logged weight trend. This is the thesis's "remain relevant as the user's recorded activities and progress change over time" requirement, only partially met today. No schema migration.
+
+## Backend (`server/src`)
+
+**`src/services/planService.ts`** — inside `generateAndSaveActivePlan`, before calling `generateExerciseDetail`, compute a compact `AdherenceSummary`: workout-completion rate over the last 14 days, current streak, and a simple weight-trend direction vs. goal (same comparison logic already used for the `goal_crusher` achievement, extracted into a small shared helper).
+
+**`src/services/workoutGenerationService.ts`** — `buildPrompt` gains a "RECENT ADHERENCE" section with completion rate, streak, and weight-trend-vs-goal, plus explicit instruction: high adherence → progress difficulty/volume; low adherence → keep it approachable; no history → omit the section entirely rather than print misleading zeros.
+
+## Frontend
+
+No changes.
+
+## Out of scope
+
+- Changing `buildWorkoutSplit`'s day/focus skeleton logic itself.
+- Any new metric collection.
+
+## Verification
+
+1. `server`: build, test (plus one new test asserting the adherence section is omitted for a zero-history user).
+2. Manual, live: regenerate a plan for a test account with ~2 weeks of high-adherence logs, confirm the adherence section renders with real numbers; confirm it's cleanly omitted for a brand-new account.
+
+---
+
+# Phase 14 (detailed): Code quality / hygiene (moved to last, per instruction) — 🔲 PLANNED, NOT YET IMPLEMENTED
+
+## Context
+
+The original roadmap's "Ongoing" line, never started — resequenced to run last, after all the new thesis-driven phases above.
+
+## Work
+
+1. **CI pipeline** — `.github/workflows/ci.yml`, two jobs (frontend + backend), running on every PR.
+2. **Fix backend ESLint** — add a proper Node-scoped flat config so backend lint actually runs instead of erroring on the frontend's browser-scoped config.
+3. **Zod version reconciliation** — recommend upgrading the backend (v3→v4) rather than downgrading the frontend, but check for v3→v4 breaking changes first.
+4. **Document the unused-model decision** — `StreakHistory`, `LeaderboardEntry`, `Report`, `SystemSetting` stay unused (live-computation deliberately preferred); add doc-comments in `schema.prisma` making that explicit.
+
+## Verification
+
+1. Confirm the new CI workflow runs and goes green on both jobs.
+2. `server`: `npm run lint` runs its own real config.
+3. Both packages: `npm run build && npm test` after the Zod bump.

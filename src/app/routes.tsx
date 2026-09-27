@@ -17,6 +17,7 @@ import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
 import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPage';
 import SettingsPage from '../pages/SettingsPage/SettingsPage';
+import ChallengesPage from '../pages/ChallengesPage/ChallengesPage';
 
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
@@ -42,6 +43,7 @@ export const routes: RouteObject[] = [
           { path: ROUTES.leaderboard.slice(1), element: <LeaderboardPage /> },
           { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
           { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
+          { path: ROUTES.challenges.slice(1), element: <ChallengesPage /> },
         ],
       },
       {

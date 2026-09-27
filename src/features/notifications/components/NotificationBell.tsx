@@ -12,6 +12,8 @@ const TYPE_ICONS: Record<NotificationType, string> = {
   REMINDER: '⏰',
   SYSTEM: 'ℹ️',
   ADMIN: '📢',
+  CHALLENGE_INVITE: '⚔️',
+  CHALLENGE_COMPLETED: '🏆',
 };
 
 function formatRelativeTime(iso: string): string {

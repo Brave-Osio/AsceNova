@@ -45,4 +45,8 @@ export const queryKeys = {
     users: (filters: Record<string, unknown>) => ['admin', 'users', filters] as const,
     userDetail: (id: string) => ['admin', 'user', id] as const,
   },
+  challenges: {
+    catalog: () => ['challenges', 'catalog'] as const,
+    mine: (userId: string) => ['challenges', 'mine', userId] as const,
+  },
 } as const;

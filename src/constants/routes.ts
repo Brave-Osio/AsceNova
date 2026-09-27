@@ -19,6 +19,7 @@ export const ROUTES = {
   resetPassword: '/reset-password',
   admin: '/admin',
   settings: '/settings',
+  challenges: '/challenges',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

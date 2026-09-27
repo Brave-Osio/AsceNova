@@ -92,6 +92,7 @@ enum XpSource {
   THIRTY_DAY_STREAK
   ACHIEVEMENT_UNLOCK
   GOAL_PROGRESS
+  CHALLENGE_COMPLETE
 }
 
 enum NotificationType {
@@ -102,6 +103,26 @@ enum NotificationType {
   REMINDER
   SYSTEM
   ADMIN
+  CHALLENGE_INVITE
+  CHALLENGE_COMPLETED
+}
+
+enum ChallengeMetric {
+  WORKOUTS_COMPLETED
+  WATER_GOAL_HITS
+  PROTEIN_GOAL_HITS
+  LOG_STREAK
+}
+
+enum ChallengeInviteStatus {
+  ACTIVE
+  EXPIRED
+}
+
+enum ChallengeParticipantStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
 }
 
 enum GoalStatus {
@@ -155,6 +176,8 @@ model User {
   leaderboardEntry    LeaderboardEntry?
   chatHistory         ChatMessage[]
   goals               Goal[]
+  challengeInvitesCreated ChallengeInvite[]
+  challengeParticipations ChallengeParticipant[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   reportsGenerated    Report[]              @relation("ReportsGeneratedBy")
@@ -472,6 +495,64 @@ model StreakHistory {
 
   @@index([userId, date])
   @@map("streak_history")
+}
+
+// System-defined templates only — not admin-editable (see docs/ROADMAP.md
+// Phase 11 scoping: admin gamification management covers Achievements only).
+model Challenge {
+  id          String          @id
+  title       String
+  description String
+  icon        String
+  metric      ChallengeMetric
+  targetValue Int
+  periodDays  Int             @default(7)
+  xpReward    Int             @default(100)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  invites ChallengeInvite[]
+
+  @@map("challenges")
+}
+
+// One specific time-boxed run of a Challenge, started by a user (who is
+// also its first, auto-accepted participant) and optionally shared with
+// friends by email invite.
+model ChallengeInvite {
+  id              String                 @id @default(cuid())
+  challengeId     String
+  createdByUserId String
+  periodStart     DateTime               @default(now())
+  periodEnd       DateTime
+  status          ChallengeInviteStatus  @default(ACTIVE)
+  createdAt       DateTime               @default(now())
+
+  challenge   Challenge             @relation(fields: [challengeId], references: [id])
+  createdBy   User                  @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  participants ChallengeParticipant[]
+
+  @@index([createdByUserId])
+  @@index([status, periodEnd])
+  @@map("challenge_invites")
+}
+
+model ChallengeParticipant {
+  id                String                     @id @default(cuid())
+  challengeInviteId String
+  userId            String
+  status            ChallengeParticipantStatus @default(INVITED)
+  progressValue     Int                        @default(0)
+  completedAt       DateTime?
+  createdAt         DateTime                   @default(now())
+
+  challengeInvite ChallengeInvite @relation(fields: [challengeInviteId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeInviteId, userId])
+  @@index([userId])
+  @@map("challenge_participants")
 }
 
 model LeaderboardEntry {
