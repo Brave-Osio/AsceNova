@@ -2,6 +2,7 @@ import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import * as dailyProgressService from './dailyProgressService.js';
 import * as notificationService from './notificationService.js';
+import * as challengeService from './challengeService.js';
 import type { RankName, XpSource } from '@prisma/client';
 
 /** Ported from src/constants/xpRules.ts XP_REWARDS (achievementUnlock only — the
@@ -226,6 +227,12 @@ export async function applyDailyLog(userId: string, date: Date) {
       xpGrants.push({ amount: XP_REWARDS.ACHIEVEMENT_UNLOCK, reason: 'ACHIEVEMENT_UNLOCK', sourceRefId: id });
     }
 
+    const { xpGrants: challengeXpGrants, completedTitles: newChallengeTitles } =
+      await challengeService.updateChallengeProgress(tx, userId, streak.currentStreak);
+    for (const grant of challengeXpGrants) {
+      xpGrants.push({ amount: grant.amount, reason: 'CHALLENGE_COMPLETE', sourceRefId: grant.sourceRefId });
+    }
+
     const totalXp = current.totalXp + xpGrants.reduce((sum, g) => sum + g.amount, 0);
     const newRank = getRankForXp(totalXp);
     const rankChanged = newRank !== current.cachedRank;
@@ -290,6 +297,7 @@ export async function applyDailyLog(userId: string, date: Date) {
       },
       xpGained,
       newAchievementTitles,
+      newChallengeTitles,
     };
   });
 }

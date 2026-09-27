@@ -5,7 +5,9 @@ export type NotificationType =
   | 'PLAN_READY'
   | 'REMINDER'
   | 'SYSTEM'
-  | 'ADMIN';
+  | 'ADMIN'
+  | 'CHALLENGE_INVITE'
+  | 'CHALLENGE_COMPLETED';
 
 export interface AppNotification {
   id: string;

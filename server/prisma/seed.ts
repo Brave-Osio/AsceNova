@@ -35,6 +35,54 @@ async function seedAchievements() {
   console.log(`Seeded ${ACHIEVEMENTS.length} achievements.`);
 }
 
+// Weekly, system-defined templates — not admin-editable (see docs/ROADMAP.md
+// Phase 11 scoping). xpReward matches the achievement-unlock convention (100).
+const CHALLENGES = [
+  {
+    id: 'weekly_warrior',
+    title: 'Weekly Warrior',
+    description: 'Complete 4 workouts this week.',
+    icon: '⚔️',
+    metric: 'WORKOUTS_COMPLETED' as const,
+    targetValue: 4,
+  },
+  {
+    id: 'hydration_squad',
+    title: 'Hydration Squad',
+    description: 'Hit your water goal on 5 days this week.',
+    icon: '💧',
+    metric: 'WATER_GOAL_HITS' as const,
+    targetValue: 5,
+  },
+  {
+    id: 'protein_pact',
+    title: 'Protein Pact',
+    description: 'Hit your protein goal on 5 days this week.',
+    icon: '🍗',
+    metric: 'PROTEIN_GOAL_HITS' as const,
+    targetValue: 5,
+  },
+  {
+    id: 'streak_squad',
+    title: 'Streak Squad',
+    description: 'Keep your logging streak alive all 7 days this week.',
+    icon: '🔥',
+    metric: 'LOG_STREAK' as const,
+    targetValue: 7,
+  },
+];
+
+async function seedChallenges() {
+  for (const c of CHALLENGES) {
+    await prisma.challenge.upsert({
+      where: { id: c.id },
+      update: { title: c.title, description: c.description, icon: c.icon, metric: c.metric, targetValue: c.targetValue },
+      create: { ...c, periodDays: 7, xpReward: 100 },
+    });
+  }
+  console.log(`Seeded ${CHALLENGES.length} challenges.`);
+}
+
 async function seedAdminUser() {
   if (process.env.NODE_ENV === 'production') {
     console.log('Skipping admin seed user — NODE_ENV=production.');
@@ -63,6 +111,7 @@ async function seedAdminUser() {
 
 async function main() {
   await seedAchievements();
+  await seedChallenges();
   await seedAdminUser();
 }
 

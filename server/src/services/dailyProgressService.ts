@@ -39,3 +39,19 @@ export async function countWaterGoalHits(userId: string): Promise<number> {
 export async function countProteinGoalHits(userId: string): Promise<number> {
   return prisma.dailyProgress.count({ where: { userId, hitProteinGoal: true } });
 }
+
+const METRIC_FIELD = {
+  WORKOUTS_COMPLETED: 'workoutCompleted',
+  WATER_GOAL_HITS: 'hitWaterGoal',
+  PROTEIN_GOAL_HITS: 'hitProteinGoal',
+} as const;
+
+/** Period-scoped count, for Challenges — achievements above use lifetime totals instead. */
+export async function countMetricSince(
+  userId: string,
+  metric: keyof typeof METRIC_FIELD,
+  since: Date,
+): Promise<number> {
+  const field = METRIC_FIELD[metric];
+  return prisma.dailyProgress.count({ where: { userId, date: { gte: since }, [field]: true } });
+}
