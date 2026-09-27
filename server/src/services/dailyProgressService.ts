@@ -55,3 +55,8 @@ export async function countMetricSince(
   const field = METRIC_FIELD[metric];
   return prisma.dailyProgress.count({ where: { userId, date: { gte: since }, [field]: true } });
 }
+
+/** Total logged days in a window, regardless of habit values — the denominator for an adherence rate. */
+export async function countLogsSince(userId: string, since: Date): Promise<number> {
+  return prisma.dailyProgress.count({ where: { userId, date: { gte: since } } });
+}

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Type } from '@google/genai';
 import type { Profile } from '@prisma/client';
 import { generateStructuredContent } from '../lib/gemini.js';
-import type { GeneratedWorkoutDay } from './planService.js';
+import type { GeneratedWorkoutDay, AdherenceSummary } from './planService.js';
 
 export const WORKOUT_PROMPT_VERSION = 'workout-gemini-v1';
 
@@ -86,7 +86,42 @@ function formatSkeleton(skeleton: GeneratedWorkoutDay[]): string {
   return skeleton.map((d, i) => `${i + 1}. ${d.day}: ${d.focus}`).join('\n');
 }
 
-function buildPrompt(profile: Profile, skeleton: GeneratedWorkoutDay[], priorExerciseNames: string[]): string {
+function buildAdherenceSection(profile: Profile, adherence: AdherenceSummary | null): string[] {
+  if (!adherence) return [];
+
+  const lines = ['', `RECENT ADHERENCE (last 14 days)`];
+  if (adherence.workoutCompletionRate != null) {
+    lines.push(`- Completed workouts on ${Math.round(adherence.workoutCompletionRate * 100)}% of logged days`);
+  }
+  lines.push(`- Current logging streak: ${adherence.currentStreak} days`);
+  if (adherence.weightTrend !== 'unknown') {
+    const trackText =
+      adherence.onTrackForGoal === true
+        ? 'on track'
+        : adherence.onTrackForGoal === false
+          ? 'behind'
+          : null;
+    lines.push(
+      `- Weight trend: ${adherence.weightTrend}${trackText ? `, ${trackText} for their ${profile.goal} goal` : ''}`,
+    );
+  }
+  lines.push(
+    '',
+    'Use this adherence data to calibrate difficulty: if adherence is high (roughly 70%+ workout completion,',
+    "a decent streak), progress this plan's difficulty/volume slightly versus a brand-new client. If adherence is",
+    'low, keep the plan approachable and motivating rather than escalating — consistency matters more than',
+    'intensity right now.',
+  );
+  return lines;
+}
+
+/** Exported solely for unit testing the adherence-section behavior below. */
+export function buildPrompt(
+  profile: Profile,
+  skeleton: GeneratedWorkoutDay[],
+  priorExerciseNames: string[],
+  adherence: AdherenceSummary | null,
+): string {
   const lines = [
     'You are a certified strength & conditioning coach designing a detailed workout plan for one specific client.',
     'A 7-day day/focus schedule has already been decided — do NOT change the days or their focus. Your job is only',
@@ -116,6 +151,8 @@ function buildPrompt(profile: Profile, skeleton: GeneratedWorkoutDay[], priorExe
     );
   }
 
+  lines.push(...buildAdherenceSection(profile, adherence));
+
   return lines.join('\n');
 }
 
@@ -129,8 +166,9 @@ export async function generateExerciseDetail(
   profile: Profile,
   skeleton: GeneratedWorkoutDay[],
   priorExerciseNames: string[],
+  adherence: AdherenceSummary | null = null,
 ): Promise<EnrichedWorkoutDay[]> {
-  const prompt = buildPrompt(profile, skeleton, priorExerciseNames);
+  const prompt = buildPrompt(profile, skeleton, priorExerciseNames, adherence);
   const raw = await generateStructuredContent<unknown>(prompt, workoutDetailGeminiSchema);
   const parsed = workoutDetailResponseSchema.parse(raw);
 

@@ -63,7 +63,7 @@ Everything previously deferred (real email delivery, email verification, theme t
 10. **Phase 10 — Mobile app (React Native / Expo).** 🟡 Feature-complete pending a fresh device pass — all 7 tabs (Dashboard, Plan, Log, Leaderboard, Challenges, Coach, Settings) plus Profile Setup now have real content, all backend integrations live-verified. Real installable app (not a responsive web view), full end-user feature parity with the web app; admin stays web-only. See "Phase 10" below — by far the largest phase in this roadmap.
 11. **Phase 11 — Admin achievement management.** ✅ Done. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
 12. **Phase 12 — Goal CRUD.** ✅ Done. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
-13. **Phase 13 — Activity-aware recommendations.** 🔲 Planned, not started. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
+13. **Phase 13 — Activity-aware recommendations.** ✅ Done. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
 14. **Phase 14 — Code quality / hygiene (moved to last, per instruction).** 🔲 Planned, not started. CI pipeline, Zod version reconciliation, backend ESLint config fix, documented decision on unused schema models. See "Phase 14" below.
 
 Each phase lands as its own PR/set of PRs, preserving all currently-working features, with `npm run build`/`test` green on both the frontend and `server/` before merging.
@@ -485,7 +485,7 @@ Phase 12 is done.
 
 ---
 
-# Phase 13 (detailed): Activity-aware recommendations — 🔲 PLANNED, NOT YET IMPLEMENTED
+# Phase 13 (detailed): Activity-aware recommendations — ✅ DONE
 
 ## Context
 
@@ -510,6 +510,16 @@ No changes.
 
 1. `server`: build, test (plus one new test asserting the adherence section is omitted for a zero-history user).
 2. Manual, live: regenerate a plan for a test account with ~2 weeks of high-adherence logs, confirm the adherence section renders with real numbers; confirm it's cleanly omitted for a brand-new account.
+
+## Status: implemented and verified end-to-end
+
+Code complete exactly per plan. `buildPrompt` was exported (it was previously private) specifically so its adherence-rendering logic could be unit-tested directly with mock `AdherenceSummary` objects, rather than only indirectly through a live Gemini call. Backend build clean, 40/40 tests (37 + 3 new: section omitted when adherence is `null`, completion-rate/streak render correctly while an "unknown" weight trend is omitted, and a clear trend renders with the correct on-track wording).
+
+**Live-verified against the real Supabase + Gemini setup**: generated a plan for a brand-new account with zero `DailyProgress` history — succeeded normally (`source: GEMINI`), confirming the `null`-adherence path doesn't break anything. Logged 14 real days of history on the same account (10/14 workouts completed, weight trending 82kg → 78.8kg) and independently confirmed those exact aggregate numbers directly via Prisma before regenerating — then regenerated the plan again and confirmed it again succeeded normally through the real Gemini API with the non-null adherence path now active. Frontend confirmed unaffected (build clean, 21/21 tests) since the plan explicitly required zero frontend changes — the API response shape is unchanged, only Gemini's prompt inputs differ server-side. Test account cleaned up, dev server stopped.
+
+Not independently observable: the raw prompt text actually sent to Gemini in production (would require temporary debug instrumentation, not left in the codebase) — confidence here comes from the unit tests covering the exact rendering logic plus the successful real API round-trips in both the null and non-null cases.
+
+Phase 13 is done.
 
 ---
 

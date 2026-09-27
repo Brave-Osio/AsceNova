@@ -1,5 +1,34 @@
 import { describe, it, expect } from 'vitest';
-import { workoutDetailResponseSchema } from './workoutGenerationService.js';
+import { workoutDetailResponseSchema, buildPrompt } from './workoutGenerationService.js';
+import type { Profile } from '@prisma/client';
+import type { AdherenceSummary } from './planService.js';
+
+function makeProfile(overrides: Partial<Profile> = {}): Profile {
+  return {
+    id: 'profile_1',
+    userId: 'user_1',
+    fullName: 'Test User',
+    birthday: null,
+    age: 30,
+    gender: null,
+    heightCm: 175,
+    currentWeightKg: 80,
+    goalWeightKg: null,
+    goal: 'WEIGHT_LOSS',
+    fitnessLevel: 'INTERMEDIATE',
+    equipmentAccess: 'GYM',
+    activityLevel: null,
+    workoutFrequency: null,
+    preferredSplitStyle: null,
+    dailySchedule: null,
+    sleepHoursTarget: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+const skeleton = [{ day: 'Monday', focus: 'Push Day' }];
 
 function makeExercise(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -69,5 +98,37 @@ describe('workoutDetailResponseSchema', () => {
       return day;
     });
     expect(() => workoutDetailResponseSchema.parse(makeResponse(days))).toThrow();
+  });
+});
+
+describe('workoutGenerationService.buildPrompt (adherence section)', () => {
+  it('omits the RECENT ADHERENCE section entirely when adherence is null (brand-new user)', () => {
+    const prompt = buildPrompt(makeProfile(), skeleton, [], null);
+    expect(prompt).not.toContain('RECENT ADHERENCE');
+  });
+
+  it('includes completion rate and streak when adherence data is present', () => {
+    const adherence: AdherenceSummary = {
+      workoutCompletionRate: 0.75,
+      currentStreak: 5,
+      weightTrend: 'unknown',
+      onTrackForGoal: null,
+    };
+    const prompt = buildPrompt(makeProfile(), skeleton, [], adherence);
+    expect(prompt).toContain('RECENT ADHERENCE');
+    expect(prompt).toContain('75%');
+    expect(prompt).toContain('streak: 5 days');
+    expect(prompt).not.toContain('Weight trend'); // omitted when trend is 'unknown'
+  });
+
+  it('includes weight trend and on-track wording when a clear trend exists', () => {
+    const adherence: AdherenceSummary = {
+      workoutCompletionRate: 0.5,
+      currentStreak: 2,
+      weightTrend: 'losing',
+      onTrackForGoal: true,
+    };
+    const prompt = buildPrompt(makeProfile({ goal: 'WEIGHT_LOSS' }), skeleton, [], adherence);
+    expect(prompt).toContain('Weight trend: losing, on track for their WEIGHT_LOSS goal');
   });
 });

@@ -1,7 +1,62 @@
 import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { generateExerciseDetail, WORKOUT_PROMPT_VERSION, type EnrichedWorkoutDay } from './workoutGenerationService.js';
+import * as dailyProgressService from './dailyProgressService.js';
 import type { Profile, WorkoutSplitStyle, PlanSource } from '@prisma/client';
+
+const ADHERENCE_WINDOW_DAYS = 14;
+
+export interface AdherenceSummary {
+  workoutCompletionRate: number | null;
+  currentStreak: number;
+  weightTrend: 'losing' | 'gaining' | 'stable' | 'unknown';
+  onTrackForGoal: boolean | null;
+}
+
+/**
+ * Feeds real logged activity into workout generation instead of just
+ * static profile fields + variety-avoidance — returns null when there's
+ * no history at all (brand-new user), so the prompt can omit the whole
+ * section rather than print misleading zeros.
+ */
+async function buildAdherenceSummary(userId: string, profile: Profile): Promise<AdherenceSummary | null> {
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - ADHERENCE_WINDOW_DAYS);
+  since.setUTCHours(0, 0, 0, 0);
+
+  const [daysLogged, workoutsCompleted, recentLogs, userProgress] = await Promise.all([
+    dailyProgressService.countLogsSince(userId, since),
+    dailyProgressService.countMetricSince(userId, 'WORKOUTS_COMPLETED', since),
+    prisma.dailyProgress.findMany({
+      where: { userId, date: { gte: since } },
+      orderBy: { date: 'asc' },
+      select: { weightKg: true },
+    }),
+    prisma.userProgress.findUnique({ where: { userId } }),
+  ]);
+
+  if (daysLogged === 0) {
+    return null;
+  }
+
+  let weightTrend: AdherenceSummary['weightTrend'] = 'unknown';
+  let onTrackForGoal: boolean | null = null;
+  if (recentLogs.length >= 2) {
+    const weightChange = recentLogs[recentLogs.length - 1].weightKg - recentLogs[0].weightKg;
+    weightTrend = weightChange < -0.2 ? 'losing' : weightChange > 0.2 ? 'gaining' : 'stable';
+
+    if (profile.goal === 'WEIGHT_LOSS') onTrackForGoal = weightChange <= 0.2;
+    else if (profile.goal === 'MUSCLE_GAIN') onTrackForGoal = weightChange >= -0.2;
+    else onTrackForGoal = Math.abs(weightChange) <= 1;
+  }
+
+  return {
+    workoutCompletionRate: workoutsCompleted / daysLogged,
+    currentStreak: userProgress?.currentStreak ?? 0,
+    weightTrend,
+    onTrackForGoal,
+  };
+}
 
 export interface GeneratedWorkoutDay {
   day: string;
@@ -135,13 +190,14 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
   const priorExerciseNames = [
     ...new Set(previousPlan?.workoutDays.flatMap((d) => d.exercises.map((e) => e.name)) ?? []),
   ].slice(0, 20);
+  const adherence = await buildAdherenceSummary(userId, profile);
 
   let source: PlanSource = 'RULE_BASED_LEGACY';
   let promptVersion: string | null = null;
   let enrichedDays: EnrichedWorkoutDay[] | null = null;
 
   try {
-    enrichedDays = await generateExerciseDetail(profile, skeleton, priorExerciseNames);
+    enrichedDays = await generateExerciseDetail(profile, skeleton, priorExerciseNames, adherence);
     source = 'GEMINI';
     promptVersion = WORKOUT_PROMPT_VERSION;
   } catch (err) {
