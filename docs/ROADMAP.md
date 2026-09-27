@@ -60,7 +60,7 @@ The following categories of work need **explicit, separate sign-off before imple
 Everything previously deferred (real email delivery, email verification, theme toggle, notification preferences, Missions/Season resets) **stays deferred**, per explicit instruction — not part of this batch.
 
 9. **Phase 9 — Challenges (gamification).** ✅ Done. Includes peer/social challenges (invite a friend) — see "Phase 9" below.
-10. **Phase 10 — Mobile app (React Native / Expo).** 🔲 Planned, not started. Real installable app (not a responsive web view), full end-user feature parity with the web app; admin stays web-only. See "Phase 10" below — by far the largest phase in this roadmap.
+10. **Phase 10 — Mobile app (React Native / Expo).** 🟡 Feature-complete pending a fresh device pass — all 7 tabs (Dashboard, Plan, Log, Leaderboard, Challenges, Coach, Settings) plus Profile Setup now have real content, all backend integrations live-verified. Real installable app (not a responsive web view), full end-user feature parity with the web app; admin stays web-only. See "Phase 10" below — by far the largest phase in this roadmap.
 11. **Phase 11 — Admin achievement management.** 🔲 Planned, not started. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
 12. **Phase 12 — Goal CRUD.** 🔲 Planned, not started. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
 13. **Phase 13 — Activity-aware recommendations.** 🔲 Planned, not started. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
@@ -330,7 +330,7 @@ Phase 9 is done.
 
 ---
 
-# Phase 10 (detailed): Mobile app (React Native / Expo) — 🔲 PLANNED, NOT YET IMPLEMENTED
+# Phase 10 (detailed): Mobile app (React Native / Expo) — 🟡 FEATURE-COMPLETE, PENDING FRESH DEVICE PASS
 
 ## Context
 
@@ -350,7 +350,7 @@ This is an auth-mechanism change, flagged per policy — needs explicit sign-off
 
 A **third independent package** (matches this repo's existing "independent packages, not a monorepo/workspace" philosophy — `CLAUDE.md` gets updated from "two" to "three" packages once this lands). Expo + TypeScript, its own `package.json`/lockfile/`node_modules`, run via `npx expo start` from `/mobile`.
 
-- **Navigation**: React Navigation — a bottom-tab navigator for the authenticated app (Dashboard, Plan, Daily Log, Leaderboard, Coach, Settings — mirrors `NAV_LINKS`), with a separate auth stack (Login/Register/ForgotPassword/ResetPassword) shown when unauthenticated, and Profile Setup as a modal/stack screen — same guarding logic as the web's `ProtectedRoute`/profile-empty-state checks, just expressed via React Navigation instead of React Router.
+- **Navigation**: **Expo Router** (file-based routing, built on React Navigation under the hood — the current Expo-recommended default, confirmed via the official docs and the scaffold's own bundled agent guidance) rather than bare React Navigation. `(app)/` is a bottom-tab group (Dashboard, Plan, Log, Leaderboard, Challenges, Coach, Settings — mirrors `NAV_LINKS`), `(auth)/` is a separate stack (Login/Register/ForgotPassword) shown when unauthenticated. Switching between them uses `Stack.Protected guard={isAuthenticated}` in the root `_layout.tsx` — all routes are always defined, only reachability changes with auth state (docs.expo.dev/router/advanced/authentication) — this is the actual replacement for the web's `ProtectedRoute`/profile-empty-state checks.
 - **Data layer**: same TanStack Query + axios pattern as the web app — an `httpClient.ts` equivalent (axios instance, `Authorization` header interceptor, refresh-on-401 interceptor) ported directly, with the one change above (SecureStore-backed refresh token instead of a cookie). Query keys, service-call shapes, and API response mapping are duplicated into the mobile package (not shared via a monorepo package — a bigger, separate architectural change not requested), following the exact same "one service file per API domain" convention already established.
 - **UI**: React Native core components with a `StyleSheet`-based theme module mirroring the web's existing dark violet/cyan tokens (can't reuse Tailwind directly in RN), so the app is visually recognizable as the same product, not restyled from scratch.
 - **Storage**: access token in memory only (same posture as web); refresh token via `expo-secure-store`; zero use of plain `AsyncStorage` for anything auth-related.
@@ -377,6 +377,25 @@ A **third independent package** (matches this repo's existing "independent packa
 1. `npx expo start`, run in Expo Go (or a simulator/emulator) — full login→dashboard→daily-log→plan-view round trip against the real backend.
 2. Force-quit and relaunch the app — confirm the silent-refresh flow using the SecureStore-persisted refresh token still logs the user back in without re-entering credentials.
 3. Confirm the web app is completely unaffected — `npm run build`/`test` on both existing packages still green, log in via the browser and confirm the refresh cookie flow still works exactly as before.
+
+## Status: feature-complete pending a fresh device pass
+
+**What's shipped, complete:** the backend refresh-token change (returns `refreshToken` in the JSON body on login/register/refresh, accepts it from the body as a fallback to the cookie); the `/mobile` package (Expo SDK 57 + Expo Router + TypeScript); theme module mirroring the web's dark violet/cyan tokens; `httpClient.ts` (axios + SecureStore-backed refresh + auth-logout event bus); `AuthContext.tsx`; real Login/Register/Forgot-Password screens; `(auth)`/`(app)` route groups with `Stack.Protected` auth guarding; a full Profile Setup screen (reused for onboarding and editing); and now **all 7 tabs with real content**:
+- **Dashboard** — profile-empty-state check, rank/XP/streak/achievement-count stat cards.
+- **Plan** — nutrition targets summary, split-style picker, expandable per-day workout cards (warm-up/exercises/cooldown/coaching tips), regenerate button, auto-generates on first visit (same as web).
+- **Log** — full daily-log form (weight, 5-habit checklist, notes), XP/achievement result card on submit.
+- **Leaderboard** — real ranked list with the current user highlighted.
+- **Challenges** — full port of Phase 9's web feature: catalog picker, friend-email invite (`TagInput`), accept/decline, per-participant progress bars.
+- **Coach** — real chat against the live Gemini-backed backend, suggested-question chips, thinking indicator.
+- **Settings** — account info, Edit Profile link, working Change Password, logout.
+
+Two honest simplifications from the web (not functional gaps): no confetti animation on rank-up/achievement (`canvas-confetti` has no RN equivalent installed), and `NutritionSummary` uses flat accent colors instead of the web's gradient fills (would need `expo-linear-gradient`, a new dependency, for a visual-only difference).
+
+**Verified:**
+- Backend: build clean, 34/34 tests unaffected. Live-verified both refresh-token paths (web cookie unchanged, mobile body-token works), the full profile create/read round-trip, plan generation (real Gemini output, 7 days, exercises populated, nutrition targets), leaderboard (real ranked rows), coach chat (real Gemini reply correctly referencing the test account's actual plan), and daily-log + apply-log (XP granted, achievements unlocked) — all with the exact payload shapes the mobile services produce.
+- Mobile: `npx tsc --noEmit` clean, `npx expo lint` clean (one pre-existing-pattern warning matching the web's own `AuthContext.tsx`, not new). `npx expo export --platform web` bundles cleanly (1036 modules, 0 errors) — the closest verification available in this environment to actually running the app, since there's no simulator/device here; proves the JS/routing/data-layer wiring is structurally sound but does **not** prove native rendering behavior.
+- `npx expo-doctor`'s "duplicate react" flag investigated and confirmed benign (see earlier note) — expected for 3 independent packages in one repo.
+- **User confirmed on a real physical device via Expo Go**: register, login, and logout work end-to-end against the live backend over LAN (caught and fixed two real setup issues along the way — editing `.env.example` instead of `.env`, and a malformed API base URL). This device confirmation predates the Profile Setup/Dashboard-enrichment/Plan/Log/Leaderboard/Challenges/Coach/Settings work above — **a fresh device pass on all of it is the one remaining verification step.**
 
 ---
 

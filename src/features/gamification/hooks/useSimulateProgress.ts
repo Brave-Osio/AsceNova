@@ -65,6 +65,8 @@ export function useSimulateProgress() {
         // have persisted RANK_UP/ACHIEVEMENT notifications — refresh the bell.
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(user.id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount(user.id) });
+        // Same real pipeline also recomputes any active challenges' progress.
+        queryClient.invalidateQueries({ queryKey: queryKeys.challenges.mine(user.id) });
       }
 
       // Fired once for the whole batch, not per simulated day — 45 rapid

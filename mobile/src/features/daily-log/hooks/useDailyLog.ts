@@ -4,13 +4,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { upsertLog } from '../../../services/logService';
 import { applyDailyLog } from '../../../services/progressService';
 import { queryKeys } from '../../../lib/queryKeys';
-import { showErrorToast } from '../../../lib/toast';
-import { fireConfetti } from '../../../lib/confetti';
-import { getRankForXp } from '../../../engines/rankEngine';
 import { getTodayDateString } from '../../../utils/dateUtils';
 import { validateNumberInRange } from '../../../utils/validation';
+import { getErrorMessage } from '../../../lib/errors';
 import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
-import type { UserProgress } from '../../../types/gamification.types';
 
 export interface DailyLogFormState {
   weightKg: string;
@@ -23,19 +20,12 @@ export interface SubmitResult {
   newAchievementTitles: string[];
 }
 
-const INITIAL_STATE: DailyLogFormState = {
-  weightKg: '',
-  habits: DEFAULT_HABITS,
-  notes: '',
-};
+const INITIAL_STATE: DailyLogFormState = { weightKg: '', habits: DEFAULT_HABITS, notes: '' };
 
 /**
- * Orchestrates the daily-log write path, now fully backend-driven:
- * upsertLog (DailyProgress) -> applyDailyLog (streak/XP/achievements).
- * Gamification is fully cut over as of this domain — unlike the interim
- * dual-write period, a backend failure here means the submission's
- * gamification effects genuinely don't happen, surfaced via the error
- * toast, rather than silently falling back to a local computation.
+ * Mirrors the web app's useDailyLog.ts — same upsertLog -> applyDailyLog
+ * pipeline. No confetti here (canvas-confetti has no RN equivalent
+ * installed yet) — the XP/achievement result card below still shows.
  */
 export function useDailyLog() {
   const { user } = useAuth();
@@ -53,9 +43,7 @@ export function useDailyLog() {
     setForm((prev) => ({ ...prev, habits: { ...prev.habits, [habit]: checked } }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
+  async function handleSubmit() {
     const weightError = validateNumberInRange(Number(form.weightKg), 30, 300, 'Weight (kg)');
     if (weightError) {
       setError(weightError);
@@ -64,12 +52,7 @@ export function useDailyLog() {
     setError(null);
 
     const today = getTodayDateString();
-    const input = {
-      date: today,
-      weightKg: Number(form.weightKg),
-      habits: form.habits,
-      notes: form.notes.trim(),
-    };
+    const input = { date: today, weightKg: Number(form.weightKg), habits: form.habits, notes: form.notes.trim() };
 
     setIsSubmitting(true);
     try {
@@ -81,17 +64,9 @@ export function useDailyLog() {
         });
       }
 
-      const previousXp = user
-        ? queryClient.getQueryData<UserProgress>(queryKeys.progress.detail(user.id))?.totalXp ?? 0
-        : 0;
-
       const result = await applyDailyLog(today);
       if (user) {
         queryClient.setQueryData(queryKeys.progress.detail(user.id), result.progress);
-        // applyDailyLog may have unlocked achievements or a rank-up, which
-        // now also persist as Notification rows — refresh the bell.
-        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(user.id) });
-        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount(user.id) });
         // applyDailyLog also recomputes progress on any active challenges
         // (server/src/services/challengeService.ts's updateChallengeProgress,
         // called from inside progressService.applyDailyLog's transaction) —
@@ -100,15 +75,10 @@ export function useDailyLog() {
         queryClient.invalidateQueries({ queryKey: queryKeys.challenges.mine(user.id) });
       }
 
-      const rankedUp = getRankForXp(previousXp) !== getRankForXp(result.progress.totalXp);
-      if (rankedUp || result.newAchievementTitles.length > 0) {
-        fireConfetti();
-      }
-
       setLastResult({ xpGained: result.xpGained, newAchievementTitles: result.newAchievementTitles });
       setForm(INITIAL_STATE);
     } catch (err) {
-      showErrorToast(err);
+      setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

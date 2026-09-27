@@ -40,7 +40,9 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       requestMeta(req),
     );
     setRefreshCookie(res, refreshToken, refreshExpiresAt);
-    res.status(201).json({ user: { id: userId, email: input.email, role: 'USER' }, accessToken });
+    // refreshToken is also returned in the body for non-browser clients (mobile) that
+    // can't rely on an httpOnly cookie surviving app restarts — see docs/ROADMAP.md Phase 10.
+    res.status(201).json({ user: { id: userId, email: input.email, role: 'USER' }, accessToken, refreshToken });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       next(new HttpError(409, 'An account with this email already exists.'));
@@ -58,7 +60,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       requestMeta(req),
     );
     setRefreshCookie(res, refreshToken, refreshExpiresAt);
-    res.json({ user: { id: userId, email: input.email, role }, accessToken });
+    res.json({ user: { id: userId, email: input.email, role }, accessToken, refreshToken });
   } catch (err) {
     next(err);
   }
@@ -66,13 +68,15 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
 export async function refresh(req: Request, res: Response, next: NextFunction) {
   try {
-    const raw = req.cookies?.[REFRESH_COOKIE_NAME];
+    // Browser clients rely on the httpOnly cookie; mobile has no persistent cookie
+    // jar across app restarts, so it stores the token itself and sends it explicitly.
+    const raw = req.cookies?.[REFRESH_COOKIE_NAME] ?? req.body?.refreshToken;
     if (!raw) {
       throw new HttpError(401, 'No refresh token provided');
     }
     const { accessToken, refreshToken, refreshExpiresAt } = await authService.refresh(raw, requestMeta(req));
     setRefreshCookie(res, refreshToken, refreshExpiresAt);
-    res.json({ accessToken });
+    res.json({ accessToken, refreshToken });
   } catch (err) {
     clearRefreshCookie(res);
     next(err);
@@ -81,7 +85,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
 
 export async function logout(req: Request, res: Response, next: NextFunction) {
   try {
-    const raw = req.cookies?.[REFRESH_COOKIE_NAME];
+    const raw = req.cookies?.[REFRESH_COOKIE_NAME] ?? req.body?.refreshToken;
     if (raw) {
       await authService.logout(raw);
     }
