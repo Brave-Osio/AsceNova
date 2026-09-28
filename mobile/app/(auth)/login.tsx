@@ -82,7 +82,7 @@ export default function LoginScreen() {
           Forgot password?
         </Link>
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={styles.footerText}>Don&apos;t have an account?</Text>
           <Link href="/(auth)/register" style={styles.link}>
             Sign up
           </Link>
