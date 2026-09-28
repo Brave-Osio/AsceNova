@@ -24,7 +24,7 @@ export default function ForgotPasswordForm() {
       <div className="space-y-4 text-center">
         <p className="text-sm text-brand-text-secondary">{data.message}</p>
         {data.devResetToken && (
-          <div className="rounded-lg bg-amber-500/10 p-3 text-left text-xs text-amber-300">
+          <div className="rounded-lg bg-amber-500/10 p-3 text-left text-xs text-amber-300 light:text-amber-700">
             <p className="font-semibold">Dev mode only — no email service is wired up yet:</p>
             <Link
               to={`${ROUTES.resetPassword}?token=${data.devResetToken}`}
@@ -59,7 +59,7 @@ export default function ForgotPasswordForm() {
         )}
       />
 
-      {error && <p className="text-sm text-red-400">{getErrorMessage(error)}</p>}
+      {error && <p className="text-sm text-red-400 light:text-red-700">{getErrorMessage(error)}</p>}
 
       <Button type="submit" variant="primary" fullWidth loading={isPending}>
         Send Reset Link

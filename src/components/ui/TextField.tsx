@@ -30,7 +30,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextFiel
         }`}
       />
       {error ? (
-        <span className="mt-1 block text-xs text-red-400">{error}</span>
+        <span className="mt-1 block text-xs text-red-400 light:text-red-700">{error}</span>
       ) : helperText ? (
         <span className="mt-1 block text-xs text-brand-text-muted">{helperText}</span>
       ) : null}

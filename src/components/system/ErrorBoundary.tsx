@@ -39,7 +39,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     return (
       <div className="flex min-h-svh items-center justify-center bg-brand-bg px-4">
         <div className="card max-w-md rounded-3xl p-10 text-center">
-          <AlertTriangle size={40} className="mx-auto text-amber-400" />
+          <AlertTriangle size={40} className="mx-auto text-amber-400 light:text-amber-600" />
           <h1 className="mt-4 text-2xl font-bold text-brand-text">Something went wrong</h1>
           <p className="mt-2 text-brand-text-secondary">
             An unexpected error occurred. Reloading the page usually fixes this.

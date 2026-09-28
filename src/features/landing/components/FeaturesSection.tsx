@@ -7,7 +7,7 @@ const FEATURES: { icon: LucideIcon; title: string; description: string; accent: 
     icon: Flame,
     title: 'Streaks',
     description: 'Build daily momentum. Every consecutive day logged keeps your streak alive and multiplies your XP gains.',
-    accent: 'text-orange-400 bg-orange-500/15',
+    accent: 'text-orange-400 light:text-orange-700 bg-orange-500/15',
   },
   {
     icon: Zap,
@@ -19,13 +19,13 @@ const FEATURES: { icon: LucideIcon; title: string; description: string; accent: 
     icon: Award,
     title: 'Achievements',
     description: 'Unlock badges for milestones — first workout, 7-day streaks, rank promotions, and rare feats of discipline.',
-    accent: 'text-amber-400 bg-amber-500/15',
+    accent: 'text-amber-400 light:text-amber-700 bg-amber-500/15',
   },
   {
     icon: Trophy,
     title: 'Leaderboard',
     description: 'Compete on consistency, not weight loss. The top of the board belongs to the most disciplined.',
-    accent: 'text-cyan-400 bg-cyan-500/15',
+    accent: 'text-cyan-400 light:text-cyan-700 bg-cyan-500/15',
   },
 ];
 

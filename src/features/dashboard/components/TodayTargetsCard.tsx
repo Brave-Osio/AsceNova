@@ -9,7 +9,7 @@ function GoalBadge({ hit, label }: { hit: boolean; label: string }) {
   return (
     <span
       className={`chip px-2 py-0.5 text-[10px] ${
-        hit ? 'bg-green-500/15 text-green-300' : 'bg-brand-card-alt text-brand-text-muted'
+        hit ? 'bg-green-500/15 text-green-300 light:text-green-700' : 'bg-brand-card-alt text-brand-text-muted'
       }`}
     >
       {hit ? <Check size={10} strokeWidth={3} /> : <Minus size={10} strokeWidth={3} />} {label}

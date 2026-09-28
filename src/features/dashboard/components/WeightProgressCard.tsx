@@ -33,7 +33,7 @@ export default function WeightProgressCard() {
         <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Weight Progress</div>
         <div className="flex items-center gap-3">
           {logs.length > 1 && (
-            <span className={`text-xs font-semibold ${delta < 0 ? 'text-green-400' : delta > 0 ? 'text-rose-400' : 'text-brand-text-muted'}`}>
+            <span className={`text-xs font-semibold ${delta < 0 ? 'text-green-400 light:text-green-700' : delta > 0 ? 'text-rose-400 light:text-rose-700' : 'text-brand-text-muted'}`}>
               {deltaSign}{delta.toFixed(1)} kg
             </span>
           )}

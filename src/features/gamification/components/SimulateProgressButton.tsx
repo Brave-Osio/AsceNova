@@ -42,13 +42,13 @@ export default function SimulateProgressButton() {
               Simulated {lastResult.daysSimulated} days
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg bg-brand-card-alt px-3 py-2 text-green-400">
+            <div className="flex items-center gap-2 rounded-lg bg-brand-card-alt px-3 py-2 text-green-400 light:text-green-700">
               <Zap size={14} />
               +{lastResult.xpGained} XP earned
             </div>
 
             {lastResult.newAchievementTitles.length > 0 && (
-              <div className="rounded-lg bg-brand-card-alt px-3 py-2 text-brand-accent">
+              <div className="rounded-lg bg-brand-card-alt px-3 py-2 text-brand-accent-ink">
                 <div className="flex items-center gap-2">
                   <Trophy size={14} />
                   <span>Achievements Unlocked</span>

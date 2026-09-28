@@ -46,7 +46,7 @@ function ExerciseRow({ exercise }: { exercise: WorkoutExercise }) {
           {exercise.targetMuscles.map((muscle) => (
             <span
               key={muscle}
-              className="chip bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-300"
+              className="chip bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-300 light:text-cyan-700"
             >
               {muscle}
             </span>
@@ -101,7 +101,7 @@ function DayDetail({ day }: { day: WorkoutDay }) {
           <ul className="space-y-1 text-xs text-brand-text-secondary">
             {day.coachingTips.map((tip) => (
               <li key={tip} className="flex gap-1.5">
-                <Lightbulb size={12} className="mt-0.5 flex-shrink-0 text-brand-accent" />
+                <Lightbulb size={12} className="mt-0.5 flex-shrink-0 text-brand-accent-ink" />
                 {tip}
               </li>
             ))}

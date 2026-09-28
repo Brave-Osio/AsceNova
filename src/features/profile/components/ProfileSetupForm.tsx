@@ -236,7 +236,7 @@ export default function ProfileSetupForm({
         </div>
       </section>
 
-      {error && <p className="text-sm text-red-400">{getErrorMessage(error)}</p>}
+      {error && <p className="text-sm text-red-400 light:text-red-700">{getErrorMessage(error)}</p>}
 
       <div className="pt-2">
         <Button type="submit" loading={isPending}>

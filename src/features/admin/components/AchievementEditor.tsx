@@ -54,7 +54,7 @@ function AchievementRow({ achievement }: { achievement: AdminAchievement }) {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-brand-text">{achievement.title}</span>
               {!achievement.isActive && (
-                <span className="chip bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">
+                <span className="chip bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300 light:text-amber-700">
                   Inactive
                 </span>
               )}

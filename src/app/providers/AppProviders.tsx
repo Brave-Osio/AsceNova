@@ -5,6 +5,7 @@ import { queryClient } from '../../lib/queryClient';
 import ErrorBoundary from '../../components/system/ErrorBoundary';
 import ToastHost from '../../components/system/ToastHost';
 import { AuthProvider } from '../../context/AuthContext';
+import { ThemeProvider } from '../../context/ThemeContext';
 
 /**
  * Single place to add future app-wide providers without App.tsx
@@ -15,13 +16,15 @@ import { AuthProvider } from '../../context/AuthContext';
 export default function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          {children}
-          <ToastHost />
-          {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-        </AuthProvider>
-      </QueryClientProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            {children}
+            <ToastHost />
+            {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

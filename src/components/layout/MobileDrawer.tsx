@@ -3,6 +3,7 @@ import { X, Zap } from 'lucide-react';
 import { MORE_TAB_LINKS } from '../../constants/navLinks';
 import { useAuth } from '../../context/AuthContext';
 import AuthNavControls from '../../features/auth/components/AuthNavControls';
+import ThemeToggle from '../ui/ThemeToggle';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -74,6 +75,10 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             </li>
           ))}
         </ul>
+
+        <div className="border-t border-brand-border p-4">
+          <ThemeToggle variant="row" />
+        </div>
 
         <div className="border-t border-brand-border p-4">
           <AuthNavControls onNavigate={onClose} />

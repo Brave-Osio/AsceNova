@@ -14,9 +14,9 @@ const STATUS_OPTIONS: { label: string; value: AccountStatus | undefined }[] = [
 ];
 
 const STATUS_BADGE: Record<AccountStatus, string> = {
-  ACTIVE: 'bg-emerald-500/15 text-emerald-300',
-  SUSPENDED: 'bg-amber-500/15 text-amber-300',
-  DELETED: 'bg-red-500/15 text-red-300',
+  ACTIVE: 'bg-emerald-500/15 text-emerald-300 light:text-emerald-700',
+  SUSPENDED: 'bg-amber-500/15 text-amber-300 light:text-amber-700',
+  DELETED: 'bg-red-500/15 text-red-300 light:text-red-700',
 };
 
 export default function UserTable() {
