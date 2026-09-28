@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Award } from 'lucide-react';
 import { useUserProgress } from '../hooks/useUserProgress';
 import { ACHIEVEMENTS } from '../../../constants/achievements';
 
@@ -16,13 +17,13 @@ export default function AchievementCard() {
   ).slice(0, 3);
 
   return (
-    <div className="glass h-full rounded-2xl p-5 flex flex-col">
+    <div className="card h-full rounded-2xl p-5 flex flex-col">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-bold uppercase tracking-widest text-gray-500">
+        <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">
           Achievements
         </div>
 
-        <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-xs font-bold text-violet-300">
+        <span className="chip chip-primary px-2 py-0.5 text-xs">
           {earned.length}/{ACHIEVEMENTS.length}
         </span>
       </div>
@@ -37,21 +38,21 @@ export default function AchievementCard() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: i * 0.05 }}
                 title={`${a.title}: ${a.description}`}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-xl"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-accent/15 text-brand-accent"
               >
-                {a.icon}
+                <Award size={18} strokeWidth={2} />
               </motion.div>
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-center text-sm text-gray-500">
+          <p className="mt-3 text-center text-sm text-brand-text-muted">
             Log your first habit to unlock achievements.
           </p>
         )}
 
         {unearned.length > 0 && (
-          <div className="mt-4 border-t border-white/5 pt-3">
-            <p className="mb-2 text-center text-xs text-gray-600">
+          <div className="mt-4 border-t border-brand-border pt-3">
+            <p className="mb-2 text-center text-xs text-brand-text-muted">
               Up next:
             </p>
 
@@ -60,9 +61,9 @@ export default function AchievementCard() {
                 <div
                   key={a.id}
                   title={`${a.title}: ${a.description}`}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/8 bg-white/3 text-xl grayscale opacity-40"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-card-alt text-brand-text-muted"
                 >
-                  {a.icon}
+                  <Award size={18} strokeWidth={2} />
                 </div>
               ))}
             </div>

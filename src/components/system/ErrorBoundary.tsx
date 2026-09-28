@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -36,18 +37,17 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     }
 
     return (
-      <div className="relative flex min-h-svh items-center justify-center bg-mesh px-4">
-        <div className="orb w-80 h-80 bg-violet-600/10 -top-20 -left-32" />
-        <div className="glass-strong relative max-w-md rounded-3xl border border-white/8 p-10 text-center">
-          <span className="text-5xl">⚠️</span>
-          <h1 className="mt-4 text-2xl font-bold text-white">Something went wrong</h1>
-          <p className="mt-2 text-gray-400">
+      <div className="flex min-h-svh items-center justify-center bg-brand-bg px-4">
+        <div className="card max-w-md rounded-3xl p-10 text-center">
+          <AlertTriangle size={40} className="mx-auto text-amber-400" />
+          <h1 className="mt-4 text-2xl font-bold text-brand-text">Something went wrong</h1>
+          <p className="mt-2 text-brand-text-secondary">
             An unexpected error occurred. Reloading the page usually fixes this.
           </p>
           <button
             type="button"
             onClick={this.handleReload}
-            className="mt-6 inline-block rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+            className="mt-6 inline-block rounded-full bg-brand-primary px-6 py-3 text-sm font-bold text-white hover:bg-brand-primary-light transition-colors"
           >
             Reload App
           </button>

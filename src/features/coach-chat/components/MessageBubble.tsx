@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import ReactMarkdown, { type Components } from 'react-markdown';
+import { Bot, User } from 'lucide-react';
 import type { ChatMessage } from '../types';
 
 interface MessageBubbleProps {
@@ -13,17 +14,17 @@ interface MessageBubbleProps {
  */
 const markdownComponents: Components = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+  strong: ({ children }) => <strong className="font-semibold text-brand-text">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   ul: ({ children }) => <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>,
   ol: ({ children }) => <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>,
   li: ({ children }) => <li>{children}</li>,
   a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-violet-300 underline">
+    <a href={href} target="_blank" rel="noreferrer" className="text-brand-primary-light underline">
       {children}
     </a>
   ),
-  code: ({ children }) => <code className="rounded bg-white/10 px-1 py-0.5 text-xs">{children}</code>,
+  code: ({ children }) => <code className="rounded bg-brand-card-alt px-1 py-0.5 text-xs">{children}</code>,
 };
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
@@ -38,8 +39,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     >
       {/* Coach avatar */}
       {!isUser && (
-        <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10 text-sm">
-          🤖
+        <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-brand-primary/15 text-brand-primary-light">
+          <Bot size={14} />
         </div>
       )}
 
@@ -47,7 +48,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
           isUser
             ? 'chat-user-bubble text-white rounded-br-md'
-            : 'chat-coach-bubble text-gray-200 rounded-bl-md'
+            : 'chat-coach-bubble text-brand-text-secondary rounded-bl-md'
         }`}
       >
         {isUser ? (
@@ -59,8 +60,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
       {/* User avatar */}
       {isUser && (
-        <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm">
-          👤
+        <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-brand-card-alt text-brand-text-secondary">
+          <User size={14} />
         </div>
       )}
     </motion.div>

@@ -33,8 +33,8 @@ export default function GoalForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass flex flex-col gap-4 rounded-2xl p-5">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">New Goal</div>
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-4 rounded-2xl p-5">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">New Goal</div>
       <OptionSelector label="Goal Type" value={goalType} options={GOAL_TYPE_OPTIONS} onChange={setGoalType} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <TextField

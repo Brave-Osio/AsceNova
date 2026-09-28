@@ -1,27 +1,25 @@
 import { motion } from 'framer-motion';
+import { Bot } from 'lucide-react';
 import ChatWindow from '../../features/coach-chat/components/ChatWindow';
 
 export default function CoachChatPage() {
   return (
-    <section className="relative mx-auto max-w-2xl px-4 py-12 sm:py-16">
-      {/* Ambient glow */}
-      <div className="orb w-96 h-96 bg-violet-600/10 -top-32 left-1/2 -translate-x-1/2" />
-
+    <section className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
         <div className="flex items-center gap-4">
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/15">
-            <span className="text-2xl">🤖</span>
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-[var(--color-brand-bg)] pulse-dot" />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-primary/15 text-brand-primary-light">
+            <Bot size={26} />
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-brand-bg pulse-dot" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-white sm:text-3xl">
-              AI Fitness <span className="text-gradient-violet">Coach</span>
+            <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">
+              AI Fitness <span className="text-brand-primary-light">Coach</span>
             </h1>
-            <p className="mt-0.5 text-sm text-gray-400">
+            <p className="mt-0.5 text-sm text-brand-text-secondary">
               Online · Answers instantly · Knows your goals
             </p>
           </div>
@@ -30,10 +28,7 @@ export default function CoachChatPage() {
         {/* Topic chips */}
         <div className="mt-6 flex flex-wrap gap-2">
           {['Workouts', 'Nutrition', 'Supplements', 'Recovery', 'XP & Ranks'].map((topic) => (
-            <span
-              key={topic}
-              className="rounded-full border border-white/8 bg-white/4 px-3 py-1 text-xs text-gray-400"
-            >
+            <span key={topic} className="chip px-3 py-1 text-xs">
               {topic}
             </span>
           ))}

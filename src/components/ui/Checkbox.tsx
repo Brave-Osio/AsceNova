@@ -6,12 +6,12 @@ interface CheckboxProps {
 
 export default function Checkbox({ label, checked, onChange }: CheckboxProps) {
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-200">
+    <label className="flex items-center gap-2 text-sm text-brand-text">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-white/20 bg-white/5 text-violet-600 focus:ring-violet-500"
+        className="h-4 w-4 rounded border-brand-border bg-brand-card text-brand-primary focus:ring-brand-primary/60"
       />
       {label}
     </label>

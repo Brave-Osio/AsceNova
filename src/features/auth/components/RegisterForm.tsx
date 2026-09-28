@@ -91,9 +91,9 @@ export default function RegisterForm() {
         Create Account
       </Button>
 
-      <p className="text-center text-sm text-gray-400">
+      <p className="text-center text-sm text-brand-text-secondary">
         Already have an account?{' '}
-        <Link to={ROUTES.login} className="text-violet-300 hover:text-violet-200">
+        <Link to={ROUTES.login} className="text-brand-primary-light hover:text-white">
           Log in
         </Link>
       </p>

@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
+import { Calendar, Trophy, Zap } from 'lucide-react';
 import { useSimulateProgress } from '../hooks/useSimulateProgress';
 
 export default function SimulateProgressButton() {
   const { simulate, isSimulating, lastResult } = useSimulateProgress();
 
   return (
-    <div className="glass h-full rounded-2xl p-5 flex flex-col">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">
+    <div className="card h-full rounded-2xl p-5 flex flex-col">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">
         Demo Tools
       </div>
 
@@ -15,7 +16,7 @@ export default function SimulateProgressButton() {
           type="button"
           onClick={() => simulate(45)}
           disabled={isSimulating}
-          className="mt-3 w-full rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-3 text-sm font-bold text-white transition-all hover:from-violet-500 hover:to-purple-500 hover:shadow-[0_0_20px_rgba(124,58,237,0.35)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+          className="mt-3 w-full rounded-full bg-brand-primary py-3 text-sm font-bold text-white transition-colors hover:bg-brand-primary-light disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
         >
           {isSimulating ? (
             <span className="flex items-center justify-center gap-2">
@@ -23,7 +24,10 @@ export default function SimulateProgressButton() {
               Simulating...
             </span>
           ) : (
-            '⚡ Simulate 45 Days Progress'
+            <span className="flex items-center justify-center gap-2">
+              <Zap size={16} />
+              Simulate 45 Days Progress
+            </span>
           )}
         </button>
 
@@ -33,20 +37,20 @@ export default function SimulateProgressButton() {
             animate={{ opacity: 1, height: 'auto' }}
             className="mt-3 space-y-2 text-xs"
           >
-            <div className="flex items-center gap-2 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-violet-300">
-              <span>📅</span>
+            <div className="flex items-center gap-2 rounded-lg bg-brand-card-alt px-3 py-2 text-brand-primary-light">
+              <Calendar size={14} />
               Simulated {lastResult.daysSimulated} days
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-green-300">
-              <span>⚡</span>
+            <div className="flex items-center gap-2 rounded-lg bg-brand-card-alt px-3 py-2 text-green-400">
+              <Zap size={14} />
               +{lastResult.xpGained} XP earned
             </div>
 
             {lastResult.newAchievementTitles.length > 0 && (
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-300">
+              <div className="rounded-lg bg-brand-card-alt px-3 py-2 text-brand-accent">
                 <div className="flex items-center gap-2">
-                  <span>🏆</span>
+                  <Trophy size={14} />
                   <span>Achievements Unlocked</span>
                 </div>
 
@@ -60,7 +64,7 @@ export default function SimulateProgressButton() {
           </motion.div>
         )}
 
-        <p className="mt-3 text-center text-xs text-gray-600">
+        <p className="mt-3 text-center text-xs text-brand-text-muted">
           Instantly simulates 45 days of fitness activity for demonstration
           purposes.
         </p>

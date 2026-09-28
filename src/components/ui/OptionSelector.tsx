@@ -13,7 +13,7 @@ export default function OptionSelector<T extends string>({
 }: OptionSelectorProps<T>) {
   return (
     <div>
-      <span className="mb-1 block text-sm font-medium text-gray-300">{label}</span>
+      <span className="mb-1.5 block text-sm font-medium text-brand-text-secondary">{label}</span>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const isSelected = option.value === value;
@@ -22,10 +22,10 @@ export default function OptionSelector<T extends string>({
               key={option.value}
               type="button"
               onClick={() => onChange(option.value)}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                 isSelected
-                  ? 'border-violet-500 bg-violet-500/20 text-white'
-                  : 'border-white/10 text-gray-400 hover:border-white/20 hover:text-gray-200'
+                  ? 'border-brand-primary bg-brand-primary text-white'
+                  : 'border-brand-border bg-brand-card text-brand-text-secondary hover:border-white/20 hover:text-brand-text'
               }`}
             >
               {option.label}

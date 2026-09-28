@@ -1,10 +1,10 @@
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { daysBetween, getTodayDateString } from '../../../utils/dateUtils';
 
-function Row({ label, value, valueClass = 'text-white' }: { label: string; value: string; valueClass?: string }) {
+function Row({ label, value, valueClass = 'text-brand-text' }: { label: string; value: string; valueClass?: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-gray-500">{label}</span>
+      <span className="text-brand-text-muted">{label}</span>
       <span className={`font-bold ${valueClass}`}>{value}</span>
     </div>
   );
@@ -30,11 +30,11 @@ export default function WeeklySummaryCard() {
     sortedByDate.length >= 2 ? sortedByDate[sortedByDate.length - 1].weightKg - sortedByDate[0].weightKg : null;
 
   return (
-    <div className="glass h-full rounded-2xl p-5 flex flex-col">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">This Week</div>
+    <div className="card h-full rounded-2xl p-5 flex flex-col">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">This Week</div>
       {daysLogged === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-gray-500 text-center">No logs yet this week.</p>
+          <p className="text-sm text-brand-text-muted text-center">No logs yet this week.</p>
         </div>
       ) : (
         <div className="mt-3 space-y-2 text-sm">
@@ -46,7 +46,7 @@ export default function WeeklySummaryCard() {
             <Row
               label="Weight change"
               value={`${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg`}
-              valueClass={weightChange < 0 ? 'text-green-400' : weightChange > 0 ? 'text-rose-400' : 'text-gray-300'}
+              valueClass={weightChange < 0 ? 'text-green-400' : weightChange > 0 ? 'text-rose-400' : 'text-brand-text-secondary'}
             />
           )}
         </div>

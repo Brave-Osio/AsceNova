@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Check, Minus, Droplet } from 'lucide-react';
 import { usePlanGenerator } from '../../fitness-plan/hooks/usePlanGenerator';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { getTodayDateString } from '../../../utils/dateUtils';
@@ -7,11 +8,11 @@ import { ROUTES } from '../../../constants/routes';
 function GoalBadge({ hit, label }: { hit: boolean; label: string }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-        hit ? 'bg-green-500/15 text-green-300' : 'bg-white/5 text-gray-500'
+      className={`chip px-2 py-0.5 text-[10px] ${
+        hit ? 'bg-green-500/15 text-green-300' : 'bg-brand-card-alt text-brand-text-muted'
       }`}
     >
-      {hit ? '✓' : '—'} {label}
+      {hit ? <Check size={10} strokeWidth={3} /> : <Minus size={10} strokeWidth={3} />} {label}
     </span>
   );
 }
@@ -24,10 +25,10 @@ export default function TodayTargetsCard() {
 
   if (!plan) {
     return (
-      <div className="glass h-full rounded-2xl p-5 flex flex-col">
-        <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Today's Targets</div>
+      <div className="card h-full rounded-2xl p-5 flex flex-col">
+        <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Today's Targets</div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-gray-500 text-center">Generate a plan to see your daily targets.</p>
+          <p className="text-sm text-brand-text-muted text-center">Generate a plan to see your daily targets.</p>
         </div>
       </div>
     );
@@ -37,38 +38,40 @@ export default function TodayTargetsCard() {
   const todayLog = logs?.find((l) => l.date === getTodayDateString());
 
   return (
-    <div className="glass h-full rounded-2xl p-5 flex flex-col">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Today's Targets</div>
+    <div className="card h-full rounded-2xl p-5 flex flex-col">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Today's Targets</div>
       <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-2.5 text-sm">
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-600">Calories</div>
-          <div className="font-bold text-white">{calories} kcal</div>
+          <div className="text-[10px] uppercase tracking-wide text-brand-text-muted">Calories</div>
+          <div className="font-bold text-brand-text">{calories} kcal</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-600">Protein</div>
-          <div className="font-bold text-white">{proteinGrams}g</div>
+          <div className="text-[10px] uppercase tracking-wide text-brand-text-muted">Protein</div>
+          <div className="font-bold text-brand-text">{proteinGrams}g</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-600">Carbs</div>
-          <div className="font-bold text-white">{carbsGrams}g</div>
+          <div className="text-[10px] uppercase tracking-wide text-brand-text-muted">Carbs</div>
+          <div className="font-bold text-brand-text">{carbsGrams}g</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-600">Fat</div>
-          <div className="font-bold text-white">{fatGrams}g</div>
+          <div className="text-[10px] uppercase tracking-wide text-brand-text-muted">Fat</div>
+          <div className="font-bold text-brand-text">{fatGrams}g</div>
         </div>
       </div>
       <div className="mt-2.5 flex items-center justify-between text-xs">
-        <span className="text-gray-500">💧 Water target</span>
-        <span className="font-semibold text-cyan-300">{waterLiters}L</span>
+        <span className="flex items-center gap-1 text-brand-text-muted">
+          <Droplet size={12} /> Water target
+        </span>
+        <span className="font-semibold text-brand-primary-light">{waterLiters}L</span>
       </div>
-      <div className="mt-3 border-t border-white/5 pt-3">
+      <div className="mt-3 border-t border-brand-border pt-3">
         {todayLog ? (
           <div className="flex flex-wrap gap-1.5">
             <GoalBadge hit={todayLog.habits.hitWaterGoal} label="Water goal" />
             <GoalBadge hit={todayLog.habits.hitProteinGoal} label="Protein goal" />
           </div>
         ) : (
-          <Link to={ROUTES.log} className="text-xs font-medium text-violet-300 hover:text-violet-200">
+          <Link to={ROUTES.log} className="text-xs font-medium text-brand-primary-light hover:text-white">
             Log today's progress →
           </Link>
         )}

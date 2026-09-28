@@ -9,9 +9,9 @@ const GOAL_LABEL: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  ACTIVE: 'border-violet-500/30 bg-violet-500/10 text-violet-300',
-  COMPLETED: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-  ABANDONED: 'border-gray-500/30 bg-gray-500/10 text-gray-400',
+  ACTIVE: 'chip-primary',
+  COMPLETED: 'bg-emerald-500/15 text-emerald-300',
+  ABANDONED: 'bg-brand-card-alt text-brand-text-muted',
 };
 
 export default function GoalCard({ goal }: { goal: Goal }) {
@@ -19,21 +19,21 @@ export default function GoalCard({ goal }: { goal: Goal }) {
   const isPending = pendingGoalId === goal.id;
 
   return (
-    <div className="glass rounded-2xl p-5">
+    <div className="card rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="font-bold text-white">{GOAL_LABEL[goal.goalType] ?? goal.goalType}</span>
-          {goal.targetValue != null && <span className="ml-2 text-sm text-gray-400">Target: {goal.targetValue}kg</span>}
+          <span className="font-bold text-brand-text">{GOAL_LABEL[goal.goalType] ?? goal.goalType}</span>
+          {goal.targetValue != null && <span className="ml-2 text-sm text-brand-text-secondary">Target: {goal.targetValue}kg</span>}
         </div>
-        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[goal.status]}`}>
+        <span className={`chip px-2 py-0.5 text-xs ${STATUS_BADGE[goal.status]}`}>
           {goal.status}
         </span>
       </div>
 
       {goal.targetDate && (
-        <p className="mt-2 text-xs text-gray-500">By {new Date(goal.targetDate).toLocaleDateString()}</p>
+        <p className="mt-2 text-xs text-brand-text-muted">By {new Date(goal.targetDate).toLocaleDateString()}</p>
       )}
-      {goal.progressNote && <p className="mt-2 text-sm text-gray-400">{goal.progressNote}</p>}
+      {goal.progressNote && <p className="mt-2 text-sm text-brand-text-secondary">{goal.progressNote}</p>}
 
       {goal.status === 'ACTIVE' && (
         <div className="mt-4 flex gap-2">

@@ -1,3 +1,4 @@
+import { TrendingUp } from 'lucide-react';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import SimpleLineChart from '../../../components/charts/SimpleLineChart';
 
@@ -6,10 +7,10 @@ export default function WeightProgressCard() {
 
   if (logs.length === 0) {
     return (
-      <div className="glass rounded-2xl p-5 sm:col-span-2">
-        <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Weight Progress</div>
-        <div className="mt-4 flex items-center gap-3 text-sm text-gray-500">
-          <span className="text-2xl">📈</span>
+      <div className="card rounded-2xl p-5 sm:col-span-2">
+        <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Weight Progress</div>
+        <div className="mt-4 flex items-center gap-3 text-sm text-brand-text-muted">
+          <TrendingUp size={22} />
           <span>Your weight trend will appear here once you start logging.</span>
         </div>
       </div>
@@ -27,16 +28,16 @@ export default function WeightProgressCard() {
   const deltaSign = delta > 0 ? '+' : '';
 
   return (
-    <div className="glass rounded-2xl p-5 sm:col-span-2">
+    <div className="card rounded-2xl p-5 sm:col-span-2">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Weight Progress</div>
+        <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Weight Progress</div>
         <div className="flex items-center gap-3">
           {logs.length > 1 && (
-            <span className={`text-xs font-semibold ${delta < 0 ? 'text-green-400' : delta > 0 ? 'text-rose-400' : 'text-gray-400'}`}>
+            <span className={`text-xs font-semibold ${delta < 0 ? 'text-green-400' : delta > 0 ? 'text-rose-400' : 'text-brand-text-muted'}`}>
               {deltaSign}{delta.toFixed(1)} kg
             </span>
           )}
-          <span className="text-sm font-bold text-white">{latestWeight} kg</span>
+          <span className="text-sm font-bold text-brand-text">{latestWeight} kg</span>
         </div>
       </div>
       <div className="mt-3">

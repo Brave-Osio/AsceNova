@@ -62,7 +62,7 @@ export default function LoginForm() {
             <Checkbox label="Remember me" checked={field.value} onChange={field.onChange} />
           )}
         />
-        <Link to={ROUTES.forgotPassword} className="text-xs text-violet-300 hover:text-violet-200">
+        <Link to={ROUTES.forgotPassword} className="text-xs text-brand-primary-light hover:text-white">
           Forgot password?
         </Link>
       </div>
@@ -73,9 +73,9 @@ export default function LoginForm() {
         Log In
       </Button>
 
-      <p className="text-center text-sm text-gray-400">
+      <p className="text-center text-sm text-brand-text-secondary">
         Don't have an account?{' '}
-        <Link to={ROUTES.register} className="text-violet-300 hover:text-violet-200">
+        <Link to={ROUTES.register} className="text-brand-primary-light hover:text-white">
           Sign up
         </Link>
       </p>

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Bot, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { getChatHistory } from '../../../services/coachService';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -41,27 +42,27 @@ export default function CoachTeaserCard() {
   const lastCoachMessage = [...(messages ?? [])].reverse().find((m) => m.sender === 'coach');
 
   return (
-    <div className="glass h-full rounded-2xl p-5 flex flex-col">
+    <div className="card h-full rounded-2xl p-5 flex flex-col">
       <div className="flex items-center gap-2">
-        <span className="text-lg">🤖</span>
-        <span className="text-xs font-bold uppercase tracking-widest text-gray-500">AI Coach</span>
+        <Bot size={16} className="text-brand-primary-light" />
+        <span className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">AI Coach</span>
       </div>
       <div className="mt-3 flex-1">
         {lastCoachMessage ? (
-          <p className="line-clamp-4 text-sm leading-relaxed text-gray-300">
+          <p className="line-clamp-4 text-sm leading-relaxed text-brand-text-secondary">
             {stripMarkdown(lastCoachMessage.text)}
           </p>
         ) : (
-          <p className="text-sm leading-relaxed text-gray-500">
+          <p className="text-sm leading-relaxed text-brand-text-muted">
             Ask your coach anything about training, recovery, or your progress.
           </p>
         )}
       </div>
       <Link
         to={ROUTES.coach}
-        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-300 hover:text-violet-200"
+        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-light hover:text-white"
       >
-        Continue chatting →
+        Continue chatting <ArrowRight size={12} />
       </Link>
     </div>
   );

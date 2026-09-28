@@ -1,30 +1,32 @@
 import { motion } from 'framer-motion';
+import { User, ClipboardList, NotebookPen, Rocket } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const STEPS = [
+const STEPS: { number: string; icon: LucideIcon; title: string; description: string; color: string }[] = [
   {
     number: '01',
-    icon: '👤',
+    icon: User,
     title: 'Set up your profile',
     description: 'Tell us your goal, fitness level, and equipment access in under 60 seconds.',
-    color: 'text-violet-400',
+    color: 'text-brand-primary-light',
   },
   {
     number: '02',
-    icon: '📋',
+    icon: ClipboardList,
     title: 'Get your AI plan',
     description: 'Receive a full workout split with exercises, sets, and reps, plus personalized calorie and macro targets.',
     color: 'text-cyan-400',
   },
   {
     number: '03',
-    icon: '📝',
+    icon: NotebookPen,
     title: 'Log daily habits',
     description: 'Check off workouts, water, protein, sleep, and steps every day to earn XP.',
     color: 'text-amber-400',
   },
   {
     number: '04',
-    icon: '🚀',
+    icon: Rocket,
     title: 'Rank up & compete',
     description: 'Earn XP, build streaks, unlock achievements, and climb the leaderboard.',
     color: 'text-rose-400',
@@ -42,11 +44,11 @@ export default function HowItWorksSection() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-gray-400 mb-5">
+          <span className="chip px-4 py-1.5 text-xs mb-5">
             The Process
           </span>
-          <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-            How it <span className="text-gradient-cyan">works</span>
+          <h2 className="text-2xl font-extrabold text-brand-text sm:text-3xl">
+            How it <span className="text-brand-primary-light">works</span>
           </h2>
         </motion.div>
 
@@ -58,23 +60,19 @@ export default function HowItWorksSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group relative flex gap-5 rounded-2xl border border-white/8 bg-white/4 p-6 card-hover"
+              className="relative flex gap-5 card card-hover rounded-2xl p-6"
             >
               {/* Step number */}
               <div className="flex-shrink-0">
-                <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                  <span className="text-xl leading-none">{step.icon}</span>
+                <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-brand-card-alt">
+                  <step.icon size={18} className={step.color} />
                   <span className={`text-[10px] font-bold mt-0.5 ${step.color}`}>{step.number}</span>
                 </div>
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">{step.title}</h3>
-                <p className="mt-1.5 text-sm text-gray-400 leading-relaxed">{step.description}</p>
+                <h3 className="text-base font-bold text-brand-text">{step.title}</h3>
+                <p className="mt-1.5 text-sm text-brand-text-secondary leading-relaxed">{step.description}</p>
               </div>
-              {/* Connector line for sm+ */}
-              {index < 3 && (
-                <div className="absolute -bottom-2 left-6 hidden h-4 w-px bg-gradient-to-b from-white/10 to-transparent sm:block" />
-              )}
             </motion.div>
           ))}
         </div>
