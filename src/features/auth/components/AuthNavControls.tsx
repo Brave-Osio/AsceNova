@@ -22,7 +22,7 @@ export default function AuthNavControls({ onNavigate }: AuthNavControlsProps) {
           logout();
           onNavigate?.();
         }}
-        className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-200"
+        className="rounded-full px-3 py-1.5 text-xs font-medium text-brand-text-secondary transition-colors hover:bg-brand-card hover:text-brand-text"
       >
         Log Out
       </button>
@@ -33,7 +33,7 @@ export default function AuthNavControls({ onNavigate }: AuthNavControlsProps) {
     <Link
       to={ROUTES.login}
       onClick={onNavigate}
-      className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-violet-300 transition-colors hover:bg-violet-500/20"
+      className="rounded-full bg-brand-card-alt px-3 py-1.5 text-xs font-bold text-brand-primary-light transition-colors hover:bg-brand-card"
     >
       Log In
     </Link>

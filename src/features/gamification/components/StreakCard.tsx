@@ -1,3 +1,4 @@
+import { Flame } from 'lucide-react';
 import { useUserProgress } from '../hooks/useUserProgress';
 
 export default function StreakCard() {
@@ -7,18 +8,18 @@ export default function StreakCard() {
   if (isLoading) return null;
 
   return (
-    <div className="glass rounded-2xl p-5 h-full">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Streak</div>
+    <div className="card rounded-2xl p-5 h-full">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Streak</div>
       <div className="mt-3 flex items-end gap-2">
-        <span className="fire text-3xl leading-none">🔥</span>
-        <span className="text-4xl font-black text-white leading-none">{streak}</span>
-        <span className="mb-1 text-sm text-gray-400 font-semibold">days</span>
+        <Flame size={26} className="text-brand-accent" strokeWidth={2.25} />
+        <span className="text-4xl font-black text-brand-text leading-none">{streak}</span>
+        <span className="mb-1 text-sm text-brand-text-secondary font-semibold">days</span>
       </div>
-      <div className="mt-2 text-xs text-gray-500">
+      <div className="mt-2 text-xs text-brand-text-muted">
         {streak === 0
           ? 'Log today to start your streak!'
           : streak >= 7
-          ? '🎉 Week streak — legendary!'
+          ? 'Week streak — legendary!'
           : 'Keep it going!'}
       </div>
     </div>

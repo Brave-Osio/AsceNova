@@ -95,7 +95,7 @@ const DEFAULT_VALUES: ProfileFormValues = {
 };
 
 function SectionHeading({ children }: { children: string }) {
-  return <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-violet-300">{children}</h2>;
+  return <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-primary-light">{children}</h2>;
 }
 
 interface ProfileSetupFormProps {
@@ -130,7 +130,7 @@ export default function ProfileSetupForm({
   if (isProfileLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
       </div>
     );
   }

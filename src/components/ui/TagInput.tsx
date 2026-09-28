@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
+import { X } from 'lucide-react';
 
 interface TagInputProps {
   label: string;
@@ -38,21 +39,21 @@ export default function TagInput({ label, value, onChange, placeholder }: TagInp
 
   return (
     <div>
-      <span className="mb-1 block text-sm font-medium text-gray-300">{label}</span>
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus-within:ring-2 focus-within:ring-violet-500">
+      <span className="mb-1.5 block text-sm font-medium text-brand-text-secondary">{label}</span>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-border bg-brand-card px-4 py-2.5 focus-within:ring-2 focus-within:ring-brand-primary/60">
         {value.map((tag) => (
           <span
             key={tag}
-            className="flex items-center gap-1 rounded-full bg-violet-500/20 px-2.5 py-1 text-xs font-medium text-violet-200"
+            className="chip chip-primary px-2.5 py-1 text-xs"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="text-violet-300 hover:text-white"
+              className="text-brand-primary-light hover:text-white"
               aria-label={`Remove ${tag}`}
             >
-              ×
+              <X size={12} strokeWidth={2.5} />
             </button>
           </span>
         ))}
@@ -63,7 +64,7 @@ export default function TagInput({ label, value, onChange, placeholder }: TagInp
           onKeyDown={handleKeyDown}
           onBlur={commitDraft}
           placeholder={value.length === 0 ? placeholder : undefined}
-          className="min-w-[8rem] flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none"
+          className="min-w-[8rem] flex-1 bg-transparent text-sm text-brand-text placeholder:text-brand-text-muted focus:outline-none"
         />
       </div>
     </div>

@@ -18,14 +18,14 @@ export default function SplitStylePicker({ selected, onSelect }: SplitStylePicke
             onClick={() => onSelect(option.value)}
             className={`rounded-xl border px-4 py-3 text-left transition-colors ${
               isSelected
-                ? 'border-violet-500 bg-violet-500/15'
-                : 'border-white/10 bg-white/5 hover:border-white/20'
+                ? 'border-brand-primary bg-brand-primary/15'
+                : 'border-brand-border bg-brand-card hover:border-white/20'
             }`}
           >
-            <div className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+            <div className={`text-sm font-semibold ${isSelected ? 'text-brand-text' : 'text-brand-text-secondary'}`}>
               {option.label}
             </div>
-            <div className="mt-0.5 text-xs text-gray-500">{option.description}</div>
+            <div className="mt-0.5 text-xs text-brand-text-muted">{option.description}</div>
           </button>
         );
       })}

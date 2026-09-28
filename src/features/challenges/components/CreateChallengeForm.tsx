@@ -23,8 +23,8 @@ export default function CreateChallengeForm() {
   if (catalog.length === 0) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="glass flex flex-col gap-4 rounded-2xl p-5">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Start a Challenge</div>
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-4 rounded-2xl p-5">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Start a Challenge</div>
       <OptionSelector
         label="Challenge"
         value={challengeId || catalog[0].id}

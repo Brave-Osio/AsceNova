@@ -20,29 +20,29 @@ export default function WorkoutCalendarCard() {
   });
 
   return (
-    <div className="glass h-full rounded-2xl p-5 flex flex-col">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Workout Calendar</div>
-      <p className="mt-1 text-[10px] text-gray-600">Last {DAYS_TO_SHOW} days</p>
+    <div className="card h-full rounded-2xl p-5 flex flex-col">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Workout Calendar</div>
+      <p className="mt-1 text-[10px] text-brand-text-muted">Last {DAYS_TO_SHOW} days</p>
       <div className="mt-3 grid grid-cols-7 gap-1.5">
         {days.map(({ dateStr, log }) => {
           const isToday = dateStr === todayStr;
-          const color = log?.habits.workoutCompleted ? 'bg-violet-500' : log ? 'bg-white/15' : 'bg-white/5';
+          const color = log?.habits.workoutCompleted ? 'bg-brand-primary' : log ? 'bg-brand-card-alt' : 'bg-white/5';
           return (
             <div
               key={dateStr}
               title={dateStr}
-              className={`aspect-square rounded-md ${color} ${isToday ? 'ring-1 ring-violet-300' : ''}`}
+              className={`aspect-square rounded-md ${color} ${isToday ? 'ring-1 ring-brand-primary-light' : ''}`}
             />
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-brand-text-muted">
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-sm bg-violet-500" />
+          <span className="h-2 w-2 rounded-sm bg-brand-primary" />
           Workout
         </span>
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-sm bg-white/15" />
+          <span className="h-2 w-2 rounded-sm bg-brand-card-alt" />
           Logged
         </span>
         <span className="flex items-center gap-1">

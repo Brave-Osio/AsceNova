@@ -47,23 +47,23 @@ function AchievementRow({ achievement }: { achievement: AdminAchievement }) {
 
   if (!isEditing) {
     return (
-      <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-0">
+      <div className="flex items-center justify-between gap-4 border-b border-brand-border py-3 last:border-0">
         <div className="flex items-center gap-3">
           <span className="text-xl">{achievement.icon}</span>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-white">{achievement.title}</span>
+              <span className="font-semibold text-brand-text">{achievement.title}</span>
               {!achievement.isActive && (
-                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-300">
+                <span className="chip bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">
                   Inactive
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500">{achievement.description}</p>
+            <p className="text-xs text-brand-text-muted">{achievement.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">+{achievement.xpReward} XP</span>
+          <span className="text-xs text-brand-text-muted">+{achievement.xpReward} XP</span>
           <Button size="sm" variant="secondary" onClick={startEditing}>
             Edit
           </Button>
@@ -73,7 +73,7 @@ function AchievementRow({ achievement }: { achievement: AdminAchievement }) {
   }
 
   return (
-    <div className="border-b border-white/5 py-4 last:border-0">
+    <div className="border-b border-brand-border py-4 last:border-0">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <TextField label="Icon (emoji)" value={form.icon} onChange={(v) => setForm((f) => ({ ...f, icon: v }))} />
         <TextField label="Title" value={form.title} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
@@ -114,13 +114,13 @@ export default function AchievementEditor() {
   const { achievements, isLoading } = useAdminAchievements();
 
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Achievements</div>
+    <div className="card rounded-2xl p-5">
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Achievements</div>
       <div className="mt-3">
         {isLoading ? (
-          <p className="py-4 text-center text-sm text-gray-500">Loading…</p>
+          <p className="py-4 text-center text-sm text-brand-text-muted">Loading…</p>
         ) : achievements.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-500">No achievements found.</p>
+          <p className="py-4 text-center text-sm text-brand-text-muted">No achievements found.</p>
         ) : (
           achievements.map((a) => <AchievementRow key={a.id} achievement={a} />)
         )}
