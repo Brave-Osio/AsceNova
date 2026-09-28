@@ -78,7 +78,7 @@ export default function ChangePasswordForm() {
         )}
       />
 
-      {error && <p className="text-sm text-red-400">{getErrorMessage(error)}</p>}
+      {error && <p className="text-sm text-red-400 light:text-red-700">{getErrorMessage(error)}</p>}
 
       <Button type="submit" variant="secondary" loading={isPending}>
         Change Password

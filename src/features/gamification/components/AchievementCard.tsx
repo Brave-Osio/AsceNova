@@ -38,7 +38,7 @@ export default function AchievementCard() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: i * 0.05 }}
                 title={`${a.title}: ${a.description}`}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-accent/15 text-brand-accent"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-accent/15 text-brand-accent-ink"
               >
                 <Award size={18} strokeWidth={2} />
               </motion.div>

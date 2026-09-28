@@ -46,7 +46,7 @@ export default function WeeklySummaryCard() {
             <Row
               label="Weight change"
               value={`${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg`}
-              valueClass={weightChange < 0 ? 'text-green-400' : weightChange > 0 ? 'text-rose-400' : 'text-brand-text-secondary'}
+              valueClass={weightChange < 0 ? 'text-green-400 light:text-green-700' : weightChange > 0 ? 'text-rose-400 light:text-rose-700' : 'text-brand-text-secondary'}
             />
           )}
         </div>

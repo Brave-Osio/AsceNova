@@ -45,7 +45,7 @@ export default function RankCard() {
           </div>
         </div>
       ) : (
-        <div className="mt-4 flex items-center gap-1.5 text-xs text-brand-accent font-semibold">
+        <div className="mt-4 flex items-center gap-1.5 text-xs text-brand-accent-ink font-semibold">
           <Trophy size={14} />
           Highest rank reached!
         </div>

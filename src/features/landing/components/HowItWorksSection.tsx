@@ -15,21 +15,21 @@ const STEPS: { number: string; icon: LucideIcon; title: string; description: str
     icon: ClipboardList,
     title: 'Get your AI plan',
     description: 'Receive a full workout split with exercises, sets, and reps, plus personalized calorie and macro targets.',
-    color: 'text-cyan-400',
+    color: 'text-cyan-400 light:text-cyan-700',
   },
   {
     number: '03',
     icon: NotebookPen,
     title: 'Log daily habits',
     description: 'Check off workouts, water, protein, sleep, and steps every day to earn XP.',
-    color: 'text-amber-400',
+    color: 'text-amber-400 light:text-amber-700',
   },
   {
     number: '04',
     icon: Rocket,
     title: 'Rank up & compete',
     description: 'Earn XP, build streaks, unlock achievements, and climb the leaderboard.',
-    color: 'text-rose-400',
+    color: 'text-rose-400 light:text-rose-700',
   },
 ];
 

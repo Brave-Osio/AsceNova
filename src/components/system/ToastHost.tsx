@@ -12,8 +12,8 @@ export default function ToastHost() {
       toastOptions={{
         style: {
           background: 'var(--color-brand-card)',
-          color: '#e2e8f0',
-          border: '1px solid rgba(255,255,255,0.08)',
+          color: 'var(--color-brand-text)',
+          border: '1px solid var(--color-brand-border)',
           borderRadius: '0.75rem',
           fontSize: '0.875rem',
         },

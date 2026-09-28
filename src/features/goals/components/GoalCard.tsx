@@ -10,7 +10,7 @@ const GOAL_LABEL: Record<string, string> = {
 
 const STATUS_BADGE: Record<string, string> = {
   ACTIVE: 'chip-primary',
-  COMPLETED: 'bg-emerald-500/15 text-emerald-300',
+  COMPLETED: 'bg-emerald-500/15 text-emerald-300 light:text-emerald-700',
   ABANDONED: 'bg-brand-card-alt text-brand-text-muted',
 };
 

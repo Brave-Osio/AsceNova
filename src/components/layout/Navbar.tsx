@@ -4,6 +4,7 @@ import { ROUTES } from '../../constants/routes';
 import { NAV_LINKS } from '../../constants/navLinks';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
 import AuthNavControls from '../../features/auth/components/AuthNavControls';
+import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -48,6 +49,7 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <NotificationBell />
           <AuthNavControls />
         </div>

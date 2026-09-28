@@ -8,9 +8,9 @@ interface LeaderboardTableProps {
 }
 
 const PODIUM_CLASS: Record<number, string> = {
-  1: 'bg-amber-500/15 text-amber-300',
-  2: 'bg-slate-400/15 text-slate-300',
-  3: 'bg-orange-600/15 text-orange-300',
+  1: 'bg-amber-500/15 text-amber-300 light:text-amber-700',
+  2: 'bg-slate-400/15 text-slate-300 light:text-slate-700',
+  3: 'bg-orange-600/15 text-orange-300 light:text-orange-700',
 };
 
 export default function LeaderboardTable({ rows }: LeaderboardTableProps) {
@@ -61,7 +61,7 @@ export default function LeaderboardTable({ rows }: LeaderboardTableProps) {
             <span className="text-right text-sm font-bold text-brand-primary-light">
               {row.xp.toLocaleString()}
             </span>
-            <span className="flex items-center justify-end gap-1 text-right text-sm text-orange-400 font-semibold">
+            <span className="flex items-center justify-end gap-1 text-right text-sm text-orange-400 light:text-orange-700 font-semibold">
               <Flame size={13} /> {row.streak}
             </span>
           </motion.div>

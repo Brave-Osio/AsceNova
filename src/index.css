@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Lets components write `light:text-foo-700` to override a color only when
+ * `data-theme="light"` is set on <html> — used for the handful of Tailwind
+ * palette shades (status badges, categorical accent colors) that were tuned
+ * for a near-black background and need a darker variant for contrast on a
+ * light one. Most of the app doesn't need this — it reads brand-* tokens
+ * via CSS custom properties, which already flip themselves (see the
+ * :root[data-theme="light"] block below). */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
 @theme {
   --color-rank-iron: #6b7280;
   --color-rank-bronze: #d97706;
@@ -20,6 +29,11 @@
   --color-brand-primary: #7c5cfc;
   --color-brand-primary-light: #8f73ff;
   --color-brand-accent: #d6f84c;
+  /* Lime (--color-brand-accent) is tuned to sit on chip backgrounds with dark
+   * text — it's far too light to use as plain text/icon color on the page
+   * background in light mode. This is that same accent hue, but readable on
+   * its own (used by RankCard/StreakCard's accent icon+text, not chips). */
+  --color-brand-accent-ink: #d6f84c;
   --color-brand-text: #f5f3fa;
   --color-brand-text-secondary: #9c97ae;
   --color-brand-text-muted: #6b6680;
@@ -27,6 +41,22 @@
 
 :root {
   color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-brand-bg: #f6f4fb;
+  --color-brand-surface: #ffffff;
+  --color-brand-card: #ffffff;
+  --color-brand-card-alt: #efecf7;
+  --color-brand-border: rgba(23, 19, 31, 0.1);
+  --color-brand-primary: #7c5cfc;
+  --color-brand-primary-light: #6942e8;
+  --color-brand-accent-ink: #4d7c0f;
+  --color-brand-text: #17131f;
+  --color-brand-text-secondary: #5b5568;
+  --color-brand-text-muted: #8a8499;
 }
 
 * {
