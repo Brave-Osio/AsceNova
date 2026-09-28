@@ -34,7 +34,7 @@ export default function LogScreen() {
         />
 
         <View style={styles.checklistHeader}>
-          <Text style={styles.checklistLabel}>Today's Checklist</Text>
+          <Text style={styles.checklistLabel}>Today&apos;s Checklist</Text>
           <Text style={styles.checklistCount}>{checkedCount} / {HABIT_ITEMS.length} done</Text>
         </View>
         {HABIT_ITEMS.map((item) => (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ROUTES } from '../../constants/routes';
@@ -11,14 +11,18 @@ import type { WorkoutSplitStyle } from '../../types/plan.types';
 
 export default function PlanGeneratorPage() {
   const { plan, profile, isLoading, regenerate } = usePlanGenerator();
-  const [selectedStyle, setSelectedStyle] = useState<WorkoutSplitStyle>('PUSH_PULL_LEGS');
+  const [selectedStyle, setSelectedStyle] = useState<WorkoutSplitStyle>(plan?.splitStyle ?? 'PUSH_PULL_LEGS');
 
-  // Keep the picker in sync with whatever style the active plan
-  // actually used, so reopening the page doesn't silently show a
-  // different selection than what generated the plan you're looking at.
-  useEffect(() => {
-    if (plan) setSelectedStyle(plan.splitStyle ?? 'PUSH_PULL_LEGS');
-  }, [plan]);
+  // Keep the picker in sync with whatever style the active plan actually
+  // used, so reopening the page doesn't silently show a different selection
+  // than what generated the plan you're looking at. Adjusted during render
+  // (React's documented pattern for deriving state from a changed prop)
+  // rather than in an effect, to avoid an extra cascading render.
+  const [lastPlanId, setLastPlanId] = useState(plan?.id);
+  if (plan && plan.id !== lastPlanId) {
+    setLastPlanId(plan.id);
+    setSelectedStyle(plan.splitStyle ?? 'PUSH_PULL_LEGS');
+  }
 
   if (!profile) {
     return (

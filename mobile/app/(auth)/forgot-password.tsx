@@ -44,7 +44,7 @@ export default function ForgotPasswordScreen() {
         {sent ? (
           <Text style={styles.info}>
             If an account with that email exists, a reset link has been sent. Check your email, then use the link on
-            the web app to finish resetting your password (mobile doesn't have its own reset-password screen yet).
+            the web app to finish resetting your password (mobile doesn&apos;t have its own reset-password screen yet).
           </Text>
         ) : (
           <>

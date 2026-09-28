@@ -30,13 +30,13 @@ The brief assumes a greenfield localStorage-based prototype. That was **out of d
 | Notifications | ✅ Implemented (Phase 4 done) | Achievement unlocks and rank-ups now persist as `Notification` rows (in addition to the existing inline `apply-log` response fields, unchanged). Notification bell in the navbar with unread badge, dropdown, mark-read/mark-all-read. Reminders and admin/system notification types are out of scope (no scheduler/admin panel yet). See "Phase 4" below. |
 | Settings | ✅ Implemented (Phase 7 done) | `/settings` shows account info, an edit-profile section (reuses the onboarding form/endpoint, no redirect), and change-password-while-logged-in. Theme/notification-prefs deferred — see "Phase 7" below. |
 | UI/UX redesign | 🟡 Partial | Already dark-themed with glassmorphism (`.glass`/`.glass-strong`), purple/violet accents, Framer Motion animations, custom Tailwind v4 theme tokens — closer to the brief's aesthetic goal than a typical capstone UI. Hand-rolled component primitives (no shadcn/Radix). No light mode (not requested elsewhere). No loading skeletons/empty-state system audited yet at the per-page level. |
-| Code quality | 🟡 Partial | Feature-sliced architecture, typed services, Zod validation, React Query caching already in place — genuinely good bones. Known debt: `requireRole` dead code, `StreakHistory`/`LeaderboardEntry` unused models, zod v3/v4 split, no CI pipeline at all. |
+| Code quality | ✅ Implemented (Phase 14 done) | Feature-sliced architecture, typed services, Zod validation, React Query caching. CI pipeline now runs build/lint/test across all three packages on every PR; backend, frontend, and mobile all lint with 0 errors; Zod aligned to v4 across frontend and backend; unused schema models (`StreakHistory`/`LeaderboardEntry`/`AdminAnalyticsSnapshot`/`Report`/`SystemSetting`) documented in-schema as a deliberate decision, not an oversight. See "Phase 14" below. |
 
-## Technical debt / risks noted (not yet fixed)
+## Technical debt / risks noted
 
-1. **No CI** — no `.github/workflows` or any CI config; typecheck/lint/test only run locally.
-2. **Zod version split** — server on v3, client on v4. Not urgent, but worth aligning before either side does more schema-sharing work.
-3. **Password reset has no real email delivery** — currently dev-only token echo; needs a transactional email provider before this is production-safe.
+1. ~~**No CI**~~ — fixed in Phase 14: `.github/workflows/ci.yml` runs build/lint/test (frontend, backend) and typecheck/lint (mobile) on every PR and push to `main`.
+2. ~~**Zod version split**~~ — fixed in Phase 14: backend upgraded from v3 to v4, matching the frontend.
+3. **Password reset has no real email delivery** — currently dev-only token echo; needs a transactional email provider before this is production-safe. Still open, explicitly deferred (see Phase 7).
 
 ## Org-policy flags for later phases
 
@@ -64,7 +64,7 @@ Everything previously deferred (real email delivery, email verification, theme t
 11. **Phase 11 — Admin achievement management.** ✅ Done. Scoped to achievement metadata (title/description/icon/XP/active-toggle) only — see "Phase 11" below.
 12. **Phase 12 — Goal CRUD.** ✅ Done. Wires up the already-existing-but-unused `Goal` model — see "Phase 12" below.
 13. **Phase 13 — Activity-aware recommendations.** ✅ Done. Feeds real logged adherence/progress into the workout-generation prompt — see "Phase 13" below.
-14. **Phase 14 — Code quality / hygiene (moved to last, per instruction).** 🔲 Planned, not started. CI pipeline, Zod version reconciliation, backend ESLint config fix, documented decision on unused schema models. See "Phase 14" below.
+14. **Phase 14 — Code quality / hygiene (moved to last, per instruction).** ✅ Done. CI pipeline (3 packages), Zod version reconciliation, backend + mobile ESLint config fixes, documented decision on unused schema models, all three packages lint with 0 errors. See "Phase 14" below.
 
 Each phase lands as its own PR/set of PRs, preserving all currently-working features, with `npm run build`/`test` green on both the frontend and `server/` before merging.
 
@@ -523,21 +523,27 @@ Phase 13 is done.
 
 ---
 
-# Phase 14 (detailed): Code quality / hygiene (moved to last, per instruction) — 🔲 PLANNED, NOT YET IMPLEMENTED
+# Phase 14 (detailed): Code quality / hygiene (moved to last, per instruction) — ✅ DONE
 
 ## Context
 
-The original roadmap's "Ongoing" line, never started — resequenced to run last, after all the new thesis-driven phases above.
+The original roadmap's "Ongoing" line, never started — resequenced to run last, after all the new thesis-driven phases above. Expanded from a 2-job CI plan to 3 jobs partway through, since `mobile/` now exists as a real package (it didn't when this phase was first scoped).
 
-## Work
+## What shipped
 
-1. **CI pipeline** — `.github/workflows/ci.yml`, two jobs (frontend + backend), running on every PR.
-2. **Fix backend ESLint** — add a proper Node-scoped flat config so backend lint actually runs instead of erroring on the frontend's browser-scoped config.
-3. **Zod version reconciliation** — recommend upgrading the backend (v3→v4) rather than downgrading the frontend, but check for v3→v4 breaking changes first.
-4. **Document the unused-model decision** — `StreakHistory`, `LeaderboardEntry`, `Report`, `SystemSetting` stay unused (live-computation deliberately preferred); add doc-comments in `schema.prisma` making that explicit.
+1. **CI pipeline** — `.github/workflows/ci.yml`, three jobs on every PR and push to `main`: frontend (`npm ci && npm run build && npm run lint && npm test`), backend (same, in `server/`, with fake-but-schema-valid env vars for `config/env.ts`'s eager Zod validation — safe because the existing test suite only unit-tests pure functions, never a real DB/Gemini call), mobile (`npm ci && npm run typecheck && npm run lint` — no `npm test`, since this package has no test suite).
+2. **Fixed backend ESLint** — `server/eslint.config.js` (new): Node-scoped flat config (`globals.node` instead of the root config's `globals.browser`), same `@typescript-eslint` ruleset shape as root, with an `argsIgnorePattern: '^_'` rule override matching the codebase's existing underscore-prefix convention for Express's positional error-handler params. Backend lint now runs its own real config instead of erroring on the frontend's.
+3. **Fixed a related bug found while wiring the above**: root's `eslint.config.js` had no `server`/`mobile` exclusion, so it was implicitly linting those packages' files too (with the wrong, browser-scoped globals) whenever ESLint's nested-config auto-discovery didn't kick in — not reliable to depend on for CI, since a CI job installing only one package's deps wouldn't have another's `node_modules` available for a nested config's own plugin imports to resolve. Fixed with an explicit `globalIgnores(['dist', 'server', 'mobile'])` in the root config.
+4. **Zod version reconciliation** — upgraded `server` from `^3.24.1` to `^4.4.3` (frontend was already on v4). De-risked by cataloging every Zod API touchpoint server-side first (only basic, stable methods used — `.flatten()`'s shape is unchanged between v3 and v4). Verified via build/tests plus a live round-trip: a malformed request still gets a correct 400 with the same `.flatten()` error shape, a valid request still succeeds.
+5. **Documented the unused-model decision** — added "INTENTIONALLY UNUSED (documented, not an oversight)" doc-comments above `StreakHistory`, `LeaderboardEntry`, `AdminAnalyticsSnapshot`, `Report`, and `SystemSetting` in `schema.prisma`, each with a specific 2–4 line rationale (e.g. `LeaderboardEntry`'s: the leaderboard is computed live because this codebase has no scheduler/cron on a Vercel serverless deploy target — the same reasoning already applied consistently since Phase 6). No migration needed — `npx prisma validate` confirmed the schema is still valid.
+6. **Two more gaps found and fixed during final verification, beyond the original 4-item plan** (both were "is the CI actually green" checks, not scope creep — a CI pipeline that's red on day one from pre-existing debt defeats the point of adding it):
+   - **`mobile/` had zero ESLint setup at all** — no config file, no `eslint`/`eslint-config-expo` devDependency. `npm run lint` (`expo lint`) failed outright ("all files matching the glob pattern are ignored"), since Expo's normal first-run auto-setup didn't run non-interactively. Fixed by installing `eslint` + `eslint-config-expo` via `npx expo install --dev` and adding `mobile/eslint.config.js` (flat config extending `eslint-config-expo/flat`, per the current SDK 57 docs at docs.expo.dev/guides/using-eslint). This surfaced 5 real (if trivial) `react/no-unescaped-entities` errors — raw apostrophes in JSX text across `leaderboard.tsx`, `log.tsx`, `plan.tsx`, `forgot-password.tsx`, `login.tsx` — fixed by escaping them (`&apos;`). One remaining `import/no-named-as-default-member` warning on `httpClient.ts`'s `axios.create(...)` call is a correct, intentional use of the default export — left as a warning, doesn't fail the build.
+   - **Frontend's 2 lint errors, carried forward as "pre-existing" since Phase 1, finally fixed**: `AuthContext.tsx`'s `react-refresh/only-export-components` (exporting the `useAuth` hook alongside the `AuthProvider` component breaks Fast Refresh's HMR boundary detection) — fixed with a scoped, commented `eslint-disable-next-line` rather than extracting `useAuth` into its own file, since that would mean updating ~26 import sites across the codebase for a pure HMR nicety with no functional effect (out of proportion for this pass). `PlanGeneratorPage.tsx`'s `react-hooks/set-state-in-effect` (calling `setSelectedStyle` synchronously inside a `useEffect` keyed on `plan`) — fixed using React's documented "adjust state during render" pattern (comparing `plan.id` against a tracked `lastPlanId` and calling `setState` directly in the render body when it changes) instead of an effect, which avoids the extra cascading render the lint rule warns about.
 
 ## Verification
 
-1. Confirm the new CI workflow runs and goes green on both jobs.
-2. `server`: `npm run lint` runs its own real config.
-3. Both packages: `npm run build && npm test` after the Zod bump.
+All three packages verified clean, together, as a final consolidated pass (not just per-change): backend (`npm run build && npm run lint && npm test`, both normally and with the exact fake CI env vars — 40/40 tests, 0 lint errors), frontend (`npm run build && npm run lint && npm test` — 21/21 tests, 0 lint errors, down from the 2 "pre-existing" errors every prior phase in this session carried forward), mobile (`npx tsc --noEmit && npm run lint` — 0 errors, 1 harmless warning). This is the first point in the whole engagement where all three packages lint with zero errors simultaneously.
+
+Not independently exercised: an actual GitHub Actions run of `.github/workflows/ci.yml` (would require pushing/opening a PR) — confidence comes from having locally reproduced each job's exact steps and env, including the backend job's fake-env-var approach.
+
+Phase 14 is done. This was the last planned phase in the roadmap.

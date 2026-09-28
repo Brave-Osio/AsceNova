@@ -481,6 +481,10 @@ model AchievementProgress {
   @@map("achievement_progress")
 }
 
+// INTENTIONALLY UNUSED (documented, not an oversight — see docs/ROADMAP.md
+// Phase 14). UserProgress.currentStreak/longestStreak already carry the
+// live state; nothing in this codebase currently needs a per-day audit
+// trail of streak transitions. Populate only if that need arises later.
 model StreakHistory {
   id               String   @id @default(cuid())
   userId           String
@@ -555,6 +559,12 @@ model ChallengeParticipant {
   @@map("challenge_participants")
 }
 
+// INTENTIONALLY UNUSED (documented, not an oversight — see docs/ROADMAP.md
+// Phase 14). The leaderboard is computed live from UserProgress on every
+// request (leaderboardService.ts) instead of precomputed into this table
+// — this codebase has no scheduler/cron (Vercel serverless deploy target)
+// to ever keep a materialized copy fresh, and live queries have been fast
+// enough at the current scale. Revisit if that changes.
 model LeaderboardEntry {
   id            String   @id @default(cuid())
   userId        String   @unique
@@ -625,6 +635,11 @@ model Notification {
 
 // ===================== ADMIN =====================
 
+// INTENTIONALLY UNUSED (documented, not an oversight — see docs/ROADMAP.md
+// Phase 14). Admin analytics (server/src/services/adminService.ts's
+// getStats()) are computed live via Prisma aggregate queries on every
+// request instead of precomputed into daily snapshots — same "no
+// scheduler, live queries are fast enough" reasoning as LeaderboardEntry.
 model AdminAnalyticsSnapshot {
   id                  String             @id @default(cuid())
   snapshotDate        DateTime           @unique @db.Date
@@ -642,6 +657,11 @@ model AdminAnalyticsSnapshot {
   @@map("admin_analytics_snapshots")
 }
 
+// INTENTIONALLY UNUSED (documented, not an oversight — see docs/ROADMAP.md
+// Phase 14). No admin reporting/export-generation feature has been built
+// yet beyond the CSV user export in adminService.ts, which doesn't need
+// an async job record — this model anticipates a future async report
+// pipeline (e.g. a large export queued and polled for), not built yet.
 model Report {
   id                String       @id @default(cuid())
   generatedByUserId String
@@ -658,6 +678,11 @@ model Report {
   @@map("reports")
 }
 
+// INTENTIONALLY UNUSED (documented, not an oversight — see docs/ROADMAP.md
+// Phase 14). Anticipates a future admin-configurable settings feature
+// (feature flags, app-wide toggles, etc.) — nothing in this codebase
+// currently needs runtime-configurable settings; everything is either an
+// env var (deploy-time config) or per-user data.
 model SystemSetting {
   id              String   @id @default(cuid())
   key             String   @unique

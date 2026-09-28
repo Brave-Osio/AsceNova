@@ -54,7 +54,7 @@ export default function PlanScreen() {
       <Text style={styles.eyebrow}>✨ AI-Generated Plan</Text>
       <Text style={styles.title}>Your Fitness Plan</Text>
       <Text style={styles.subtitle}>
-        Tailored for {profile.fullName}'s {profile.goal.replace(/_/g, ' ').toLowerCase()} goal
+        Tailored for {profile.fullName}&apos;s {profile.goal.replace(/_/g, ' ').toLowerCase()} goal
       </Text>
 
       <Text style={styles.sectionHeading}>Nutrition Targets</Text>

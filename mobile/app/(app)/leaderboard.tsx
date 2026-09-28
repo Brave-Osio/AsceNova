@@ -38,7 +38,7 @@ export default function LeaderboardScreen() {
         contentContainerStyle={styles.container}
         ListHeaderComponent={<Text style={styles.title}>Leaderboard</Text>}
         renderItem={({ item }) => <Row row={item} />}
-        ListEmptyComponent={<Text style={styles.empty}>No one's on the board yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>No one&apos;s on the board yet.</Text>}
       />
     </View>
   );

@@ -37,7 +37,7 @@ npm run prisma:migrate           # create + apply a dev migration
 npm run prisma:seed               # seed achievements + optional dev admin user (no-ops in production)
 npm run prisma:studio              # browse the DB
 ```
-Backend `npm run lint` currently has no working ESLint config of its own (falls through to the frontend's browser-scoped root config and errors) — known gap, not yet fixed.
+Backend has its own Node-scoped `server/eslint.config.js` (separate from the frontend's browser-scoped root config).
 
 ### Mobile (`mobile/`)
 ```

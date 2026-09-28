@@ -6,7 +6,12 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // server/ and mobile/ are independent packages with their own eslint
+  // config and node_modules (see CLAUDE.md) — explicitly excluded here
+  // rather than relying on ESLint's nested-config auto-discovery, so this
+  // config (and any CI job that only installs root's deps) never depends
+  // on those other packages' node_modules being present.
+  globalIgnores(['dist', 'server', 'mobile']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
