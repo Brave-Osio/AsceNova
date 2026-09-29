@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, type KeyboardTypeOptions } from 'react-native';
-import { colors, spacing, radius } from '../../theme';
+import { spacing, radius, type ColorPalette } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 interface TextFieldProps {
   label: string;
@@ -24,6 +26,9 @@ export default function TextField({
   error,
   helperText,
 }: TextFieldProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -42,20 +47,22 @@ export default function TextField({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { marginBottom: spacing.md },
-  label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    color: colors.textPrimary,
-    fontSize: 15,
-  },
-  inputError: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 12, marginTop: spacing.xs },
-  helper: { color: colors.textMuted, fontSize: 12, marginTop: spacing.xs },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    container: { marginBottom: spacing.md },
+    label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+      color: colors.textPrimary,
+      fontSize: 15,
+    },
+    inputError: { borderColor: colors.danger },
+    error: { color: colors.danger, fontSize: 12, marginTop: spacing.xs },
+    helper: { color: colors.textMuted, fontSize: 12, marginTop: spacing.xs },
+  });
+}

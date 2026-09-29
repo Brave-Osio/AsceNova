@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -20,7 +20,8 @@ import {
 } from '../../src/features/profile/schemas';
 import { useProfileForm, toFormValues } from '../../src/features/profile/hooks/useProfileForm';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
-import { colors, spacing, typography } from '../../src/theme';
+import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 
 const GENDER_LABELS: Record<(typeof genderOptions)[number], string> = {
   MALE: 'Male',
@@ -83,11 +84,13 @@ const DEFAULT_VALUES: ProfileFormValues = {
   sleepHoursTarget: '',
 };
 
-function SectionHeading({ children }: { children: string }) {
+function SectionHeading({ children, styles }: { children: string; styles: ReturnType<typeof createStyles> }) {
   return <Text style={styles.sectionHeading}>{children}</Text>;
 }
 
 export default function ProfileSetupScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: existingProfile, isLoading: isProfileLoading } = useProfile();
   const { mutateAsync, isPending } = useProfileForm();
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +120,7 @@ export default function ProfileSetupScreen() {
   if (isProfileLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.violet} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -127,7 +130,7 @@ export default function ProfileSetupScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>{existingProfile ? 'Edit Profile' : 'Set Up Your Profile'}</Text>
 
-        <SectionHeading>Identity</SectionHeading>
+        <SectionHeading styles={styles}>Identity</SectionHeading>
         <Controller name="fullName" control={control} render={({ field }) => (
           <TextField label="Full Name" value={field.value} onChangeText={field.onChange} autoCapitalize="words" placeholder="Juan Dela Cruz" error={errors.fullName?.message} />
         )} />
@@ -141,7 +144,7 @@ export default function ProfileSetupScreen() {
           <OptionSelector label="Gender" value={field.value} options={toOptions(genderOptions, GENDER_LABELS)} onChange={field.onChange} />
         )} />
 
-        <SectionHeading>Body & Goals</SectionHeading>
+        <SectionHeading styles={styles}>Body & Goals</SectionHeading>
         <Controller name="heightCm" control={control} render={({ field }) => (
           <TextField label="Height (cm)" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="175" error={errors.heightCm?.message} />
         )} />
@@ -155,7 +158,7 @@ export default function ProfileSetupScreen() {
           <OptionSelector label="Goal" value={field.value} options={toOptions(goalOptions, GOAL_LABELS)} onChange={field.onChange} />
         )} />
 
-        <SectionHeading>Training</SectionHeading>
+        <SectionHeading styles={styles}>Training</SectionHeading>
         <Controller name="fitnessLevel" control={control} render={({ field }) => (
           <OptionSelector label="Fitness Level" value={field.value} options={toOptions(fitnessLevelOptions, FITNESS_LEVEL_LABELS)} onChange={field.onChange} />
         )} />
@@ -172,7 +175,7 @@ export default function ProfileSetupScreen() {
           <TextField label="Workout Days / Week" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="4" helperText="Optional" error={errors.workoutFrequency?.message} />
         )} />
 
-        <SectionHeading>Schedule</SectionHeading>
+        <SectionHeading styles={styles}>Schedule</SectionHeading>
         <Controller name="preferredWorkoutTime" control={control} render={({ field }) => (
           <OptionSelector label="Preferred Workout Time" value={field.value} options={toOptions(preferredWorkoutTimeOptions, WORKOUT_TIME_LABELS)} onChange={field.onChange} />
         )} />
@@ -190,11 +193,13 @@ export default function ProfileSetupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-  container: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
-  title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
-  sectionHeading: { ...typography.label, color: colors.violetLight, marginTop: spacing.md, marginBottom: spacing.sm },
-  error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
+    container: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
+    title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
+    sectionHeading: { ...typography.label, color: colors.primaryLight, marginTop: spacing.md, marginBottom: spacing.sm },
+    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+  });
+}

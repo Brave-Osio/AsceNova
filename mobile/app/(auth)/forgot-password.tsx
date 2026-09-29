@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -8,9 +8,12 @@ import Button from '../../src/components/ui/Button';
 import { getErrorMessage } from '../../src/lib/errors';
 import { forgotPasswordRequest } from '../../src/services/authService';
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '../../src/features/auth/schemas';
-import { colors, spacing, typography } from '../../src/theme';
+import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 
 export default function ForgotPasswordScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -79,12 +82,14 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
-  info: { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 20 },
-  error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-  link: { color: colors.violetLight, fontWeight: '600' },
-  footer: { alignItems: 'center', marginTop: spacing.lg },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
+    title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
+    info: { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 20 },
+    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+    link: { color: colors.primaryLight, fontWeight: '600' },
+    footer: { alignItems: 'center', marginTop: spacing.lg },
+  });
+}

@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import Button from '../../../components/ui/Button';
 import { useChallengeActions } from '../hooks/useChallengeActions';
 import type { ChallengeInvite } from '../../../types/challenge.types';
-import { colors, spacing, radius } from '../../../theme';
+import { spacing, radius, type ColorPalette } from '../../../theme';
+import { useAppTheme } from '../../../context/ThemeContext';
 
 function daysLeft(periodEnd: string): number {
   return Math.max(0, Math.ceil((new Date(periodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
@@ -11,6 +13,8 @@ function daysLeft(periodEnd: string): number {
 
 /** Mirrors the web app's ChallengeCard.tsx. */
 export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
   const { respond, pendingInviteId } = useChallengeActions();
 
@@ -63,23 +67,25 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
-  header: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
-  headerText: { flex: 1 },
-  title: { color: colors.textPrimary, fontWeight: '700', fontSize: 15 },
-  description: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
-  badge: { borderWidth: 1, borderColor: colors.violet, backgroundColor: 'rgba(124,58,237,0.1)', borderRadius: radius.sm, paddingVertical: 2, paddingHorizontal: spacing.sm, alignSelf: 'flex-start' },
-  badgeExpired: { borderColor: colors.textMuted, backgroundColor: 'transparent' },
-  badgeText: { color: colors.violetLight, fontSize: 11, fontWeight: '600' },
-  badgeTextExpired: { color: colors.textMuted },
-  participants: { marginTop: spacing.sm, gap: spacing.sm },
-  participantRow: {},
-  participantHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  participantName: { color: colors.textSecondary, fontSize: 12 },
-  participantStat: { color: colors.textMuted, fontSize: 12 },
-  progressTrack: { height: 6, backgroundColor: colors.border, borderRadius: 3, marginTop: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: colors.violet, borderRadius: 3 },
-  progressFillDone: { backgroundColor: colors.success },
-  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    card: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
+    header: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
+    headerText: { flex: 1 },
+    title: { color: colors.textPrimary, fontWeight: '700', fontSize: 15 },
+    description: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
+    badge: { backgroundColor: colors.primaryMuted, borderRadius: radius.sm, paddingVertical: 2, paddingHorizontal: spacing.sm, alignSelf: 'flex-start' },
+    badgeExpired: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+    badgeText: { color: colors.primaryLight, fontSize: 11, fontWeight: '600' },
+    badgeTextExpired: { color: colors.textMuted },
+    participants: { marginTop: spacing.sm, gap: spacing.sm },
+    participantRow: {},
+    participantHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+    participantName: { color: colors.textSecondary, fontSize: 12 },
+    participantStat: { color: colors.textMuted, fontSize: 12 },
+    progressTrack: { height: 6, backgroundColor: colors.border, borderRadius: 3, marginTop: 4, overflow: 'hidden' },
+    progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
+    progressFillDone: { backgroundColor: colors.success },
+    actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  });
+}

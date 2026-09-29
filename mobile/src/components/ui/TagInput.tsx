@@ -1,6 +1,8 @@
+import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
-import { useState } from 'react';
-import { colors, spacing, radius } from '../../theme';
+import { X } from 'lucide-react-native';
+import { spacing, radius, type ColorPalette } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 interface TagInputProps {
   label: string;
@@ -11,6 +13,8 @@ interface TagInputProps {
 
 /** Mirrors the web app's TagInput.tsx — free-form chip entry, comma/submit commits. */
 export default function TagInput({ label, value, onChange, placeholder }: TagInputProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [draft, setDraft] = useState('');
 
   function commit() {
@@ -32,7 +36,8 @@ export default function TagInput({ label, value, onChange, placeholder }: TagInp
         <View style={styles.tags}>
           {value.map((tag, i) => (
             <Pressable key={tag} style={styles.tag} onPress={() => removeAt(i)}>
-              <Text style={styles.tagText}>{tag} ✕</Text>
+              <Text style={styles.tagText}>{tag}</Text>
+              <X size={11} color={colors.primaryLight} strokeWidth={2.5} />
             </Pressable>
           ))}
         </View>
@@ -58,20 +63,30 @@ export default function TagInput({ label, value, onChange, placeholder }: TagInp
   );
 }
 
-const styles = StyleSheet.create({
-  container: { marginBottom: spacing.md },
-  label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.xs },
-  tag: { backgroundColor: 'rgba(124,58,237,0.15)', borderRadius: radius.sm, paddingVertical: 4, paddingHorizontal: spacing.sm },
-  tagText: { color: colors.violetLight, fontSize: 12, fontWeight: '600' },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    color: colors.textPrimary,
-    fontSize: 14,
-  },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    container: { marginBottom: spacing.md },
+    label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
+    tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.xs },
+    tag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primaryMuted,
+      borderRadius: radius.sm,
+      paddingVertical: 4,
+      paddingHorizontal: spacing.sm,
+    },
+    tagText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+      color: colors.textPrimary,
+      fontSize: 14,
+    },
+  });
+}

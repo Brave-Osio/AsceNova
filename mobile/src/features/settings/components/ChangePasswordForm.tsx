@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,12 +7,15 @@ import Button from '../../../components/ui/Button';
 import { getErrorMessage } from '../../../lib/errors';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../schemas';
 import { useChangePassword } from '../hooks/useChangePassword';
-import { colors, spacing } from '../../../theme';
+import { spacing, type ColorPalette } from '../../../theme';
+import { useAppTheme } from '../../../context/ThemeContext';
 
 const DEFAULT_VALUES: ChangePasswordFormValues = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 /** Mirrors the web app's ChangePasswordForm.tsx. */
 export default function ChangePasswordForm() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     control,
     handleSubmit,
@@ -45,6 +49,8 @@ export default function ChangePasswordForm() {
   );
 }
 
-const styles = StyleSheet.create({
-  error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+  });
+}
