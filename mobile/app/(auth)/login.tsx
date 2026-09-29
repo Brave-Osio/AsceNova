@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -8,9 +8,12 @@ import Button from '../../src/components/ui/Button';
 import { useAuth } from '../../src/context/AuthContext';
 import { getErrorMessage } from '../../src/lib/errors';
 import { loginSchema, type LoginFormValues } from '../../src/features/auth/schemas';
-import { colors, spacing, typography } from '../../src/theme';
+import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 
 export default function LoginScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { login } = useAuth();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.logo}>
-          Asce<Text style={{ color: colors.violet }}>Nova</Text>
+          Asce<Text style={{ color: colors.primary }}>Nova</Text>
         </Text>
         <Text style={styles.title}>Welcome back</Text>
 
@@ -92,13 +95,15 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-  logo: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
-  error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-  link: { color: colors.violetLight, fontWeight: '600', marginTop: spacing.md, textAlign: 'center' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm },
-  footerText: { color: colors.textSecondary },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
+    logo: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
+    title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
+    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+    link: { color: colors.primaryLight, fontWeight: '600', marginTop: spacing.md, textAlign: 'center' },
+    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm },
+    footerText: { color: colors.textSecondary },
+  });
+}

@@ -1,21 +1,27 @@
+import { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Dumbbell, Droplet, Beef, Moon, Footprints } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import TextField from '../../src/components/ui/TextField';
 import TextArea from '../../src/components/ui/TextArea';
 import CheckboxRow from '../../src/components/ui/Checkbox';
 import Button from '../../src/components/ui/Button';
 import { useDailyLog } from '../../src/features/daily-log/hooks/useDailyLog';
 import type { DailyHabits } from '../../src/types/log.types';
-import { colors, spacing, typography, radius } from '../../src/theme';
+import { spacing, typography, radius, type ColorPalette } from '../../src/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 
-const HABIT_ITEMS: { key: keyof DailyHabits; label: string; icon: string }[] = [
-  { key: 'workoutCompleted', label: 'Workout Completed', icon: '💪' },
-  { key: 'hitWaterGoal', label: 'Hit Water Goal (3L)', icon: '💧' },
-  { key: 'hitProteinGoal', label: 'Hit Protein Goal', icon: '🍗' },
-  { key: 'slept7PlusHours', label: 'Slept 7+ Hours', icon: '😴' },
-  { key: 'reachedStepGoal', label: 'Reached Step Goal (8,000+)', icon: '👟' },
+const HABIT_ITEMS: { key: keyof DailyHabits; label: string; Icon: LucideIcon }[] = [
+  { key: 'workoutCompleted', label: 'Workout Completed', Icon: Dumbbell },
+  { key: 'hitWaterGoal', label: 'Hit Water Goal (3L)', Icon: Droplet },
+  { key: 'hitProteinGoal', label: 'Hit Protein Goal', Icon: Beef },
+  { key: 'slept7PlusHours', label: 'Slept 7+ Hours', Icon: Moon },
+  { key: 'reachedStepGoal', label: 'Reached Step Goal (8,000+)', Icon: Footprints },
 ];
 
 export default function LogScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { form, error, lastResult, isSubmitting, updateField, toggleHabit, handleSubmit } = useDailyLog();
   const checkedCount = Object.values(form.habits).filter(Boolean).length;
 
@@ -41,7 +47,7 @@ export default function LogScreen() {
           <CheckboxRow
             key={item.key}
             label={item.label}
-            icon={item.icon}
+            icon={item.Icon}
             checked={form.habits[item.key]}
             onChange={(checked) => toggleHabit(item.key, checked)}
           />
@@ -69,21 +75,23 @@ export default function LogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xl * 2 },
-  title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
-  checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.sm },
-  checklistLabel: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
-  checklistCount: { color: colors.textMuted, fontSize: 12 },
-  resultCard: {
-    marginTop: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(124,58,237,0.3)',
-    backgroundColor: 'rgba(124,58,237,0.1)',
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  resultXp: { color: colors.textPrimary, fontWeight: '700' },
-  resultAchievement: { color: colors.violetLight, marginTop: spacing.xs, fontSize: 13 },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    container: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xl * 2 },
+    title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
+    checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.sm },
+    checklistLabel: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
+    checklistCount: { color: colors.textMuted, fontSize: 12 },
+    resultCard: {
+      marginTop: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      padding: spacing.md,
+    },
+    resultXp: { color: colors.textPrimary, fontWeight: '700' },
+    resultAchievement: { color: colors.primaryLight, marginTop: spacing.xs, fontSize: 13 },
+  });
+}

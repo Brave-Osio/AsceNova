@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { Send } from 'lucide-react-native';
 import { useCoachChat } from '../../src/features/coach-chat/hooks/useCoachChat';
 import { SUGGESTED_QUESTIONS } from '../../src/features/coach-chat/types';
 import type { ChatMessage } from '../../src/features/coach-chat/types';
 import MarkdownText from '../../src/components/MarkdownText';
-import { colors, spacing, radius, typography } from '../../src/theme';
+import { spacing, radius, typography, type ColorPalette } from '../../src/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
 
-function Bubble({ message }: { message: ChatMessage }) {
+function Bubble({ message, styles }: { message: ChatMessage; styles: ReturnType<typeof createStyles> }) {
   const isUser = message.sender === 'user';
   return (
     <View style={[styles.bubbleRow, isUser && styles.bubbleRowUser]}>
@@ -32,6 +34,8 @@ function Bubble({ message }: { message: ChatMessage }) {
 }
 
 export default function CoachScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { messages, isThinking, sendMessage } = useCoachChat();
   const [input, setInput] = useState('');
   const listRef = useRef<FlatList>(null);
@@ -54,7 +58,7 @@ export default function CoachScreen() {
         ref={listRef}
         data={messages}
         keyExtractor={(m) => m.id}
-        renderItem={({ item }) => <Bubble message={item} />}
+        renderItem={({ item }) => <Bubble message={item} styles={styles} />}
         contentContainerStyle={styles.messages}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
       />
@@ -71,7 +75,7 @@ export default function CoachScreen() {
 
       {isThinking && (
         <View style={styles.thinkingRow}>
-          <ActivityIndicator size="small" color={colors.violetLight} />
+          <ActivityIndicator size="small" color={colors.primaryLight} />
           <Text style={styles.thinkingText}>Coach is thinking…</Text>
         </View>
       )}
@@ -87,40 +91,41 @@ export default function CoachScreen() {
           returnKeyType="send"
         />
         <Pressable style={styles.sendButton} onPress={() => handleSend()}>
-          <Text style={styles.sendText}>Send</Text>
+          <Send size={16} color="#fff" />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  title: { ...typography.h2, color: colors.textPrimary, padding: spacing.lg, paddingBottom: spacing.sm },
-  messages: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
-  bubbleRow: { flexDirection: 'row' },
-  bubbleRowUser: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '80%', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.xs },
-  bubbleUser: { backgroundColor: colors.violet },
-  bubbleCoach: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
-  bubbleTextUser: { color: '#fff', fontSize: 14 },
-  bubbleTextCoach: { color: colors.textPrimary, fontSize: 14 },
-  suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, borderRadius: radius.sm, paddingVertical: 6, paddingHorizontal: spacing.sm },
-  chipText: { color: colors.textSecondary, fontSize: 12 },
-  thinkingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
-  thinkingText: { color: colors.textMuted, fontSize: 12 },
-  inputRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    color: colors.textPrimary,
-  },
-  sendButton: { backgroundColor: colors.violet, borderRadius: radius.sm, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
-  sendText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-});
+function createStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.bg },
+    title: { ...typography.h2, color: colors.textPrimary, padding: spacing.lg, paddingBottom: spacing.sm },
+    messages: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
+    bubbleRow: { flexDirection: 'row' },
+    bubbleRowUser: { justifyContent: 'flex-end' },
+    bubble: { maxWidth: '80%', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.xs },
+    bubbleUser: { backgroundColor: colors.primary },
+    bubbleCoach: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+    bubbleTextUser: { color: '#fff', fontSize: 14 },
+    bubbleTextCoach: { color: colors.textPrimary, fontSize: 14 },
+    suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+    chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, borderRadius: radius.sm, paddingVertical: 6, paddingHorizontal: spacing.sm },
+    chipText: { color: colors.textSecondary, fontSize: 12 },
+    thinkingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
+    thinkingText: { color: colors.textMuted, fontSize: 12 },
+    inputRow: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border },
+    input: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 10,
+      color: colors.textPrimary,
+    },
+    sendButton: { backgroundColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
+  });
+}
