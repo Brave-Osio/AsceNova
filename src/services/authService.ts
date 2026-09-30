@@ -6,11 +6,17 @@ export interface AuthUser {
   role?: 'USER' | 'ADMIN';
   status?: string;
   createdAt?: string;
+  /** False for accounts created through Google sign-in that haven't set a password yet. */
+  hasPassword?: boolean;
 }
 
 interface AuthResponse {
   user: AuthUser;
   accessToken: string;
+}
+
+interface GoogleAuthResponse extends AuthResponse {
+  isNewUser: boolean;
 }
 
 /**
@@ -33,6 +39,14 @@ export async function loginRequest(input: {
   rememberMe: boolean;
 }): Promise<AuthResponse> {
   const res = await httpClient.post<AuthResponse>('/api/auth/login', input);
+  return res.data;
+}
+
+export async function googleLoginRequest(input: {
+  idToken: string;
+  rememberMe: boolean;
+}): Promise<GoogleAuthResponse> {
+  const res = await httpClient.post<GoogleAuthResponse>('/api/auth/google', input);
   return res.data;
 }
 

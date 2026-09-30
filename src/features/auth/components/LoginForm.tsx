@@ -8,6 +8,7 @@ import { ROUTES } from '../../../constants/routes';
 import { getErrorMessage } from '../../../lib/errors';
 import { loginSchema, type LoginFormValues } from '../schemas';
 import { useLogin } from '../hooks/useLogin';
+import GoogleSignInButton from './GoogleSignInButton';
 
 export default function LoginForm() {
   const {
@@ -72,6 +73,8 @@ export default function LoginForm() {
       <Button type="submit" variant="primary" fullWidth loading={isPending}>
         Log In
       </Button>
+
+      <GoogleSignInButton text="signin_with" />
 
       <p className="text-center text-sm text-brand-text-secondary">
         Don't have an account?{' '}
