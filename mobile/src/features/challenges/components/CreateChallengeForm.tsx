@@ -15,7 +15,7 @@ export default function CreateChallengeForm() {
   const { catalog } = useChallenges();
   const { create, isCreating } = useChallengeActions();
   const [challengeId, setChallengeId] = useState('');
-  const [emails, setEmails] = useState<string[]>([]);
+  const [usernames, setUsernames] = useState<string[]>([]);
 
   if (catalog.length === 0) return null;
 
@@ -23,15 +23,15 @@ export default function CreateChallengeForm() {
 
   async function handleSubmit() {
     if (!challengeId && catalog.length === 0) return;
-    await create(challengeId || catalog[0].id, emails);
-    setEmails([]);
+    const ok = await create(challengeId || catalog[0].id, usernames);
+    if (ok) setUsernames([]);
   }
 
   return (
     <View style={styles.card}>
       <Text style={styles.heading}>Start a Challenge</Text>
       <OptionSelector label="Challenge" value={challengeId || catalog[0].id} options={options} onChange={setChallengeId} />
-      <TagInput label="Invite friends (optional)" value={emails} onChange={setEmails} placeholder="friend@email.com" />
+      <TagInput label="Invite friends by username (optional)" value={usernames} onChange={setUsernames} placeholder="Type a username" />
       <Button onPress={handleSubmit} loading={isCreating}>Start Challenge</Button>
     </View>
   );

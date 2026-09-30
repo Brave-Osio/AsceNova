@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { env } from '../config/env.js';
 import { HttpError } from '../middleware/errorHandler.js';
+import { recordAiUsage } from '../services/aiUsageService.js';
 
 let client: GoogleGenAI | null = null;
 
@@ -87,6 +88,7 @@ export async function generateCoachReply(
       }),
     );
 
+    void recordAiUsage(response.usageMetadata);
     const text = response.text;
     if (!text) {
       throw new HttpError(502, 'AI coach is temporarily unavailable — please try again');
@@ -120,6 +122,7 @@ export async function generateStructuredContent<T>(prompt: string, responseSchem
       },
     });
 
+    void recordAiUsage(response.usageMetadata);
     const text = response.text;
     if (!text) {
       throw new HttpError(502, 'AI generation is temporarily unavailable — please try again');

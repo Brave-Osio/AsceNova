@@ -4,6 +4,8 @@ import {
   suspendUser as suspendUserRequest,
   reactivateUser as reactivateUserRequest,
   deleteUser as deleteUserRequest,
+  grantAdmin as grantAdminRequest,
+  revokeAdmin as revokeAdminRequest,
   exportUsersCsv as exportUsersCsvRequest,
 } from '../../../services/adminService';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -65,6 +67,19 @@ export function useAdminUserActions() {
     }
   }
 
+  async function setAdminAccess(userId: string, makeAdmin: boolean) {
+    setPendingUserId(userId);
+    try {
+      await (makeAdmin ? grantAdminRequest(userId) : revokeAdminRequest(userId));
+      invalidate(userId);
+      showSuccessToast(makeAdmin ? 'Administrator access granted' : 'Administrator access revoked');
+    } catch (err) {
+      showErrorToast(err);
+    } finally {
+      setPendingUserId(null);
+    }
+  }
+
   async function exportCsv() {
     try {
       await exportUsersCsvRequest();
@@ -73,5 +88,5 @@ export function useAdminUserActions() {
     }
   }
 
-  return { suspendUser, reactivateUser, deleteUser, exportCsv, pendingUserId };
+  return { suspendUser, reactivateUser, deleteUser, setAdminAccess, exportCsv, pendingUserId };
 }

@@ -12,7 +12,7 @@ export async function getMyChallenges(): Promise<ChallengeInvite[]> {
   return res.data.invites;
 }
 
-export async function createChallenge(input: { challengeId: string; inviteeEmails: string[] }): Promise<ChallengeInvite> {
+export async function createChallenge(input: { challengeId: string; inviteeUsernames: string[] }): Promise<ChallengeInvite> {
   const res = await httpClient.post<{ invite: ChallengeInvite }>('/api/challenges', input);
   return res.data.invite;
 }

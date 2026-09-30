@@ -68,7 +68,6 @@ function toOptions<T extends string>(values: readonly T[], labels: Record<T, str
 
 const DEFAULT_VALUES: ProfileFormValues = {
   fullName: '',
-  birthday: '',
   age: '',
   gender: 'PREFER_NOT_TO_SAY',
   heightCm: '',
@@ -133,9 +132,6 @@ export default function ProfileSetupScreen() {
         <SectionHeading styles={styles}>Identity</SectionHeading>
         <Controller name="fullName" control={control} render={({ field }) => (
           <TextField label="Full Name" value={field.value} onChangeText={field.onChange} autoCapitalize="words" placeholder="Juan Dela Cruz" error={errors.fullName?.message} />
-        )} />
-        <Controller name="birthday" control={control} render={({ field }) => (
-          <TextField label="Birthday (YYYY-MM-DD)" value={field.value} onChangeText={field.onChange} placeholder="2000-01-15" error={errors.birthday?.message} />
         )} />
         <Controller name="age" control={control} render={({ field }) => (
           <TextField label="Age" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="25" error={errors.age?.message} />

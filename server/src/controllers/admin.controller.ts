@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AccountStatus } from '@prisma/client';
 import * as adminService from '../services/adminService.js';
+import * as aiUsageService from '../services/aiUsageService.js';
 import type { UpdateAchievementInput } from '../validators/admin.validators.js';
 
 const VALID_STATUSES: AccountStatus[] = ['ACTIVE', 'SUSPENDED', 'DELETED'];
@@ -58,6 +59,24 @@ export async function reactivateUser(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function grantAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await adminService.setUserRole(req.user!.id, req.params.id, 'ADMIN');
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function revokeAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await adminService.setUserRole(req.user!.id, req.params.id, 'USER');
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
     await adminService.softDeleteUser(req.user!.id, req.params.id);
@@ -92,6 +111,14 @@ export async function updateAchievement(req: Request, res: Response, next: NextF
     const input = req.body as UpdateAchievementInput;
     const achievement = await adminService.updateAchievement(req.params.id, input);
     res.json({ achievement });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAiUsage(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await aiUsageService.getAiUsage());
   } catch (err) {
     next(err);
   }

@@ -32,7 +32,6 @@ export const preferredWorkoutTimeOptions = ['MORNING', 'AFTERNOON', 'EVENING'] a
 
 export const profileSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
-  birthday: z.string().trim(),
   age: requiredNumberString(13, 100, 'Age'),
   gender: z.enum(genderOptions),
   heightCm: requiredNumberString(100, 250, 'Height'),

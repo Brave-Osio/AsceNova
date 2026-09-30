@@ -46,14 +46,26 @@ const METRIC_FIELD = {
   PROTEIN_GOAL_HITS: 'hitProteinGoal',
 } as const;
 
-/** Period-scoped count, for Challenges — achievements above use lifetime totals instead. */
+/** `date` columns are stored at UTC midnight, so a mid-day timestamp must be floored to its day or that day's own log is excluded. */
+function startOfUtcDay(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+/**
+ * Period-scoped count, for Challenges — achievements above use lifetime totals instead.
+ * `until` caps the window (inclusive) so future-dated rows — e.g. the demo
+ * "Simulate progress" logs — can't inflate a challenge that hasn't reached them.
+ */
 export async function countMetricSince(
   userId: string,
   metric: keyof typeof METRIC_FIELD,
   since: Date,
+  until?: Date,
 ): Promise<number> {
   const field = METRIC_FIELD[metric];
-  return prisma.dailyProgress.count({ where: { userId, date: { gte: since }, [field]: true } });
+  return prisma.dailyProgress.count({
+    where: { userId, date: { gte: startOfUtcDay(since), ...(until && { lte: until }) }, [field]: true },
+  });
 }
 
 /** Total logged days in a window, regardless of habit values — the denominator for an adherence rate. */

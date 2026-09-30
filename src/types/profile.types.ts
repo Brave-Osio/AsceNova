@@ -25,7 +25,6 @@ export interface Profile {
   userId: string;
 
   fullName: string;
-  birthday: string | null; // ISO date string
   age: number;
   gender: Gender | null;
 

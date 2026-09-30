@@ -12,6 +12,8 @@ export interface AdminStats {
   avgStreak: number;
   workoutCompletionRate: number;
   goalDistribution: { goal: string; count: number }[];
+  adminUsers: number;
+  signupsByDay: { date: string; count: number; total: number }[];
 }
 
 export interface AdminUserListItem {
@@ -78,4 +80,21 @@ export interface UpdateAchievementInput {
   icon?: string;
   xpReward?: number;
   isActive?: boolean;
+}
+
+export interface AiUsageDay {
+  date: string;
+  calls: number;
+  promptTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
+export interface AiUsage {
+  model: string;
+  configured: boolean;
+  dailyLimit: number | null;
+  todayTokens: number;
+  todayCalls: number;
+  series: AiUsageDay[];
 }

@@ -20,7 +20,6 @@ function toOptionalNumberString(value: number | null): string {
 export function toFormValues(profile: Profile): ProfileFormValues {
   return {
     fullName: profile.fullName,
-    birthday: profile.birthday ? profile.birthday.slice(0, 10) : '',
     age: String(profile.age),
     gender: profile.gender ?? 'PREFER_NOT_TO_SAY',
     heightCm: String(profile.heightCm),
@@ -40,7 +39,6 @@ export function toFormValues(profile: Profile): ProfileFormValues {
 function toProfileInput(values: ProfileFormValues): ProfileInput {
   return {
     fullName: values.fullName,
-    birthday: values.birthday || null,
     age: Number(values.age),
     gender: values.gender,
     heightCm: Number(values.heightCm),

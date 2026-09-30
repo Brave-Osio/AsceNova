@@ -32,6 +32,11 @@ const envSchema = z.object({
 
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  // Optional daily request quota (free tier is capped by requests per day) shown as the limit in the admin AI-usage graph (blank = no limit line).
+  GEMINI_DAILY_REQUEST_LIMIT: z
+    .string()
+    .optional()
+    .transform((v) => (v && Number.isFinite(Number(v)) && Number(v) > 0 ? Math.floor(Number(v)) : undefined)),
   ENABLE_SIMULATE_PROGRESS: z
     .string()
     .default('false')

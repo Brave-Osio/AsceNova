@@ -75,6 +75,14 @@ export async function abandonGoal(userId: string, goalId: string) {
     data: { status: 'ABANDONED', completedAt: new Date() },
   });
   if (result.count === 0) {
-    throw new HttpError(404, 'Active goal not found');
+    // Idempotent: a duplicate/late request for an already-abandoned goal is a no-op,
+    // not an error — only a missing or completed goal is reported.
+    const existing = await prisma.goal.findFirst({ where: { id: goalId, userId }, select: { status: true } });
+    if (!existing) {
+      throw new HttpError(404, 'Goal not found');
+    }
+    if (existing.status === 'COMPLETED') {
+      throw new HttpError(409, "Completed goals can't be abandoned");
+    }
   }
 }

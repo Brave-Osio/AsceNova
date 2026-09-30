@@ -121,11 +121,6 @@ body {
   color: var(--color-brand-primary-light);
 }
 
-/* ── Bottom tab bar active pill ───────────────────────────────── */
-.tab-active {
-  background: var(--color-brand-primary);
-  color: #ffffff;
-}
 
 /* ── Status dot (flat pulse, no glow) ─────────────────────────── */
 .pulse-dot {
@@ -162,4 +157,17 @@ body {
 }
 .workout-row:hover {
   background: var(--color-brand-card-alt);
+}
+
+/* ── Grouped cards ─────────────────────────────────────────────
+ * Several related cards share one outer surface; the inner cards drop their
+ * own chrome so they read as sections of one panel, not separate tiles. */
+.card-group {
+  background: var(--color-brand-card);
+  border: 1px solid var(--color-brand-border);
+}
+.card-group .card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }

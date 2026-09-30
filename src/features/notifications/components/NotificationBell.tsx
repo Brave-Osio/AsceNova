@@ -60,7 +60,7 @@ function NotificationRow({ notification, onClick }: { notification: AppNotificat
  * logged out, so it can drop straight into Navbar without Navbar itself
  * needing to become auth-aware.
  */
-export default function NotificationBell() {
+export default function NotificationBell({ placement = 'below' }: { placement?: 'below' | 'side' }) {
   const { isAuthenticated } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
@@ -101,7 +101,7 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-11 z-50 w-80 max-w-[90vw] card rounded-2xl p-2 shadow-lg"
+            className={`absolute z-50 w-80 max-w-[90vw] card rounded-2xl p-2 shadow-lg ${placement === 'side' ? 'bottom-0 left-full ml-3' : 'right-0 top-11'}`}
           >
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-xs font-bold uppercase tracking-wide text-brand-text-muted">Notifications</span>
@@ -109,7 +109,7 @@ export default function NotificationBell() {
                 <button
                   type="button"
                   onClick={() => markAllAsRead()}
-                  className="text-xs font-medium text-brand-primary-light hover:text-white"
+                  className="text-xs font-medium text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary"
                 >
                   Mark all read
                 </button>

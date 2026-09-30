@@ -1,6 +1,7 @@
 import { httpClient } from '../lib/httpClient';
 import type {
   AdminStats,
+  AiUsage,
   AdminUserDetail,
   AdminUserFilters,
   AdminUserListResult,
@@ -64,4 +65,17 @@ export async function exportUsersCsv(): Promise<void> {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+}
+
+export async function grantAdmin(userId: string): Promise<void> {
+  await httpClient.post(`/api/admin/users/${userId}/grant-admin`);
+}
+
+export async function revokeAdmin(userId: string): Promise<void> {
+  await httpClient.post(`/api/admin/users/${userId}/revoke-admin`);
+}
+
+export async function getAiUsage(): Promise<AiUsage> {
+  const res = await httpClient.get<AiUsage>('/api/admin/ai-usage');
+  return res.data;
 }

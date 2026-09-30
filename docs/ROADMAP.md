@@ -547,3 +547,7 @@ All three packages verified clean, together, as a final consolidated pass (not j
 Not independently exercised: an actual GitHub Actions run of `.github/workflows/ci.yml` (would require pushing/opening a PR) — confidence comes from having locally reproduced each job's exact steps and env, including the backend job's fake-env-var approach.
 
 Phase 14 is done. This was the last planned phase in the roadmap.
+
+## UI/UX + admin batch (VER-008)
+
+Schema-free (no migration): `Profile.birthday` column is left in place but no longer collected/validated (web + mobile forms). Collapsible sidebar replaces the top navbar for logged-in users (logged-out visitors keep a public-only top bar; mobile uses an off-canvas sidebar opened from a top bar / the bottom tab "More"). Dashboard redesigned (hero "Today's Target" with progress bar, grouped User Progress / Fitness Activity panels, larger Weight Progress). Challenge invites are by username and reject unknown usernames. Goal abandon now goes through a confirm modal (shared `ConfirmDialog`), with a duplicate-request guard and an idempotent server endpoint. Admins can grant/revoke admin (`POST /api/admin/users/:id/grant-admin|revoke-admin`, ADMIN-only, not on self). Admin overview uses doughnut/bar/line charts backed by new `adminUsers` + `signupsByDay` stats.

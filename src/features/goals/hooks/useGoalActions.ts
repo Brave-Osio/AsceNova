@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContext';
 import { createGoal, completeGoal, abandonGoal } from '../../../services/goalService';
@@ -12,6 +12,8 @@ export function useGoalActions() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [pendingGoalId, setPendingGoalId] = useState<string | null>(null);
+  // State updates are async, so a fast double-click could slip past a state check — a ref can't.
+  const inFlight = useRef(false);
 
   function invalidate() {
     if (user) {
@@ -33,6 +35,8 @@ export function useGoalActions() {
   }
 
   async function complete(goalId: string) {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setPendingGoalId(goalId);
     try {
       await completeGoal(goalId);
@@ -45,19 +49,25 @@ export function useGoalActions() {
       showErrorToast(err);
     } finally {
       setPendingGoalId(null);
+      inFlight.current = false;
     }
   }
 
-  async function abandon(goalId: string) {
+  async function abandon(goalId: string): Promise<boolean> {
+    if (inFlight.current) return false;
+    inFlight.current = true;
     setPendingGoalId(goalId);
     try {
       await abandonGoal(goalId);
       invalidate();
       showSuccessToast('Goal abandoned');
+      return true;
     } catch (err) {
       showErrorToast(err);
+      return false;
     } finally {
       setPendingGoalId(null);
+      inFlight.current = false;
     }
   }
 

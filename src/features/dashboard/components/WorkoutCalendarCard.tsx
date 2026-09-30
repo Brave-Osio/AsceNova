@@ -6,7 +6,7 @@ const DAYS_TO_SHOW = 28;
 export default function WorkoutCalendarCard() {
   const { data: logs = [], isLoading } = useLogs();
 
-  if (isLoading) return null;
+  if (isLoading) return <div className="card h-full min-h-48 animate-pulse rounded-2xl" aria-busy="true" />;
 
   const logsByDate = new Map(logs.map((l) => [l.date, l]));
   const today = new Date();
@@ -26,7 +26,7 @@ export default function WorkoutCalendarCard() {
       <div className="mt-3 grid grid-cols-7 gap-1.5">
         {days.map(({ dateStr, log }) => {
           const isToday = dateStr === todayStr;
-          const color = log?.habits.workoutCompleted ? 'bg-brand-primary' : log ? 'bg-brand-card-alt' : 'bg-white/5';
+          const color = log?.habits.workoutCompleted ? 'bg-brand-primary' : log ? 'bg-brand-primary/25' : 'bg-brand-text-muted/20';
           return (
             <div
               key={dateStr}
@@ -42,11 +42,11 @@ export default function WorkoutCalendarCard() {
           Workout
         </span>
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-sm bg-brand-card-alt" />
+          <span className="h-2 w-2 rounded-sm bg-brand-primary/25" />
           Logged
         </span>
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-sm bg-white/5" />
+          <span className="h-2 w-2 rounded-sm bg-brand-text-muted/20" />
           No entry
         </span>
       </div>
