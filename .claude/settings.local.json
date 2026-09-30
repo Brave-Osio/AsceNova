@@ -1,5 +1,10 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(mkdir -p public)",
+      "Bash(touch public/.gitkeep)",
+      "Bash(git check-ignore *)"
+    ]
   }
 }
