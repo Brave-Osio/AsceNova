@@ -4,12 +4,15 @@ import { hashPassword, comparePassword } from '../lib/password.js';
 import { signAccessToken } from '../lib/jwt.js';
 import { generateOpaqueToken, sha256Hex } from '../lib/crypto.js';
 import { verifyGoogleIdToken } from '../lib/googleAuth.js';
+import { isEmailConfigured, sendPasswordResetEmail } from '../lib/email.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
 import type {
   RegisterInput,
   LoginInput,
   GoogleLoginInput,
+  ForgotPasswordInput,
+  SetRecoveryEmailInput,
   ResetPasswordInput,
   ChangePasswordInput,
 } from '../validators/auth.validators.js';
@@ -64,7 +67,11 @@ function createUserWithProgress(data: Prisma.UserCreateInput) {
 export async function register(input: RegisterInput, meta: RequestMeta): Promise<TokenPair & { userId: string }> {
   const passwordHash = await hashPassword(input.password);
 
-  const user = await createUserWithProgress({ email: input.email, passwordHash });
+  const user = await createUserWithProgress({
+    email: input.email,
+    passwordHash,
+    recoveryEmail: input.recoveryEmail,
+  });
 
   const tokens = await issueTokenPair(user.id, user.role, false, meta);
   return { ...tokens, userId: user.id };
@@ -224,25 +231,57 @@ export async function logout(rawRefreshToken: string): Promise<void> {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, role: true, status: true, createdAt: true, passwordHash: true },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      status: true,
+      createdAt: true,
+      passwordHash: true,
+      recoveryEmail: true,
+    },
   });
   if (!user) {
     throw new HttpError(404, 'User not found');
   }
-  // Expose only whether a password exists (Google-only accounts have none), never the hash.
-  const { passwordHash, ...rest } = user;
-  return { ...rest, hasPassword: passwordHash !== null };
+  // Expose only whether a password exists (Google-only accounts have none), never the hash,
+  // and only a masked recovery email.
+  const { passwordHash, recoveryEmail, ...rest } = user;
+  return {
+    ...rest,
+    hasPassword: passwordHash !== null,
+    recoveryEmailMasked: recoveryEmail ? maskEmail(recoveryEmail) : null,
+  };
 }
 
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+const PASSWORD_RESET_THROTTLE_WINDOW_MS = 60 * 60 * 1000;
+const PASSWORD_RESET_MAX_PER_WINDOW = 3;
+const RESET_MISMATCH_MESSAGE = "Username and email don't match our records.";
 
-export async function forgotPassword(email: string): Promise<{ devResetToken?: string }> {
-  const user = await prisma.user.findUnique({ where: { email } });
+/**
+ * The user proves ownership of the account by giving its username (the `email` column)
+ * AND the recovery Gmail saved in Settings; the link goes only to that saved address.
+ * Every "can't match these two" case returns one identical error, so the response never
+ * says *why* (unknown username, no recovery email saved, wrong Gmail, deleted account).
+ */
+export async function forgotPassword(input: ForgotPasswordInput): Promise<{ devResetToken?: string }> {
+  const user = await prisma.user.findUnique({ where: { email: input.email } });
 
-  // Always behave the same whether or not the email exists, so this
-  // endpoint can't be used to enumerate registered accounts.
-  if (!user || user.deleted) {
-    return {};
+  if (!user || user.deleted || !user.recoveryEmail || user.recoveryEmail !== input.recoveryEmail) {
+    throw new HttpError(400, RESET_MISMATCH_MESSAGE);
+  }
+
+  // Cap how many links one account can request per hour, so this endpoint can't be used
+  // to flood the saved Gmail's inbox. Production only — developers testing the reset flow
+  // (including failed attempts before email was configured) shouldn't get locked out.
+  if (env.NODE_ENV === 'production') {
+    const recentRequests = await prisma.passwordResetToken.count({
+      where: { userId: user.id, createdAt: { gt: new Date(Date.now() - PASSWORD_RESET_THROTTLE_WINDOW_MS) } },
+    });
+    if (recentRequests >= PASSWORD_RESET_MAX_PER_WINDOW) {
+      throw new HttpError(429, 'Too many reset requests. Please try again in an hour.');
+    }
   }
 
   const rawToken = generateOpaqueToken(32);
@@ -254,14 +293,58 @@ export async function forgotPassword(email: string): Promise<{ devResetToken?: s
     },
   });
 
-  // No transactional email provider is wired up yet. In non-production
-  // environments only, surface the raw token so the reset flow is
-  // testable end-to-end; production must not do this until real email
-  // delivery exists.
+  if (isEmailConfigured()) {
+    // Awaited on purpose: serverless freezes the function once the response is sent, so a
+    // fire-and-forget email would silently never go out.
+    try {
+      await sendPasswordResetEmail({
+        to: user.recoveryEmail,
+        token: rawToken,
+        expiresInMinutes: PASSWORD_RESET_EXPIRY_MS / 60_000,
+      });
+    } catch (err) {
+      console.error('Failed to send password reset email:', err);
+      throw new HttpError(502, "We couldn't send the reset email right now. Please try again.");
+    }
+    return {};
+  }
+
+  // No email provider configured: in non-production only, surface the raw token so the reset
+  // flow stays testable locally. Production never returns it — the token is only ever emailed.
   if (env.NODE_ENV !== 'production') {
     return { devResetToken: rawToken };
   }
-  return {};
+  console.error('Password reset requested but no email provider is configured (SMTP_USER/SMTP_PASS)');
+  throw new HttpError(503, 'Password reset email is unavailable right now. Please try again later.');
+}
+
+/** `bravejohn@gmail.com` -> `b***@gmail.com` — enough to recognise it, not to read it over a shoulder. */
+function maskEmail(email: string): string {
+  const [local = '', domain = ''] = email.split('@');
+  return `${local.charAt(0)}***@${domain}`;
+}
+
+export async function setRecoveryEmail(
+  userId: string,
+  input: SetRecoveryEmailInput,
+): Promise<{ recoveryEmailMasked: string }> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.deleted) {
+    throw new HttpError(404, 'User not found');
+  }
+  if (!user.passwordHash) {
+    throw new HttpError(400, 'This account signs in with Google and has no password to recover.');
+  }
+
+  // Re-checking the password stops someone with a briefly-open session from swapping in
+  // their own Gmail and then resetting the owner's password.
+  const valid = await comparePassword(input.currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new HttpError(401, 'Current password is incorrect');
+  }
+
+  await prisma.user.update({ where: { id: userId }, data: { recoveryEmail: input.recoveryEmail } });
+  return { recoveryEmailMasked: maskEmail(input.recoveryEmail) };
 }
 
 export async function changePassword(userId: string, input: ChangePasswordInput): Promise<void> {
@@ -271,10 +354,7 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
   }
 
   if (!user.passwordHash) {
-    throw new HttpError(
-      400,
-      'This account signs in with Google and has no password yet. Use "Forgot password" to set one.',
-    );
+    throw new HttpError(400, 'This account signs in with Google and has no AsceNova password to change.');
   }
 
   const valid = await comparePassword(input.currentPassword, user.passwordHash);

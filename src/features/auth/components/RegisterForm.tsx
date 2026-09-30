@@ -16,7 +16,7 @@ export default function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { fullName: '', email: '', recoveryEmail: '', password: '', confirmPassword: '' },
   });
   const { mutate, isPending, error } = useRegister();
 
@@ -42,13 +42,32 @@ export default function RegisterForm() {
         control={control}
         render={({ field }) => (
           <TextField
-            label="Email"
-            type="email"
+            label="Username"
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
             error={errors.email?.message}
-            placeholder="you@example.com"
+            helperText={errors.email ? undefined : 'You will log in with this'}
+            placeholder="juandelacruz"
+          />
+        )}
+      />
+
+      <Controller
+        name="recoveryEmail"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            label="Gmail (optional)"
+            type="email"
+            value={field.value}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.recoveryEmail?.message}
+            helperText={
+              errors.recoveryEmail ? undefined : 'Used only to send a password reset link — you can add it later in Settings'
+            }
+            placeholder="you@gmail.com"
           />
         )}
       />

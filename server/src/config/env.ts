@@ -18,6 +18,15 @@ const envSchema = z.object({
   // POST /api/auth/google accepts. When unset that endpoint returns 503 (see lib/googleAuth.ts).
   GOOGLE_CLIENT_IDS: z.string().optional(),
 
+  // Optional: Gmail SMTP credentials for transactional email (password reset). SMTP_PASS is a
+  // Google *App Password*, not the account password. When unset, email is disabled (see lib/email.ts).
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  // Optional display name/address; defaults to "AsceNova <SMTP_USER>".
+  EMAIL_FROM: z.string().optional(),
+  // Optional: public frontend URL used in email links. Falls back to the first CORS_ORIGIN entry.
+  FRONTEND_URL: z.string().optional(),
+
   ADMIN_SEED_EMAIL: z.string().email().optional(),
   ADMIN_SEED_PASSWORD: z.string().optional(),
 

@@ -1,10 +1,8 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
 import TextField from '../../../components/ui/TextField';
 import Button from '../../../components/ui/Button';
 import { useAuth } from '../../../context/AuthContext';
-import { ROUTES } from '../../../constants/routes';
 import { getErrorMessage } from '../../../lib/errors';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../schemas';
 import { useChangePassword } from '../hooks/useChangePassword';
@@ -28,15 +26,12 @@ export default function ChangePasswordForm() {
   const { mutate, isPending, error } = useChangePassword();
   const { user } = useAuth();
 
-  // Google-only accounts have no current password to change; "Forgot password" lets them set one.
+  // Google-only accounts have no password on our side — Google manages theirs.
   if (user?.hasPassword === false) {
     return (
       <p className="text-sm text-brand-text-secondary">
-        Your account signs in with Google and has no password yet. To also sign in with email and password, use{' '}
-        <Link to={ROUTES.forgotPassword} className="text-brand-primary-light hover:text-white">
-          Forgot password
-        </Link>{' '}
-        to set one.
+        Your account signs in with Google, so there is no AsceNova password to change. Manage your password in your
+        Google account.
       </p>
     );
   }

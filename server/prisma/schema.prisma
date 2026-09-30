@@ -156,6 +156,9 @@ model User {
   // password via the forgot/reset-password flow.
   passwordHash    String?
   googleId        String?       @unique
+  // `email` is the login name (shown as "Username" in the UI). This is a separate,
+  // unverified Gmail address used only to deliver password-reset links.
+  recoveryEmail   String?
   role            Role          @default(USER)
   status          AccountStatus @default(ACTIVE)
   emailVerifiedAt DateTime?
