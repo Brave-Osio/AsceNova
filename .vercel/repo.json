@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_NKPAwp2dhtZ1JQccGVo11YzrEb3x",
+      "name": "ascenova-back",
+      "directory": "server",
+      "orgId": "team_pB199MpQAQXTrhTIrxXcnOtm"
+    }
+  ]
+}
