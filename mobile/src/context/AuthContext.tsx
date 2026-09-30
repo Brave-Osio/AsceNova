@@ -20,7 +20,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (input: { email: string; password: string }) => Promise<void>;
-  register: (input: { email: string; password: string; fullName: string }) => Promise<void>;
+  register: (input: { email: string; password: string; fullName: string; recoveryEmail?: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated');
   }
 
-  async function register(input: { email: string; password: string; fullName: string }) {
+  async function register(input: { email: string; password: string; fullName: string; recoveryEmail?: string }) {
     const { user: newUser, accessToken, refreshToken } = await registerRequest(input);
     setAccessToken(accessToken);
     await setStoredRefreshToken(refreshToken);

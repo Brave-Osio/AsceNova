@@ -23,14 +23,19 @@ export default function RegisterScreen() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { fullName: '', email: '', recoveryEmail: '', password: '', confirmPassword: '' },
   });
 
   async function onSubmit(values: RegisterFormValues) {
     setIsPending(true);
     setError(null);
     try {
-      await register(values);
+      await register({
+        email: values.email,
+        password: values.password,
+        fullName: values.fullName,
+        recoveryEmail: values.recoveryEmail || undefined,
+      });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -62,12 +67,33 @@ export default function RegisterScreen() {
           control={control}
           render={({ field }) => (
             <TextField
-              label="Email"
+              label="Username"
+              value={field.value}
+              onChangeText={field.onChange}
+              autoCorrect={false}
+              placeholder="juandelacruz"
+              helperText={errors.email ? undefined : 'You will log in with this'}
+              error={errors.email?.message}
+            />
+          )}
+        />
+        <Controller
+          name="recoveryEmail"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              label="Gmail (optional)"
               value={field.value}
               onChangeText={field.onChange}
               keyboardType="email-address"
-              placeholder="you@example.com"
-              error={errors.email?.message}
+              autoCorrect={false}
+              placeholder="you@gmail.com"
+              helperText={
+                errors.recoveryEmail
+                  ? undefined
+                  : 'Used only to send a password reset link — you can add it later in Settings'
+              }
+              error={errors.recoveryEmail?.message}
             />
           )}
         />

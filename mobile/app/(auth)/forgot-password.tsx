@@ -16,22 +16,21 @@ export default function ForgotPasswordScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [result, setResult] = useState<{ message: string; devResetToken?: string } | null>(null);
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+    defaultValues: { email: '', recoveryEmail: '' },
   });
 
   async function onSubmit(values: ForgotPasswordFormValues) {
     setIsPending(true);
     setError(null);
     try {
-      await forgotPasswordRequest(values);
-      setSent(true);
+      setResult(await forgotPasswordRequest(values));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -44,11 +43,19 @@ export default function ForgotPasswordScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Reset your password</Text>
 
-        {sent ? (
-          <Text style={styles.info}>
-            If an account with that email exists, a reset link has been sent. Check your email, then use the link on
-            the web app to finish resetting your password (mobile doesn&apos;t have its own reset-password screen yet).
-          </Text>
+        {result ? (
+          <>
+            <Text style={styles.info}>
+              {result.message} Open the link in your email to finish resetting your password (mobile doesn&apos;t have
+              its own reset-password screen, so the link opens the web app).
+            </Text>
+            {result.devResetToken && (
+              <Text style={styles.info}>
+                Dev mode only — email isn&apos;t configured. Open this path on the web app:{'\n'}
+                /reset-password?token={result.devResetToken}
+              </Text>
+            )}
+          </>
         ) : (
           <>
             <Controller
@@ -56,16 +63,36 @@ export default function ForgotPasswordScreen() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  label="Email"
+                  label="Username"
                   value={field.value}
                   onChangeText={field.onChange}
-                  keyboardType="email-address"
-                  placeholder="you@example.com"
+                  autoCorrect={false}
+                  placeholder="Your username"
                   error={errors.email?.message}
                 />
               )}
             />
+            <Controller
+              name="recoveryEmail"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  label="Gmail on your account"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                  placeholder="you@gmail.com"
+                  helperText={errors.recoveryEmail ? undefined : 'The Gmail you saved in Settings'}
+                  error={errors.recoveryEmail?.message}
+                />
+              )}
+            />
             {error && <Text style={styles.error}>{error}</Text>}
+            <Text style={styles.hint}>
+              No Gmail saved on your account? Reset links can&apos;t be sent for it. Add one in Settings while you&apos;re
+              logged in.
+            </Text>
             <Button onPress={handleSubmit(onSubmit)} loading={isPending}>
               Send Reset Link
             </Button>
@@ -89,6 +116,7 @@ function createStyles(colors: ColorPalette) {
     title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
     info: { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 20 },
     error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+    hint: { color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: spacing.md, lineHeight: 18 },
     link: { color: colors.primaryLight, fontWeight: '600' },
     footer: { alignItems: 'center', marginTop: spacing.lg },
   });
