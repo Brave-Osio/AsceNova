@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import TextField from '../../../components/ui/TextField';
 import Button from '../../../components/ui/Button';
+import { useAuth } from '../../../context/AuthContext';
 import { getErrorMessage } from '../../../lib/errors';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../schemas';
 import { useChangePassword } from '../hooks/useChangePassword';
@@ -23,9 +24,20 @@ export default function ChangePasswordForm() {
     formState: { errors },
   } = useForm<ChangePasswordFormValues>({ resolver: zodResolver(changePasswordSchema), defaultValues: DEFAULT_VALUES });
   const { mutate, isPending, error } = useChangePassword();
+  const { user } = useAuth();
 
   function onSubmit(values: ChangePasswordFormValues) {
     mutate(values, { onSuccess: () => reset(DEFAULT_VALUES) });
+  }
+
+  // Google-only accounts have no password on our side — Google manages theirs.
+  if (user?.hasPassword === false) {
+    return (
+      <Text style={styles.note}>
+        Your account signs in with Google, so there is no AsceNova password to change. Manage your password in your
+        Google account.
+      </Text>
+    );
   }
 
   return (
@@ -52,5 +64,6 @@ export default function ChangePasswordForm() {
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+    note: { color: colors.textSecondary, fontSize: 13, lineHeight: 19 },
   });
 }

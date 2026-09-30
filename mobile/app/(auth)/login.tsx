@@ -51,11 +51,11 @@ export default function LoginScreen() {
           control={control}
           render={({ field }) => (
             <TextField
-              label="Email"
+              label="Username"
               value={field.value}
               onChangeText={field.onChange}
-              keyboardType="email-address"
-              placeholder="you@example.com"
+              autoCorrect={false}
+              placeholder="Your username"
               error={errors.email?.message}
             />
           )}

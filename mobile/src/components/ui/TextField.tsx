@@ -10,6 +10,8 @@ interface TextFieldProps {
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  /** Turn off for usernames and emails, where autocorrect rewrites what the user typed. */
+  autoCorrect?: boolean;
   placeholder?: string;
   error?: string;
   helperText?: string;
@@ -22,6 +24,7 @@ export default function TextField({
   secureTextEntry,
   keyboardType,
   autoCapitalize = 'none',
+  autoCorrect,
   placeholder,
   error,
   helperText,
@@ -38,6 +41,7 @@ export default function TextField({
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         style={[styles.input, !!error && styles.inputError]}

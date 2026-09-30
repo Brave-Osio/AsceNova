@@ -6,6 +6,10 @@ export interface AuthUser {
   role?: 'USER' | 'ADMIN';
   status?: string;
   createdAt?: string;
+  /** False for accounts created through Google sign-in that have no password. */
+  hasPassword?: boolean;
+  /** Masked recovery Gmail (e.g. "b***@gmail.com") from /me; null when none is saved. */
+  recoveryEmailMasked?: string | null;
 }
 
 interface AuthResponse {
@@ -23,6 +27,7 @@ export async function registerRequest(input: {
   email: string;
   password: string;
   fullName: string;
+  recoveryEmail?: string;
 }): Promise<AuthResponse> {
   const res = await httpClient.post<AuthResponse>('/api/auth/register', input);
   return res.data;
@@ -52,8 +57,23 @@ export async function meRequest(): Promise<{ user: AuthUser }> {
   return res.data;
 }
 
-export async function forgotPasswordRequest(input: { email: string }): Promise<{ message: string }> {
-  const res = await httpClient.post<{ message: string }>('/api/auth/forgot-password', input);
+/** `email` is the account's username; `recoveryEmail` must match the Gmail saved in Settings. */
+export async function forgotPasswordRequest(input: {
+  email: string;
+  recoveryEmail: string;
+}): Promise<{ message: string; devResetToken?: string }> {
+  const res = await httpClient.post<{ message: string; devResetToken?: string }>(
+    '/api/auth/forgot-password',
+    input,
+  );
+  return res.data;
+}
+
+export async function setRecoveryEmailRequest(input: {
+  currentPassword: string;
+  recoveryEmail: string;
+}): Promise<{ recoveryEmailMasked: string }> {
+  const res = await httpClient.put<{ recoveryEmailMasked: string }>('/api/auth/recovery-email', input);
   return res.data;
 }
 

@@ -5,6 +5,7 @@ import { Sun, Moon } from 'lucide-react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import Button from '../../src/components/ui/Button';
 import ChangePasswordForm from '../../src/features/settings/components/ChangePasswordForm';
+import RecoveryEmailForm from '../../src/features/settings/components/RecoveryEmailForm';
 import { spacing, typography, radius, type ColorPalette } from '../../src/theme';
 import { useAppTheme } from '../../src/context/ThemeContext';
 
@@ -47,7 +48,7 @@ export default function SettingsScreen() {
       <Text style={styles.title}>Settings</Text>
 
       <SectionCard title="Account" styles={styles}>
-        <Row label="Email" value={user?.email ?? ''} styles={styles} />
+        <Row label="Username" value={user?.email ?? ''} styles={styles} />
         <Row label="Role" value={user?.role ?? 'USER'} styles={styles} />
       </SectionCard>
 
@@ -67,6 +68,10 @@ export default function SettingsScreen() {
         <Button variant="secondary" onPress={() => router.push('/(app)/profile-setup')}>
           Edit Profile
         </Button>
+      </SectionCard>
+
+      <SectionCard title="Recovery Gmail" styles={styles}>
+        <RecoveryEmailForm />
       </SectionCard>
 
       <SectionCard title="Change Password" styles={styles}>
