@@ -224,29 +224,35 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
       }))
     : skeleton.map((d, i) => ({ dayIndex: i, label: d.day, focus: d.focus }));
 
-  return prisma.$transaction(async (tx) => {
-    await tx.workoutPlan.updateMany({
-      where: { userId, isActive: true },
-      data: { isActive: false },
-    });
+  // A Gemini plan nests many rows (days -> exercises), and on serverless each
+  // query is a network hop to the DB — Prisma's 5s default interactive
+  // transaction timeout (P2028) is too tight there, so allow more headroom.
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.workoutPlan.updateMany({
+        where: { userId, isActive: true },
+        data: { isActive: false },
+      });
 
-    return tx.workoutPlan.create({
-      data: {
-        userId,
-        splitStyle: style,
-        isActive: true,
-        source,
-        promptVersion,
-        generatedAt: new Date(),
-        workoutDays: { create: workoutDaysCreate },
-        nutritionPlan: { create: nutrition },
-      },
-      include: {
-        workoutDays: { orderBy: { dayIndex: 'asc' }, include: { exercises: { orderBy: { order: 'asc' } } } },
-        nutritionPlan: true,
-      },
-    });
-  });
+      return tx.workoutPlan.create({
+        data: {
+          userId,
+          splitStyle: style,
+          isActive: true,
+          source,
+          promptVersion,
+          generatedAt: new Date(),
+          workoutDays: { create: workoutDaysCreate },
+          nutritionPlan: { create: nutrition },
+        },
+        include: {
+          workoutDays: { orderBy: { dayIndex: 'asc' }, include: { exercises: { orderBy: { order: 'asc' } } } },
+          nutritionPlan: true,
+        },
+      });
+    },
+    { maxWait: 10_000, timeout: 15_000 },
+  );
 }
 
 export async function getActivePlan(userId: string) {
