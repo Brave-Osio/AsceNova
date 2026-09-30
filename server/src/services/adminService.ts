@@ -20,6 +20,8 @@ export async function getStats() {
     totalDailyProgress,
     completedWorkoutDailyProgress,
     goalDistribution,
+    adminUsers,
+    recentSignups,
   ] = await Promise.all([
     prisma.user.count({ where: { deleted: false } }),
     prisma.user.count({ where: { deleted: false, status: 'ACTIVE' } }),
@@ -31,6 +33,8 @@ export async function getStats() {
     prisma.dailyProgress.count(),
     prisma.dailyProgress.count({ where: { workoutCompleted: true } }),
     prisma.profile.groupBy({ by: ['goal'], _count: { goal: true } }),
+    prisma.user.count({ where: { deleted: false, role: 'ADMIN' } }),
+    prisma.user.findMany({ where: { deleted: false, createdAt: { gte: thirtyDaysAgo } }, select: { createdAt: true } }),
   ]);
 
   return {
@@ -44,6 +48,8 @@ export async function getStats() {
     avgStreak: Math.round(progressAggregate._avg.currentStreak ?? 0),
     workoutCompletionRate: totalDailyProgress > 0 ? completedWorkoutDailyProgress / totalDailyProgress : 0,
     goalDistribution: goalDistribution.map((row) => ({ goal: row.goal, count: row._count.goal })),
+    adminUsers,
+    signupsByDay: bucketSignupsByDay(recentSignups.map((u) => u.createdAt), totalUsers),
   };
 }
 
@@ -143,6 +149,25 @@ export async function softDeleteUser(actingAdminId: string, userId: string) {
   });
 }
 
+/**
+ * Grant/revoke admin privileges. Only reachable through the ADMIN-gated
+ * admin router, re-checked against the DB role on every request (see
+ * requireAuth). Admins can't change their own role (prevents accidental
+ * self-lockout), and only active accounts can be promoted.
+ */
+export async function setUserRole(actingAdminId: string, userId: string, role: 'ADMIN' | 'USER') {
+  assertNotSelf(actingAdminId, userId);
+  const target = await findActiveUserOrThrow(userId);
+  if (target.role === role) {
+    throw new HttpError(409, role === 'ADMIN' ? 'User is already an administrator' : 'User is not an administrator');
+  }
+  if (role === 'ADMIN' && target.status !== 'ACTIVE') {
+    throw new HttpError(400, 'Only active accounts can be made administrators');
+  }
+  return prisma.user.update({ where: { id: userId }, data: { role }, omit: { passwordHash: true } });
+}
+
+
 export async function listAchievements() {
   return prisma.achievement.findMany({ orderBy: { createdAt: 'asc' } });
 }
@@ -197,4 +222,33 @@ export async function exportUsersCsv(): Promise<string> {
   );
 
   return [header.join(','), ...rows].join('\n');
+}
+
+/**
+ * Last 30 days (oldest first, inclusive of today, UTC days) of signups plus a
+ * running total, so the UI can draw both a daily bar chart and a growth line.
+ * `total` is back-computed from today's user count, so it only ever reflects
+ * users who still exist.
+ */
+function bucketSignupsByDay(createdAts: Date[], totalUsersNow: number) {
+  const DAYS = 30;
+  const counts = new Map<string, number>();
+  for (const d of createdAts) {
+    const key = d.toISOString().slice(0, 10);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const days: { date: string; count: number }[] = [];
+  const todayUtc = new Date(new Date().toISOString().slice(0, 10));
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const day = new Date(todayUtc.getTime() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    days.push({ date: day, count: counts.get(day) ?? 0 });
+  }
+
+  const signedUpInWindow = days.reduce((sum, d) => sum + d.count, 0);
+  let running = totalUsersNow - signedUpInWindow;
+  return days.map((d) => {
+    running += d.count;
+    return { ...d, total: running };
+  });
 }

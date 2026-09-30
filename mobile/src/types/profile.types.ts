@@ -15,7 +15,6 @@ export interface Profile {
   id: string;
   userId: string;
   fullName: string;
-  birthday: string | null;
   age: number;
   gender: Gender | null;
   heightCm: number;

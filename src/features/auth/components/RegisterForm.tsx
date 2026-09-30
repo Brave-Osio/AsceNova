@@ -115,7 +115,7 @@ export default function RegisterForm() {
 
       <p className="text-center text-sm text-brand-text-secondary">
         Already have an account?{' '}
-        <Link to={ROUTES.login} className="text-brand-primary-light hover:text-white">
+        <Link to={ROUTES.login} className="text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary">
           Log in
         </Link>
       </p>

@@ -34,6 +34,10 @@ const cardVariant = {
   visible: { opacity: 1, y: 0 },
 };
 
+function GroupHeading({ children }: { children: React.ReactNode }) {
+  return <h2 className="mb-3 px-1 text-xs font-bold uppercase tracking-widest text-brand-text-muted">{children}</h2>;
+}
+
 export default function DashboardPage() {
   const { data: profile, isLoading } = useProfile();
   const { unlockedAchievementIds } = useUserProgress();
@@ -62,7 +66,7 @@ export default function DashboardPage() {
   const GoalIcon = GOAL_ICON[profile.goal] ?? Target;
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
+    <section className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -95,30 +99,53 @@ export default function DashboardPage() {
         </Link>
       </motion.div>
 
-      {/* Cards grid */}
+      {/* Hero: today's target */}
+      <motion.div className="mt-8" initial="hidden" animate="visible" variants={cardVariant}>
+        <TodayTargetsCard />
+      </motion.div>
+
       <motion.div
-        className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="mt-10 space-y-10"
         initial="hidden"
         animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } } }}
       >
-        {[
-          <NextWorkoutCard key="next-workout" />,
-          <TodayTargetsCard key="today-targets" />,
-          <RankCard key="rank" />,
-          <XpCard key="xp" />,
-          <StreakCard key="streak" />,
-          <WeightProgressCard key="weight" />,
-          <WorkoutCalendarCard key="calendar" />,
-          <AchievementCard key="achievements" />,
-          <CoachTeaserCard key="coach" />,
-          <WeeklySummaryCard key="weekly" />,
-          <SimulateProgressButton key="simulate" />,
-        ].map((card) => (
-          <motion.div key={card.key} variants={cardVariant} className="card-hover">
-            {card}
-          </motion.div>
-        ))}
+        <motion.div variants={cardVariant}>
+          <GroupHeading>User Progress</GroupHeading>
+          <div className="card-group grid grid-cols-1 divide-y divide-brand-border overflow-hidden rounded-3xl md:grid-cols-3 md:divide-x md:divide-y-0">
+            <RankCard />
+            <XpCard />
+            <AchievementCard />
+          </div>
+        </motion.div>
+
+        <motion.div variants={cardVariant}>
+          <GroupHeading>Fitness Activity</GroupHeading>
+          <div className="card-group grid grid-cols-1 divide-y divide-brand-border overflow-hidden rounded-3xl md:grid-cols-3 md:divide-x md:divide-y-0">
+            <WorkoutCalendarCard />
+            <WeeklySummaryCard />
+            <StreakCard />
+          </div>
+        </motion.div>
+
+        <motion.div variants={cardVariant}>
+          <WeightProgressCard />
+        </motion.div>
+
+        <motion.div variants={cardVariant}>
+          <GroupHeading>Up Next</GroupHeading>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="card-hover">
+              <NextWorkoutCard />
+            </div>
+            <div className="card-hover">
+              <CoachTeaserCard />
+            </div>
+            <div className="card-hover">
+              <SimulateProgressButton />
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
     </section>
   );

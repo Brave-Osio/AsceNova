@@ -9,7 +9,7 @@ interface AuthNavControlsProps {
 
 /**
  * Self-contained like NotificationBell — checks its own auth state so
- * Navbar/MobileDrawer don't need to branch on it themselves.
+ * Navbar/Sidebar don't need to branch on it themselves.
  */
 export default function AuthNavControls({ onNavigate }: AuthNavControlsProps) {
   const { isAuthenticated, logout } = useAuth();

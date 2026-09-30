@@ -60,7 +60,7 @@ export default function CoachTeaserCard() {
       </div>
       <Link
         to={ROUTES.coach}
-        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-light hover:text-white"
+        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary"
       >
         Continue chatting <ArrowRight size={12} />
       </Link>

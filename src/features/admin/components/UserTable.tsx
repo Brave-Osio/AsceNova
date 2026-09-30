@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useAdminUsers } from '../hooks/useAdminUsers';
 import { useAdminUserActions } from '../hooks/useAdminUserActions';
 import { adminUserDetailPath } from '../../../constants/routes';
 import TextField from '../../../components/ui/TextField';
 import Button from '../../../components/ui/Button';
-import type { AccountStatus } from '../../../types/admin.types';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
+import { useAuth } from '../../../context/AuthContext';
+import type { AccountStatus, AdminUserListItem } from '../../../types/admin.types';
 
 const STATUS_OPTIONS: { label: string; value: AccountStatus | undefined }[] = [
   { label: 'All statuses', value: undefined },
@@ -21,7 +24,16 @@ const STATUS_BADGE: Record<AccountStatus, string> = {
 
 export default function UserTable() {
   const { result, isLoading, search, setSearch, status, setStatus, page, setPage, pageSize } = useAdminUsers();
-  const { suspendUser, reactivateUser, deleteUser, exportCsv, pendingUserId } = useAdminUserActions();
+  const { suspendUser, reactivateUser, deleteUser, setAdminAccess, exportCsv, pendingUserId } = useAdminUserActions();
+  const { user: currentUser } = useAuth();
+  const [roleChange, setRoleChange] = useState<AdminUserListItem | null>(null);
+  const isGranting = roleChange?.role !== 'ADMIN';
+
+  async function confirmRoleChange() {
+    if (!roleChange) return;
+    await setAdminAccess(roleChange.id, isGranting);
+    setRoleChange(null);
+  }
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
 
@@ -99,6 +111,17 @@ export default function UserTable() {
                   <td className="py-3 pr-4 text-brand-text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="py-3 pr-0">
                     <div className="flex justify-end gap-2">
+                      {u.id !== currentUser?.id && u.status === 'ACTIVE' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={pendingUserId === u.id}
+                          onClick={() => setRoleChange(u)}
+                        >
+                          {u.role === 'ADMIN' ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
+                          {u.role === 'ADMIN' ? 'Revoke admin' : 'Make admin'}
+                        </Button>
+                      )}
                       {u.status === 'SUSPENDED' ? (
                         <Button
                           size="sm"
@@ -158,6 +181,23 @@ export default function UserTable() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={roleChange !== null}
+        title={isGranting ? 'Grant administrator access?' : 'Revoke administrator access?'}
+        description={
+          isGranting
+            ? <>
+                <strong>{roleChange?.email}</strong> will be able to manage users, view platform analytics and grant or revoke admin access for others.
+              </>
+            : <>
+                <strong>{roleChange?.email}</strong> will lose access to the admin area and become a regular user.
+              </>
+        }
+        confirmLabel={isGranting ? 'Grant admin' : 'Revoke admin'}
+        isLoading={roleChange !== null && pendingUserId === roleChange.id}
+        onConfirm={confirmRoleChange}
+        onCancel={() => setRoleChange(null)}
+      />
     </div>
   );
 }

@@ -9,15 +9,14 @@ export default function CreateChallengeForm() {
   const { catalog } = useChallenges();
   const { create, isCreating } = useChallengeActions();
   const [challengeId, setChallengeId] = useState('');
-  const [emails, setEmails] = useState<string[]>([]);
+  const [usernames, setUsernames] = useState<string[]>([]);
 
   const options = catalog.map((c) => ({ value: c.id, label: `${c.icon} ${c.title}` }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!challengeId) return;
-    await create(challengeId, emails);
-    setEmails([]);
+    const ok = await create(challengeId || catalog[0].id, usernames);
+    if (ok) setUsernames([]);
   }
 
   if (catalog.length === 0) return null;
@@ -32,10 +31,10 @@ export default function CreateChallengeForm() {
         onChange={setChallengeId}
       />
       <TagInput
-        label="Invite friends (optional)"
-        value={emails}
-        onChange={setEmails}
-        placeholder="friend@email.com"
+        label="Invite friends by username (optional)"
+        value={usernames}
+        onChange={setUsernames}
+        placeholder="Type a username, press Enter"
       />
       <div>
         <Button type="submit" loading={isCreating}>

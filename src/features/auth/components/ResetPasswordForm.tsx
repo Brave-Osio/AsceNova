@@ -26,7 +26,7 @@ export default function ResetPasswordForm() {
     return (
       <div className="space-y-4 text-center text-sm text-brand-text-secondary">
         <p>This reset link is missing its token. Request a new one below.</p>
-        <Link to={ROUTES.forgotPassword} className="text-brand-primary-light hover:text-white">
+        <Link to={ROUTES.forgotPassword} className="text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary">
           Request a new reset link
         </Link>
       </div>

@@ -34,7 +34,7 @@ export default function ForgotPasswordForm() {
             </Link>
           </div>
         )}
-        <Link to={ROUTES.login} className="inline-block text-sm text-brand-primary-light hover:text-white">
+        <Link to={ROUTES.login} className="inline-block text-sm text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary">
           Back to log in
         </Link>
       </div>
@@ -87,7 +87,7 @@ export default function ForgotPasswordForm() {
       </Button>
 
       <p className="text-center text-sm text-brand-text-secondary">
-        <Link to={ROUTES.login} className="text-brand-primary-light hover:text-white">
+        <Link to={ROUTES.login} className="text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary">
           Back to log in
         </Link>
       </p>

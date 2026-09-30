@@ -18,7 +18,14 @@ const participantInclude = {
   challenge: true,
 } as const;
 
-export async function createInvite(userId: string, challengeId: string, inviteeEmails: string[]) {
+/**
+ * Invitees are addressed by username (the `email` column is the login
+ * name — see auth.validators.ts). Unlike password reset there is no
+ * anti-enumeration posture here: the inviter is logged in and explicitly
+ * asked to be told when a username doesn't exist, so the whole request is
+ * rejected (nothing is created) if any username can't be resolved.
+ */
+export async function createInvite(userId: string, challengeId: string, inviteeUsernames: string[]) {
   const challenge = await prisma.challenge.findFirst({ where: { id: challengeId, isActive: true } });
   if (!challenge) {
     throw new HttpError(404, 'Challenge not found');
@@ -26,14 +33,21 @@ export async function createInvite(userId: string, challengeId: string, inviteeE
 
   const creator = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
 
-  // Anti-enumeration: unknown emails are silently skipped, same posture as forgotPassword.
-  const invitees = await prisma.user.findMany({
-    where: {
-      email: { in: inviteeEmails.filter((e) => e !== creator?.email), mode: 'insensitive' },
-      deleted: false,
-    },
-    select: { id: true },
-  });
+  const requested = [...new Set(inviteeUsernames)].filter((name) => name !== creator?.email.toLowerCase());
+  const invitees =
+    requested.length === 0
+      ? []
+      : await prisma.user.findMany({
+          where: { email: { in: requested, mode: 'insensitive' }, deleted: false, status: 'ACTIVE' },
+          select: { id: true, email: true },
+        });
+
+  const found = new Set(invitees.map((u) => u.email.toLowerCase()));
+  const missing = requested.filter((name) => !found.has(name));
+  if (missing.length > 0) {
+    const list = missing.map((name) => `"${name}"`).join(', ');
+    throw new HttpError(404, missing.length === 1 ? `No user found with username ${list}` : `No users found with usernames ${list}`);
+  }
 
   const now = new Date();
   const periodEnd = new Date(now.getTime() + challenge.periodDays * MS_PER_DAY);
@@ -128,7 +142,9 @@ export async function updateChallengeProgress(
     if (challenge.metric === 'LOG_STREAK') {
       progressValue = currentStreak;
     } else {
-      progressValue = await dailyProgressService.countMetricSince(userId, challenge.metric, p.challengeInvite.periodStart);
+      // Upper bound = tomorrow (UTC): tolerates a client whose local date is ahead of UTC, but excludes simulated future days.
+      const until = new Date(Date.now() + MS_PER_DAY);
+      progressValue = await dailyProgressService.countMetricSince(userId, challenge.metric, p.challengeInvite.periodStart, until);
     }
 
     const justCompleted = progressValue >= challenge.targetValue;

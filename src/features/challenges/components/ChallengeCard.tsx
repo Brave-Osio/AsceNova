@@ -44,7 +44,7 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
                     ? 'Declined'
                     : p.status === 'INVITED'
                     ? 'Invited'
-                    : `${p.progressValue}/${invite.challenge.targetValue}`}
+                    : `${Math.min(p.progressValue, invite.challenge.targetValue)}/${invite.challenge.targetValue}`}
                 </span>
               </div>
               {p.status === 'ACCEPTED' && (

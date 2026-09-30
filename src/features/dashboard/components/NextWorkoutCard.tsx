@@ -47,7 +47,7 @@ export default function NextWorkoutCard() {
 
   return (
     <div className="card h-full rounded-2xl p-5 flex flex-col">
-      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Next Workout</div>
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">{isToday ? "Today's Workout" : "Next Workout"}</div>
       <div className="mt-3 flex items-center gap-2">
         <span className="chip chip-primary px-2.5 py-0.5 text-xs">
           {isToday ? 'Today' : target.day}
@@ -65,7 +65,7 @@ export default function NextWorkoutCard() {
       )}
       <Link
         to={ROUTES.plan}
-        className="mt-auto pt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-light hover:text-white"
+        className="mt-auto pt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary"
       >
         View full plan <ArrowRight size={12} />
       </Link>

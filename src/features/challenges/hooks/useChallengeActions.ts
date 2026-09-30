@@ -18,14 +18,16 @@ export function useChallengeActions() {
     }
   }
 
-  async function create(challengeId: string, inviteeEmails: string[]) {
+  async function create(challengeId: string, inviteeUsernames: string[]): Promise<boolean> {
     setIsCreating(true);
     try {
-      await createChallenge({ challengeId, inviteeEmails });
+      await createChallenge({ challengeId, inviteeUsernames });
       invalidate();
       showSuccessToast('Challenge created!');
+      return true;
     } catch (err) {
       showErrorToast(err);
+      return false;
     } finally {
       setIsCreating(false);
     }

@@ -23,7 +23,7 @@ export async function getMyChallenges(req: Request, res: Response, next: NextFun
 export async function createInvite(req: Request, res: Response, next: NextFunction) {
   try {
     const input = req.body as CreateChallengeInviteInput;
-    const invite = await challengeService.createInvite(req.user!.id, input.challengeId, input.inviteeEmails);
+    const invite = await challengeService.createInvite(req.user!.id, input.challengeId, input.inviteeUsernames);
     res.status(201).json({ invite });
   } catch (err) {
     next(err);

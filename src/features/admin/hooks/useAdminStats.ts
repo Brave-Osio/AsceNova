@@ -4,5 +4,5 @@ import { queryKeys } from '../../../lib/queryKeys';
 
 export function useAdminStats() {
   const query = useQuery({ queryKey: queryKeys.admin.stats(), queryFn: getAdminStats });
-  return { stats: query.data, isLoading: query.isLoading };
+  return { stats: query.data, isLoading: query.isLoading, isError: query.isError, refetch: query.refetch };
 }

@@ -23,7 +23,6 @@ const optionalNumber = (min: number, max: number, label: string) =>
 
 export const upsertProfileSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
-  birthday: z.preprocess((v) => (v === '' || v === undefined ? undefined : v), z.coerce.date().optional()),
   age: z.coerce.number().int().min(13, 'Age must be between 13 and 100').max(100, 'Age must be between 13 and 100'),
   gender: z.nativeEnum(Gender).optional(),
 

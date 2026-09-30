@@ -78,7 +78,6 @@ const WORKOUT_TIME_UI_OPTIONS = toOptions(preferredWorkoutTimeOptions, WORKOUT_T
 
 const DEFAULT_VALUES: ProfileFormValues = {
   fullName: '',
-  birthday: '',
   age: '',
   gender: 'PREFER_NOT_TO_SAY',
   heightCm: '',
@@ -145,13 +144,6 @@ export default function ProfileSetupForm({
             control={control}
             render={({ field }) => (
               <TextField label="Full Name" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="Juan Dela Cruz" error={errors.fullName?.message} />
-            )}
-          />
-          <Controller
-            name="birthday"
-            control={control}
-            render={({ field }) => (
-              <TextField label="Birthday" type="date" value={field.value} onChange={field.onChange} onBlur={field.onBlur} error={errors.birthday?.message} />
             )}
           />
           <Controller

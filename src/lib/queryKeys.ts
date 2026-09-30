@@ -42,6 +42,7 @@ export const queryKeys = {
   },
   admin: {
     stats: () => ['admin', 'stats'] as const,
+    aiUsage: () => ['admin', 'ai-usage'] as const,
     users: (filters: Record<string, unknown>) => ['admin', 'users', filters] as const,
     userDetail: (id: string) => ['admin', 'user', id] as const,
     achievements: () => ['admin', 'achievements'] as const,

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createChallengeInviteSchema = z.object({
   challengeId: z.string().min(1),
-  inviteeEmails: z.array(z.string().trim().toLowerCase().email()).max(10).default([]),
+  inviteeUsernames: z.array(z.string().trim().toLowerCase().min(1).max(254)).max(10).default([]),
 });
 export type CreateChallengeInviteInput = z.infer<typeof createChallengeInviteSchema>;
 
