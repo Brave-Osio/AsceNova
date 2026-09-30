@@ -19,6 +19,47 @@ export interface CoachTurn {
   text: string;
 }
 
+// Hard cap on Gemini calls per coach message (first try + retries) — the API
+// key's quota is small, so never loop beyond this. Fits Vercel Hobby's 10s limit.
+const MAX_COACH_ATTEMPTS = 3;
+const RETRY_DELAYS_MS = [500, 1500];
+
+function getUpstreamStatus(err: unknown): number | undefined {
+  if (typeof err === 'object' && err !== null && 'status' in err) {
+    const { status } = err as { status: unknown };
+    return typeof status === 'number' ? status : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Retries only on 503 (model overloaded — transient). 429 (quota exhausted)
+ * and everything else fail immediately so we don't burn more of the quota.
+ */
+async function withOverloadRetry<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (getUpstreamStatus(err) !== 503 || attempt >= MAX_COACH_ATTEMPTS) {
+        throw err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt - 1]));
+    }
+  }
+}
+
+function toCoachHttpError(err: unknown): HttpError {
+  switch (getUpstreamStatus(err)) {
+    case 503:
+      return new HttpError(503, 'The AI coach is busy right now. Please try again in a moment.');
+    case 429:
+      return new HttpError(429, 'AI usage limit reached. Please try again later.');
+    default:
+      return new HttpError(502, 'AI coach is temporarily unavailable — please try again');
+  }
+}
+
 /**
  * Thin wrapper over the Gemini SDK — the one seam chatService talks to,
  * so the prompt-building/persistence logic never touches the SDK shape
@@ -33,16 +74,18 @@ export async function generateCoachReply(
   const ai = getClient();
 
   try {
-    const response = await ai.models.generateContent({
-      model: env.GEMINI_MODEL,
-      contents: [
-        ...history.map((turn) => ({ role: turn.role, parts: [{ text: turn.text }] })),
-        { role: 'user' as const, parts: [{ text: userMessage }] },
-      ],
-      config: {
-        systemInstruction: systemPrompt,
-      },
-    });
+    const response = await withOverloadRetry(() =>
+      ai.models.generateContent({
+        model: env.GEMINI_MODEL,
+        contents: [
+          ...history.map((turn) => ({ role: turn.role, parts: [{ text: turn.text }] })),
+          { role: 'user' as const, parts: [{ text: userMessage }] },
+        ],
+        config: {
+          systemInstruction: systemPrompt,
+        },
+      }),
+    );
 
     const text = response.text;
     if (!text) {
@@ -54,7 +97,7 @@ export async function generateCoachReply(
       throw err;
     }
     console.error('Gemini request failed:', err);
-    throw new HttpError(502, 'AI coach is temporarily unavailable — please try again');
+    throw toCoachHttpError(err);
   }
 }
 
