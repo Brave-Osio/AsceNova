@@ -6,6 +6,7 @@ import { env } from '../config/env.js';
 import type {
   RegisterInput,
   LoginInput,
+  GoogleLoginInput,
   ForgotPasswordInput,
   ResetPasswordInput,
   ChangePasswordInput,
@@ -42,7 +43,9 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     setRefreshCookie(res, refreshToken, refreshExpiresAt);
     // refreshToken is also returned in the body for non-browser clients (mobile) that
     // can't rely on an httpOnly cookie surviving app restarts — see docs/ROADMAP.md Phase 10.
-    res.status(201).json({ user: { id: userId, email: input.email, role: 'USER' }, accessToken, refreshToken });
+    res
+      .status(201)
+      .json({ user: { id: userId, email: input.email, role: 'USER', hasPassword: true }, accessToken, refreshToken });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       next(new HttpError(409, 'An account with this email already exists.'));
@@ -60,7 +63,19 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       requestMeta(req),
     );
     setRefreshCookie(res, refreshToken, refreshExpiresAt);
-    res.json({ user: { id: userId, email: input.email, role }, accessToken, refreshToken });
+    res.json({ user: { id: userId, email: input.email, role, hasPassword: true }, accessToken, refreshToken });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function googleLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = req.body as GoogleLoginInput;
+    const { accessToken, refreshToken, refreshExpiresAt, userId, email, role, hasPassword, isNewUser } =
+      await authService.googleLogin(input, requestMeta(req));
+    setRefreshCookie(res, refreshToken, refreshExpiresAt);
+    res.json({ user: { id: userId, email, role, hasPassword }, isNewUser, accessToken, refreshToken });
   } catch (err) {
     next(err);
   }

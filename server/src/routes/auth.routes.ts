@@ -6,6 +6,7 @@ import { authRateLimiter } from '../middleware/rateLimiter.js';
 import {
   registerSchema,
   loginSchema,
+  googleLoginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
@@ -15,6 +16,7 @@ export const authRouter = Router();
 
 authRouter.post('/register', authRateLimiter, validateRequest(registerSchema), authController.register);
 authRouter.post('/login', authRateLimiter, validateRequest(loginSchema), authController.login);
+authRouter.post('/google', authRateLimiter, validateRequest(googleLoginSchema), authController.googleLogin);
 authRouter.post('/refresh', authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post(

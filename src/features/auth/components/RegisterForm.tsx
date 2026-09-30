@@ -7,6 +7,7 @@ import { ROUTES } from '../../../constants/routes';
 import { getErrorMessage } from '../../../lib/errors';
 import { registerSchema, type RegisterFormValues } from '../schemas';
 import { useRegister } from '../hooks/useRegister';
+import GoogleSignInButton from './GoogleSignInButton';
 
 export default function RegisterForm() {
   const {
@@ -90,6 +91,8 @@ export default function RegisterForm() {
       <Button type="submit" variant="primary" fullWidth loading={isPending}>
         Create Account
       </Button>
+
+      <GoogleSignInButton text="signup_with" />
 
       <p className="text-center text-sm text-brand-text-secondary">
         Already have an account?{' '}

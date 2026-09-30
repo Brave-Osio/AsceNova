@@ -1,12 +1,15 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prismaClient.js';
 import { hashPassword, comparePassword } from '../lib/password.js';
 import { signAccessToken } from '../lib/jwt.js';
 import { generateOpaqueToken, sha256Hex } from '../lib/crypto.js';
+import { verifyGoogleIdToken } from '../lib/googleAuth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
 import type {
   RegisterInput,
   LoginInput,
+  GoogleLoginInput,
   ResetPasswordInput,
   ChangePasswordInput,
 } from '../validators/auth.validators.js';
@@ -49,16 +52,19 @@ async function issueTokenPair(
   return { accessToken, refreshToken: rawRefreshToken, refreshExpiresAt };
 }
 
-export async function register(input: RegisterInput, meta: RequestMeta): Promise<TokenPair & { userId: string }> {
-  const passwordHash = await hashPassword(input.password);
-
-  const user = await prisma.$transaction(async (tx) => {
-    const created = await tx.user.create({
-      data: { email: input.email, passwordHash },
-    });
+/** Every new account — password or Google — needs its UserProgress row created atomically with it. */
+function createUserWithProgress(data: Prisma.UserCreateInput) {
+  return prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({ data });
     await tx.userProgress.create({ data: { userId: created.id } });
     return created;
   });
+}
+
+export async function register(input: RegisterInput, meta: RequestMeta): Promise<TokenPair & { userId: string }> {
+  const passwordHash = await hashPassword(input.password);
+
+  const user = await createUserWithProgress({ email: input.email, passwordHash });
 
   const tokens = await issueTokenPair(user.id, user.role, false, meta);
   return { ...tokens, userId: user.id };
@@ -77,6 +83,12 @@ export async function login(
     throw new HttpError(403, 'This account has been suspended');
   }
 
+  // Google-only accounts have no password — same generic error as a wrong one,
+  // so this endpoint can't be used to tell which sign-in method an email uses.
+  if (!user.passwordHash) {
+    throw new HttpError(401, 'Invalid email or password');
+  }
+
   const valid = await comparePassword(input.password, user.passwordHash);
   if (!valid) {
     throw new HttpError(401, 'Invalid email or password');
@@ -84,6 +96,83 @@ export async function login(
 
   const tokens = await issueTokenPair(user.id, user.role, input.rememberMe, meta);
   return { ...tokens, userId: user.id, role: user.role };
+}
+
+/**
+ * Signs in (or signs up) with a Google ID token. Resolution order: known googleId,
+ * then an existing account with the same Google-verified email (auto-linked, and
+ * its other sessions revoked), else a brand-new account.
+ */
+export async function googleLogin(
+  input: GoogleLoginInput,
+  meta: RequestMeta,
+): Promise<
+  TokenPair & { userId: string; email: string; role: 'USER' | 'ADMIN'; hasPassword: boolean; isNewUser: boolean }
+> {
+  const { googleId, email } = await verifyGoogleIdToken(input.idToken);
+
+  let isNewUser = false;
+  let user = await prisma.user.findUnique({ where: { googleId } });
+
+  if (!user) {
+    const byEmail = await prisma.user.findUnique({ where: { email } });
+
+    if (byEmail) {
+      if (byEmail.deleted) {
+        throw new HttpError(401, 'Unable to sign in with Google');
+      }
+      if (byEmail.status !== 'ACTIVE') {
+        throw new HttpError(403, 'This account has been suspended');
+      }
+      if (byEmail.googleId) {
+        // Same email, but already tied to a different Google account — never re-point it.
+        throw new HttpError(409, 'This email is already linked to a different Google account');
+      }
+      const [linked] = await prisma.$transaction([
+        prisma.user.update({
+          where: { id: byEmail.id },
+          data: { googleId, emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date() },
+        }),
+        // The account may have been registered by someone else who never proved they own
+        // this email (registration doesn't verify it) — end any pre-existing sessions.
+        prisma.refreshToken.updateMany({
+          where: { userId: byEmail.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        }),
+      ]);
+      user = linked;
+    } else {
+      try {
+        user = await createUserWithProgress({ email, googleId, emailVerifiedAt: new Date() });
+        isNewUser = true;
+      } catch (err) {
+        // Two concurrent first-time sign-ins raced; the other request won — use its row.
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          user = await prisma.user.findFirst({ where: { OR: [{ googleId }, { email }] } });
+        }
+        if (!user) {
+          throw err;
+        }
+      }
+    }
+  }
+
+  if (user.deleted) {
+    throw new HttpError(401, 'Unable to sign in with Google');
+  }
+  if (user.status !== 'ACTIVE') {
+    throw new HttpError(403, 'This account has been suspended');
+  }
+
+  const tokens = await issueTokenPair(user.id, user.role, input.rememberMe, meta);
+  return {
+    ...tokens,
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    hasPassword: user.passwordHash !== null,
+    isNewUser,
+  };
 }
 
 export async function refresh(rawRefreshToken: string, meta: RequestMeta): Promise<TokenPair> {
@@ -135,12 +224,14 @@ export async function logout(rawRefreshToken: string): Promise<void> {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, role: true, status: true, createdAt: true },
+    select: { id: true, email: true, role: true, status: true, createdAt: true, passwordHash: true },
   });
   if (!user) {
     throw new HttpError(404, 'User not found');
   }
-  return user;
+  // Expose only whether a password exists (Google-only accounts have none), never the hash.
+  const { passwordHash, ...rest } = user;
+  return { ...rest, hasPassword: passwordHash !== null };
 }
 
 const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
@@ -177,6 +268,13 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     throw new HttpError(404, 'User not found');
+  }
+
+  if (!user.passwordHash) {
+    throw new HttpError(
+      400,
+      'This account signs in with Google and has no password yet. Use "Forgot password" to set one.',
+    );
   }
 
   const valid = await comparePassword(input.currentPassword, user.passwordHash);

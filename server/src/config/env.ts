@@ -14,6 +14,10 @@ const envSchema = z.object({
   REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().default(30),
   BCRYPT_SALT_ROUNDS: z.coerce.number().default(12),
 
+  // Optional: comma-separated Google OAuth client IDs (web/iOS/Android) whose ID tokens
+  // POST /api/auth/google accepts. When unset that endpoint returns 503 (see lib/googleAuth.ts).
+  GOOGLE_CLIENT_IDS: z.string().optional(),
+
   ADMIN_SEED_EMAIL: z.string().email().optional(),
   ADMIN_SEED_PASSWORD: z.string().optional(),
 

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   loginRequest,
+  googleLoginRequest,
   registerRequest,
   logoutRequest,
   refreshRequest,
@@ -20,6 +21,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (input: { email: string; password: string; rememberMe: boolean }) => Promise<void>;
+  /** Resolves with whether the Google account was just created, so callers can route new users to setup. */
+  loginWithGoogle: (input: { idToken: string; rememberMe: boolean }) => Promise<{ isNewUser: boolean }>;
   register: (input: { email: string; password: string; fullName: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -77,6 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated');
   }
 
+  async function loginWithGoogle(input: { idToken: string; rememberMe: boolean }) {
+    const { user: googleUser, accessToken, isNewUser } = await googleLoginRequest(input);
+    setAccessToken(accessToken);
+    setUser(googleUser);
+    setStatus('authenticated');
+    return { isNewUser };
+  }
+
   async function register(input: { email: string; password: string; fullName: string }) {
     const { user: newUser, accessToken } = await registerRequest(input);
     setAccessToken(accessToken);
@@ -104,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: status === 'authenticated',
     isAdmin: user?.role === 'ADMIN',
     login,
+    loginWithGoogle,
     register,
     logout,
   };

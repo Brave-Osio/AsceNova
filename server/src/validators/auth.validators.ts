@@ -14,6 +14,12 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const googleLoginSchema = z.object({
+  idToken: z.string().min(1, 'Google credential is required'),
+  rememberMe: z.boolean().default(false),
+});
+export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
+
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
 });
