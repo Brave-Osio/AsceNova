@@ -11,3 +11,14 @@ export const changePasswordSchema = z
     path: ['confirmPassword'],
   });
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+export const recoveryEmailSchema = z.object({
+  recoveryEmail: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, 'Gmail address is required')
+    .regex(/^[^\s@]+@gmail\.com$/, 'Enter a Gmail address (name@gmail.com)'),
+  currentPassword: z.string().min(1, 'Enter your current password to confirm'),
+});
+export type RecoveryEmailFormValues = z.infer<typeof recoveryEmailSchema>;

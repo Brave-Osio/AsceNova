@@ -1,5 +1,6 @@
 import AccountInfoPanel from '../../features/settings/components/AccountInfoPanel';
 import ChangePasswordForm from '../../features/settings/components/ChangePasswordForm';
+import RecoveryEmailForm from '../../features/settings/components/RecoveryEmailForm';
 import ProfileSetupForm from '../../features/profile/components/ProfileSetupForm';
 
 function SectionHeading({ children }: { children: string }) {
@@ -19,6 +20,11 @@ export default function SettingsPage() {
       <div className="card mt-6 rounded-2xl p-5">
         <SectionHeading>Edit Profile</SectionHeading>
         <ProfileSetupForm submitLabel="Save Changes" redirectOnSave={false} />
+      </div>
+
+      <div className="card mt-6 rounded-2xl p-5">
+        <SectionHeading>Recovery Gmail</SectionHeading>
+        <RecoveryEmailForm />
       </div>
 
       <div className="card mt-6 rounded-2xl p-5">

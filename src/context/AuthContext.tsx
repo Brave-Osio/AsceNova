@@ -23,7 +23,7 @@ interface AuthContextValue {
   login: (input: { email: string; password: string; rememberMe: boolean }) => Promise<void>;
   /** Resolves with whether the Google account was just created, so callers can route new users to setup. */
   loginWithGoogle: (input: { idToken: string; rememberMe: boolean }) => Promise<{ isNewUser: boolean }>;
-  register: (input: { email: string; password: string; fullName: string }) => Promise<void>;
+  register: (input: { email: string; password: string; fullName: string; recoveryEmail?: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { isNewUser };
   }
 
-  async function register(input: { email: string; password: string; fullName: string }) {
+  async function register(input: { email: string; password: string; fullName: string; recoveryEmail?: string }) {
     const { user: newUser, accessToken } = await registerRequest(input);
     setAccessToken(accessToken);
     setUser(newUser);

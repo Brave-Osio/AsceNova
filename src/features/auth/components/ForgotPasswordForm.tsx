@@ -15,7 +15,7 @@ export default function ForgotPasswordForm() {
     formState: { errors },
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+    defaultValues: { email: '', recoveryEmail: '' },
   });
   const { mutate, isPending, error, data } = useForgotPassword();
 
@@ -25,7 +25,7 @@ export default function ForgotPasswordForm() {
         <p className="text-sm text-brand-text-secondary">{data.message}</p>
         {data.devResetToken && (
           <div className="rounded-lg bg-amber-500/10 p-3 text-left text-xs text-amber-300 light:text-amber-700">
-            <p className="font-semibold">Dev mode only — no email service is wired up yet:</p>
+            <p className="font-semibold">Dev mode only — email isn't configured, so the reset link is shown here instead:</p>
             <Link
               to={`${ROUTES.resetPassword}?token=${data.devResetToken}`}
               className="mt-1 block break-all underline"
@@ -48,18 +48,39 @@ export default function ForgotPasswordForm() {
         control={control}
         render={({ field }) => (
           <TextField
-            label="Email"
-            type="email"
+            label="Username"
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
             error={errors.email?.message}
-            placeholder="you@example.com"
+            placeholder="Your username"
+          />
+        )}
+      />
+
+      <Controller
+        name="recoveryEmail"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            label="Gmail on your account"
+            type="email"
+            value={field.value}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.recoveryEmail?.message}
+            helperText={errors.recoveryEmail ? undefined : 'The Gmail you saved in Settings'}
+            placeholder="you@gmail.com"
           />
         )}
       />
 
       {error && <p className="text-sm text-red-400 light:text-red-700">{getErrorMessage(error)}</p>}
+
+      <p className="text-xs text-brand-text-muted">
+        No Gmail saved on your account, or signed up with Google? Reset links can't be sent for those — Google sign-in
+        users can use Continue with Google instead.
+      </p>
 
       <Button type="submit" variant="primary" fullWidth loading={isPending}>
         Send Reset Link

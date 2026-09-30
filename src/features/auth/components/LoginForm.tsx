@@ -28,13 +28,12 @@ export default function LoginForm() {
         control={control}
         render={({ field }) => (
           <TextField
-            label="Email"
-            type="email"
+            label="Username"
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
             error={errors.email?.message}
-            placeholder="you@example.com"
+            placeholder="Your username"
           />
         )}
       />

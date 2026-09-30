@@ -11,7 +11,12 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: (values: RegisterFormValues) =>
-      register({ email: values.email, password: values.password, fullName: values.fullName }),
+      register({
+        email: values.email,
+        password: values.password,
+        fullName: values.fullName,
+        recoveryEmail: values.recoveryEmail || undefined,
+      }),
     onSuccess: () => {
       showSuccessToast('Account created — welcome to AsceNova!');
       navigate(ROUTES.setup, { replace: true });

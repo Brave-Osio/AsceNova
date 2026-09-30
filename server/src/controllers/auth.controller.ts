@@ -8,6 +8,7 @@ import type {
   LoginInput,
   GoogleLoginInput,
   ForgotPasswordInput,
+  SetRecoveryEmailInput,
   ResetPasswordInput,
   ChangePasswordInput,
 } from '../validators/auth.validators.js';
@@ -48,7 +49,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       .json({ user: { id: userId, email: input.email, role: 'USER', hasPassword: true }, accessToken, refreshToken });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      next(new HttpError(409, 'An account with this email already exists.'));
+      next(new HttpError(409, 'That username is already taken.'));
       return;
     }
     next(err);
@@ -123,11 +124,23 @@ export async function me(req: Request, res: Response, next: NextFunction) {
 export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
   try {
     const input = req.body as ForgotPasswordInput;
-    const result = await authService.forgotPassword(input.email);
+    const result = await authService.forgotPassword(input);
     res.json({
-      message: 'If an account with that email exists, a reset link has been sent.',
+      message: result.devResetToken
+        ? 'Details confirmed. Email delivery is off in this environment, so use the link below. It expires in 1 hour.'
+        : 'A reset link has been sent to your email. It expires in 1 hour.',
       ...result,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function setRecoveryEmail(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = req.body as SetRecoveryEmailInput;
+    const result = await authService.setRecoveryEmail(req.user!.id, input);
+    res.json(result);
   } catch (err) {
     next(err);
   }

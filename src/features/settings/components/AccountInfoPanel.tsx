@@ -18,7 +18,7 @@ export default function AccountInfoPanel() {
     <div className="card rounded-2xl p-5">
       <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Account</div>
       <div className="mt-2">
-        <Row label="Email" value={user.email} />
+        <Row label="Username" value={user.email} />
         <Row label="Role" value={user.role ?? 'USER'} />
         {user.status && <Row label="Status" value={user.status} />}
         {user.createdAt && <Row label="Joined" value={new Date(user.createdAt).toLocaleDateString()} />}

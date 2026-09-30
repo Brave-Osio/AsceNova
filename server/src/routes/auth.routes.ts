@@ -8,6 +8,7 @@ import {
   loginSchema,
   googleLoginSchema,
   forgotPasswordSchema,
+  setRecoveryEmailSchema,
   resetPasswordSchema,
   changePasswordSchema,
 } from '../validators/auth.validators.js';
@@ -31,5 +32,12 @@ authRouter.post(
   requireAuth,
   validateRequest(changePasswordSchema),
   authController.changePassword,
+);
+authRouter.put(
+  '/recovery-email',
+  requireAuth,
+  authRateLimiter,
+  validateRequest(setRecoveryEmailSchema),
+  authController.setRecoveryEmail,
 );
 authRouter.get('/me', requireAuth, authController.me);
