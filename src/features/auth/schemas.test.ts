@@ -7,11 +7,16 @@ const validRegister = {
   recoveryEmail: '',
   password: 'password1',
   confirmPassword: 'password1',
+  acceptedTerms: true,
 };
 
 describe('registerSchema', () => {
   it('accepts a plain username and no Gmail', () => {
     expect(registerSchema.safeParse(validRegister).success).toBe(true);
+  });
+
+  it('rejects signup until the terms are accepted', () => {
+    expect(registerSchema.safeParse({ ...validRegister, acceptedTerms: false }).success).toBe(false);
   });
 
   it('accepts a Gmail recovery address', () => {

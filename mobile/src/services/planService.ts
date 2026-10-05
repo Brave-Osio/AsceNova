@@ -94,7 +94,13 @@ export async function getActivePlan(): Promise<FitnessPlan | null> {
   }
 }
 
-export async function generatePlan(splitStyle?: WorkoutSplitStyle): Promise<FitnessPlan> {
-  const res = await httpClient.post<{ plan: ApiWorkoutPlan }>('/api/plans', { splitStyle });
-  return toFitnessPlan(res.data.plan);
+export interface GeneratedPlanResult {
+  plan: FitnessPlan;
+  /** True when AI generation failed and a pre-made backup plan was used instead. */
+  usedBackup: boolean;
+}
+
+export async function generatePlan(splitStyle?: WorkoutSplitStyle): Promise<GeneratedPlanResult> {
+  const res = await httpClient.post<{ plan: ApiWorkoutPlan; usedBackup?: boolean }>('/api/plans', { splitStyle });
+  return { plan: toFitnessPlan(res.data.plan), usedBackup: res.data.usedBackup === true };
 }

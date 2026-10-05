@@ -10,6 +10,10 @@ export function showSuccessToast(message: string): void {
   Alert.alert('Success', message);
 }
 
+export function showInfoToast(message: string): void {
+  Alert.alert('Heads up', message);
+}
+
 export function showErrorToast(err: unknown): void {
   Alert.alert('Error', getErrorMessage(err));
 }
