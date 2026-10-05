@@ -14,8 +14,8 @@ export async function getActive(req: Request, res: Response, next: NextFunction)
 export async function generate(req: Request, res: Response, next: NextFunction) {
   try {
     const input = req.body as GeneratePlanInput;
-    const plan = await planService.generateAndSaveActivePlan(req.user!.id, input.splitStyle);
-    res.status(201).json({ plan });
+    const { plan, usedBackup } = await planService.generateAndSaveActivePlan(req.user!.id, input.splitStyle);
+    res.status(201).json({ plan, usedBackup });
   } catch (err) {
     next(err);
   }

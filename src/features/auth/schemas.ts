@@ -40,6 +40,7 @@ export const registerSchema = z
       .refine((v) => v === '' || GMAIL_PATTERN.test(v), 'Enter a Gmail address (name@gmail.com)'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+    acceptedTerms: z.boolean().refine((v) => v, 'You must accept the Terms and Conditions to continue'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',

@@ -2,6 +2,7 @@ import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { generateExerciseDetail, WORKOUT_PROMPT_VERSION, type EnrichedWorkoutDay } from './workoutGenerationService.js';
 import * as dailyProgressService from './dailyProgressService.js';
+import { selectBackupDays } from './backupPlanService.js';
 import type { Profile, WorkoutSplitStyle, PlanSource } from '@prisma/client';
 
 const ADHERENCE_WINDOW_DAYS = 14;
@@ -194,40 +195,40 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
 
   let source: PlanSource = 'RULE_BASED_LEGACY';
   let promptVersion: string | null = null;
-  let enrichedDays: EnrichedWorkoutDay[] | null = null;
+  let enrichedDays: EnrichedWorkoutDay[];
+  let usedBackup = false;
 
   try {
     enrichedDays = await generateExerciseDetail(profile, skeleton, priorExerciseNames, adherence);
     source = 'GEMINI';
     promptVersion = WORKOUT_PROMPT_VERSION;
   } catch (err) {
-    // Fall back to the rule-based skeleton (no exercises) — a real,
-    // already-tested plan rather than failing the request. `source`
-    // stays RULE_BASED_LEGACY so this is fully visible in the data.
-    console.error('Workout exercise generation failed, falling back to rule-based plan:', err);
+    // Fall back to the best-fitting pre-written template (full 7-day plan with
+    // exercises) for this profile and split. `source` stays RULE_BASED_LEGACY so
+    // this is fully visible in the data; the caller is told so it can inform the user.
+    console.error('Workout exercise generation failed, falling back to backup template plan:', err);
+    enrichedDays = selectBackupDays(profile, style);
+    usedBackup = true;
   }
 
-  const workoutDaysCreate = enrichedDays
-    ? enrichedDays.map((d, i) => ({
-        dayIndex: i,
-        label: d.day,
-        focus: d.focus,
-        workoutName: d.workoutName,
-        warmUp: d.warmUp,
-        coolDown: d.coolDown,
-        estimatedDurationMinutes: d.estimatedDurationMinutes,
-        estimatedCaloriesBurned: d.estimatedCaloriesBurned,
-        coachingTips: d.coachingTips,
-        progressionAdvice: d.progressionAdvice,
-        exercises:
-          d.exercises.length > 0 ? { create: d.exercises.map((e, order) => ({ ...e, order })) } : undefined,
-      }))
-    : skeleton.map((d, i) => ({ dayIndex: i, label: d.day, focus: d.focus }));
+  const workoutDaysCreate = enrichedDays.map((d, i) => ({
+    dayIndex: i,
+    label: d.day,
+    focus: d.focus,
+    workoutName: d.workoutName,
+    warmUp: d.warmUp,
+    coolDown: d.coolDown,
+    estimatedDurationMinutes: d.estimatedDurationMinutes,
+    estimatedCaloriesBurned: d.estimatedCaloriesBurned,
+    coachingTips: d.coachingTips,
+    progressionAdvice: d.progressionAdvice,
+    exercises: d.exercises.length > 0 ? { create: d.exercises.map((e, order) => ({ ...e, order })) } : undefined,
+  }));
 
   // A Gemini plan nests many rows (days -> exercises), and on serverless each
   // query is a network hop to the DB — Prisma's 5s default interactive
   // transaction timeout (P2028) is too tight there, so allow more headroom.
-  return prisma.$transaction(
+  const plan = await prisma.$transaction(
     async (tx) => {
       await tx.workoutPlan.updateMany({
         where: { userId, isActive: true },
@@ -253,6 +254,8 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
     },
     { maxWait: 10_000, timeout: 15_000 },
   );
+
+  return { plan, usedBackup };
 }
 
 export async function getActivePlan(userId: string) {

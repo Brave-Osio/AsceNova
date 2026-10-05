@@ -4,8 +4,12 @@ import { useAuth } from '../../../context/AuthContext';
 import { useProfile } from '../../profile/hooks/useProfile';
 import { getActivePlan, generatePlan } from '../../../services/planService';
 import { queryKeys } from '../../../lib/queryKeys';
+import { showInfoToast } from '../../../lib/toast';
 import type { FitnessPlan, WorkoutSplitStyle } from '../../../types/plan.types';
 import type { Profile } from '../../../types/profile.types';
+
+const BACKUP_PLAN_MESSAGE =
+  "We couldn't generate your personalized plan with AI right now, so we picked a backup plan that fits your stats.";
 
 interface UsePlanGeneratorResult {
   plan: FitnessPlan | null;
@@ -34,9 +38,12 @@ export function usePlanGenerator(): UsePlanGeneratorResult {
 
   const generateMutation = useMutation({
     mutationFn: (splitStyle: WorkoutSplitStyle | undefined) => generatePlan(splitStyle),
-    onSuccess: (newPlan) => {
+    onSuccess: ({ plan: newPlan, usedBackup }) => {
       if (user) {
         queryClient.setQueryData(queryKeys.plan.active(user.id), newPlan);
+      }
+      if (usedBackup) {
+        showInfoToast(BACKUP_PLAN_MESSAGE);
       }
     },
   });
