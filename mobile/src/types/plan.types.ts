@@ -31,6 +31,19 @@ export interface WorkoutDay {
 
 export type WorkoutSplitStyle = 'PUSH_PULL_LEGS' | 'UPPER_LOWER' | 'FULL_BODY';
 
+export interface SplitStyleOption {
+  value: WorkoutSplitStyle;
+  label: string;
+  description: string;
+}
+
+/** Same copy as the web's SPLIT_STYLE_OPTIONS. */
+export const SPLIT_STYLE_OPTIONS: SplitStyleOption[] = [
+  { value: 'PUSH_PULL_LEGS', label: 'Push / Pull / Legs', description: 'Classic 3-way gym split, repeated across the week.' },
+  { value: 'UPPER_LOWER', label: 'Upper / Lower', description: 'Alternates upper body and lower body days.' },
+  { value: 'FULL_BODY', label: 'Full Body', description: 'Trains your whole body each session — efficient with fewer days.' },
+];
+
 export interface NutritionPlan {
   calories: number;
   proteinGrams: number;

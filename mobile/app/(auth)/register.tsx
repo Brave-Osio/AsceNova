@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,9 @@ import Button from '../../src/components/ui/Button';
 import { useAuth } from '../../src/context/AuthContext';
 import { getErrorMessage } from '../../src/lib/errors';
 import { registerSchema, type RegisterFormValues } from '../../src/features/auth/schemas';
-import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { fonts, spacing, type ColorPalette } from '../../src/theme';
+import AuthLayout from '../../src/features/auth/components/AuthLayout';
+import GoogleSignInButton from '../../src/features/auth/components/GoogleSignInButton';
 import { useAppTheme } from '../../src/context/ThemeContext';
 import TermsModal from '../../src/features/auth/components/TermsModal';
 
@@ -53,9 +55,18 @@ export default function RegisterScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Create your account</Text>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start tracking your fitness journey."
+      footer={
+        <>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <Link href="/(auth)/login" style={styles.link}>
+            Log in
+          </Link>
+        </>
+      }
+    >
 
         <Controller
           name="fullName"
@@ -168,30 +179,20 @@ export default function RegisterScreen() {
           Sign Up
         </Button>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <Link href="/(auth)/login" style={styles.link}>
-            Log in
-          </Link>
-        </View>
-      </ScrollView>
+        <GoogleSignInButton label="Sign up with Google" onError={setError} />
       <TermsModal visible={termsOpen} onClose={() => setTermsOpen(false)} />
-    </KeyboardAvoidingView>
+    </AuthLayout>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    flex: { flex: 1, backgroundColor: colors.bg },
-    container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-    title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
-    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-    link: { color: colors.primaryLight, fontWeight: '600' },
-    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.md },
-    footerText: { color: colors.textSecondary },
+    error: { color: colors.danger, fontSize: 13, fontFamily: fonts.regular, marginBottom: spacing.md, textAlign: 'center' },
+    link: { color: colors.primaryLight, fontSize: 14, fontFamily: fonts.semibold },
+    footerText: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.regular },
     termsBlock: { marginBottom: spacing.md },
     termsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    termsText: { flex: 1, color: colors.textSecondary },
+    termsText: { flex: 1, color: colors.textSecondary, fontSize: 14, fontFamily: fonts.regular },
     box: {
       width: 20,
       height: 20,
@@ -202,7 +203,7 @@ function createStyles(colors: ColorPalette) {
       justifyContent: 'center',
     },
     boxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
-    tick: { color: '#fff', fontSize: 13, fontWeight: '700' },
+    tick: { color: '#fff', fontSize: 13, fontFamily: fonts.bold },
     fieldError: { color: colors.danger, marginTop: spacing.xs, fontSize: 13 },
   });
 }

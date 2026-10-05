@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,8 @@ import Button from '../../src/components/ui/Button';
 import { getErrorMessage } from '../../src/lib/errors';
 import { forgotPasswordRequest } from '../../src/services/authService';
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '../../src/features/auth/schemas';
-import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { fonts, spacing, type ColorPalette } from '../../src/theme';
+import AuthLayout from '../../src/features/auth/components/AuthLayout';
 import { useAppTheme } from '../../src/context/ThemeContext';
 
 export default function ForgotPasswordScreen() {
@@ -39,9 +40,15 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Reset your password</Text>
+    <AuthLayout
+      title="Reset your password"
+      subtitle="We'll email a reset link to your saved Gmail."
+      footer={
+        <Link href="/(auth)/login" style={styles.link}>
+          Back to login
+        </Link>
+      }
+    >
 
         {result ? (
           <>
@@ -99,25 +106,15 @@ export default function ForgotPasswordScreen() {
           </>
         )}
 
-        <View style={styles.footer}>
-          <Link href="/(auth)/login" style={styles.link}>
-            Back to login
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </AuthLayout>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    flex: { flex: 1, backgroundColor: colors.bg },
-    container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-    title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
-    info: { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 20 },
-    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-    hint: { color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: spacing.md, lineHeight: 18 },
-    link: { color: colors.primaryLight, fontWeight: '600' },
-    footer: { alignItems: 'center', marginTop: spacing.lg },
+    info: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.md, lineHeight: 20 },
+    error: { color: colors.danger, fontSize: 13, fontFamily: fonts.regular, marginBottom: spacing.md, textAlign: 'center' },
+    hint: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.md, lineHeight: 18 },
+    link: { color: colors.primaryLight, fontSize: 14, fontFamily: fonts.semibold },
   });
 }

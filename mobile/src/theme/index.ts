@@ -11,6 +11,8 @@ export interface ColorPalette {
   surface: string;
   /** Card backgrounds. */
   surfaceAlt: string;
+  /** Web `card-alt`: chips, progress-bar tracks, pressed/hover fills. */
+  cardAlt: string;
   border: string;
   primary: string;
   primaryLight: string;
@@ -33,6 +35,7 @@ export const darkColors: ColorPalette = {
   bg: '#0e0b16',
   surface: '#17131f',
   surfaceAlt: '#1e1929',
+  cardAlt: '#241e33',
   border: 'rgba(255,255,255,0.08)',
   primary: '#7c5cfc',
   primaryLight: '#8f73ff',
@@ -50,6 +53,7 @@ export const lightColors: ColorPalette = {
   bg: '#f6f4fb',
   surface: '#ffffff',
   surfaceAlt: '#ffffff',
+  cardAlt: '#efecf7',
   border: 'rgba(23,19,31,0.1)',
   primary: '#7c5cfc',
   primaryLight: '#6942e8',
@@ -71,16 +75,34 @@ export const spacing = {
   xl: 32,
 } as const;
 
+/** Matches the web's rounding: inputs/nav rows 12 (rounded-xl), cards 16 (rounded-2xl), hero/auth cards 24 (rounded-3xl), buttons/chips full. */
 export const radius = {
   sm: 8,
   md: 12,
   lg: 16,
   xl: 24,
+  full: 999,
+} as const;
+
+/**
+ * Plus Jakarta Sans, same family as the web. React Native picks the weight
+ * from the font family name (not `fontWeight`), so always use these.
+ * Loaded in app/_layout.tsx.
+ */
+export const fonts = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold',
 } as const;
 
 export const typography = {
-  h1: { fontSize: 28, fontWeight: '800' as const },
-  h2: { fontSize: 20, fontWeight: '700' as const },
-  body: { fontSize: 15, fontWeight: '400' as const },
-  label: { fontSize: 12, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  /** Web page title: text-2xl font-extrabold. */
+  h1: { fontSize: 24, fontFamily: fonts.extrabold },
+  h2: { fontSize: 18, fontFamily: fonts.bold },
+  body: { fontSize: 15, fontFamily: fonts.regular },
+  subtitle: { fontSize: 14, fontFamily: fonts.regular },
+  /** Web section label: text-xs font-bold uppercase tracking-widest. */
+  label: { fontSize: 11, fontFamily: fonts.bold, textTransform: 'uppercase' as const, letterSpacing: 1.4 },
 };

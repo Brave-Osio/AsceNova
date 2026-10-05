@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import TextField from '../../src/components/ui/TextField';
 import Button from '../../src/components/ui/Button';
+import AuthLayout from '../../src/features/auth/components/AuthLayout';
+import GoogleSignInButton from '../../src/features/auth/components/GoogleSignInButton';
 import { useAuth } from '../../src/context/AuthContext';
 import { getErrorMessage } from '../../src/lib/errors';
 import { loginSchema, type LoginFormValues } from '../../src/features/auth/schemas';
-import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { fonts, spacing, type ColorPalette } from '../../src/theme';
 import { useAppTheme } from '../../src/context/ThemeContext';
 
 export default function LoginScreen() {
@@ -39,71 +41,69 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.logo}>
-          Asce<Text style={{ color: colors.primary }}>Nova</Text>
-        </Text>
-        <Text style={styles.title}>Welcome back</Text>
-
-        <Controller
-          name="email"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              label="Username"
-              value={field.value}
-              onChangeText={field.onChange}
-              autoCorrect={false}
-              placeholder="Your username"
-              error={errors.email?.message}
-            />
-          )}
-        />
-        <Controller
-          name="password"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              label="Password"
-              value={field.value}
-              onChangeText={field.onChange}
-              secureTextEntry
-              placeholder="••••••••"
-              error={errors.password?.message}
-            />
-          )}
-        />
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Button onPress={handleSubmit(onSubmit)} loading={isPending}>
-          Log In
-        </Button>
-
-        <Link href="/(auth)/forgot-password" style={styles.link}>
-          Forgot password?
-        </Link>
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don&apos;t have an account?</Text>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Log in to keep your streak going."
+      footer={
+        <>
+          <Text style={styles.footerText}>Don&apos;t have an account? </Text>
           <Link href="/(auth)/register" style={styles.link}>
             Sign up
           </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </>
+      }
+    >
+      <Controller
+        name="email"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            label="Username"
+            value={field.value}
+            onChangeText={field.onChange}
+            autoCorrect={false}
+            placeholder="Your username"
+            error={errors.email?.message}
+          />
+        )}
+      />
+      <Controller
+        name="password"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            label="Password"
+            value={field.value}
+            onChangeText={field.onChange}
+            secureTextEntry
+            placeholder="••••••••"
+            error={errors.password?.message}
+          />
+        )}
+      />
+
+      <View style={styles.forgotRow}>
+        <Link href="/(auth)/forgot-password" style={styles.link}>
+          Forgot password?
+        </Link>
+      </View>
+
+      {error && <Text style={styles.error}>{error}</Text>}
+
+      <Button onPress={handleSubmit(onSubmit)} loading={isPending}>
+        Log In
+      </Button>
+
+      <GoogleSignInButton label="Sign in with Google" onError={setError} />
+    </AuthLayout>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    flex: { flex: 1, backgroundColor: colors.bg },
-    container: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-    logo: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
-    title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
-    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-    link: { color: colors.primaryLight, fontWeight: '600', marginTop: spacing.md, textAlign: 'center' },
-    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm },
-    footerText: { color: colors.textSecondary },
+    error: { color: colors.danger, fontSize: 13, fontFamily: fonts.regular, marginBottom: spacing.md, textAlign: 'center' },
+    link: { color: colors.primaryLight, fontSize: 14, fontFamily: fonts.semibold },
+    forgotRow: { alignItems: 'flex-end', marginBottom: spacing.md, marginTop: -spacing.xs },
+    footerText: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.regular },
   });
 }

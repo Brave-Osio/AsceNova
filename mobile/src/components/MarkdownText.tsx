@@ -1,4 +1,5 @@
 import { Text, type TextStyle } from 'react-native';
+import { fonts } from '../theme';
 
 const BOLD_PATTERN = /(\*\*[^*]+\*\*)/g;
 
@@ -19,7 +20,7 @@ export default function MarkdownText({ text, style }: { text: string; style?: Te
       {segments.map((segment, i) => {
         const boldMatch = segment.match(/^\*\*(.+)\*\*$/s);
         return boldMatch ? (
-          <Text key={i} style={{ fontWeight: '700' }}>
+          <Text key={i} style={{ fontFamily: fonts.bold }}>
             {boldMatch[1]}
           </Text>
         ) : (

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { spacing, radius, type ColorPalette } from '../../theme';
+import { fonts, radius, spacing, type ColorPalette } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 
 interface OptionSelectorProps<T extends string> {
@@ -17,7 +17,7 @@ export default function OptionSelector<T extends string>({ label, value, options
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={styles.row}>
         {options.map((opt) => {
           const selected = opt.value === value;
@@ -39,18 +39,18 @@ export default function OptionSelector<T extends string>({ label, value, options
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     container: { marginBottom: spacing.md },
-    label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
-    row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    label: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium, marginBottom: spacing.xs + 2 },
+    row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
     pill: {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: radius.full,
       paddingVertical: 8,
       paddingHorizontal: spacing.md,
     },
-    pillSelected: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
-    pillText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
-    pillTextSelected: { color: colors.primaryLight },
+    pillSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
+    pillText: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.semibold },
+    pillTextSelected: { color: '#fff' },
   });
 }

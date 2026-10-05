@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { emitAuthLogout } from './authEvents';
 
 const REFRESH_TOKEN_KEY = 'ascenova_refresh_token';
@@ -21,7 +22,19 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+/**
+ * expo-secure-store has no web implementation, so the browser preview
+ * (`expo start --web`, a dev-only target) falls back to sessionStorage.
+ * Native builds always use SecureStore.
+ */
+const isWeb = Platform.OS === 'web';
+
 export async function setStoredRefreshToken(token: string | null): Promise<void> {
+  if (isWeb) {
+    if (token) sessionStorage.setItem(REFRESH_TOKEN_KEY, token);
+    else sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+    return;
+  }
   if (token) {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
   } else {
@@ -30,6 +43,7 @@ export async function setStoredRefreshToken(token: string | null): Promise<void>
 }
 
 export async function getStoredRefreshToken(): Promise<string | null> {
+  if (isWeb) return sessionStorage.getItem(REFRESH_TOKEN_KEY);
   return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
 }
 

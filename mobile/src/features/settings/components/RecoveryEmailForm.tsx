@@ -8,7 +8,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getErrorMessage } from '../../../lib/errors';
 import { recoveryEmailSchema, type RecoveryEmailFormValues } from '../schemas';
 import { useRecoveryEmail } from '../hooks/useRecoveryEmail';
-import { spacing, type ColorPalette } from '../../../theme';
+import { fonts, spacing, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
 const DEFAULT_VALUES: RecoveryEmailFormValues = { recoveryEmail: '', currentPassword: '' };
@@ -87,9 +87,9 @@ export default function RecoveryEmailForm() {
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    note: { color: colors.textSecondary, fontSize: 13, lineHeight: 19, marginBottom: spacing.md },
-    current: { color: colors.textMuted, marginBottom: spacing.md },
-    currentValue: { color: colors.textPrimary, fontWeight: '600' },
-    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+    note: { color: colors.textSecondary, fontSize: 13, fontFamily: fonts.regular, lineHeight: 19, marginBottom: spacing.md },
+    current: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.regular, marginBottom: spacing.md },
+    currentValue: { color: colors.textPrimary, fontFamily: fonts.semibold },
+    error: { color: colors.danger, fontSize: 13, fontFamily: fonts.regular, marginBottom: spacing.md, textAlign: 'center' },
   });
 }
