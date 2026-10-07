@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildWorkoutSplit, buildNutritionTargets } from './planService.js';
+import { countTrainingDays } from './workoutGenerationService.js';
 import type { Profile } from '@prisma/client';
 
 function makeProfile(overrides: Partial<Profile> = {}): Profile {
@@ -69,6 +70,37 @@ describe('planService workout split generation', () => {
 
     const allFocuses = days.map((d) => d.focus).join(' ');
     expect(allFocuses.toLowerCase()).toContain('cardio');
+  });
+});
+
+describe('planService workout split honours workoutFrequency', () => {
+  const splits = ['PUSH_PULL_LEGS', 'UPPER_LOWER', 'FULL_BODY'] as const;
+
+  it.each(splits)('%s has exactly N training days for every N from 1 to 7', (split) => {
+    for (let n = 1; n <= 7; n++) {
+      for (const goal of ['WEIGHT_LOSS', 'MUSCLE_GAIN', 'MAINTAIN_WEIGHT'] as const) {
+        const days = buildWorkoutSplit(makeProfile({ workoutFrequency: n, goal }), split);
+        expect(days, `${split} n=${n}`).toHaveLength(7);
+        expect(countTrainingDays(days), `${split} ${goal} n=${n}`).toBe(n);
+      }
+    }
+  });
+
+  it('keeps Monday-to-Sunday order', () => {
+    const days = buildWorkoutSplit(makeProfile({ workoutFrequency: 4 }), 'PUSH_PULL_LEGS');
+    expect(days.map((d) => d.day)).toEqual(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
+  });
+
+  it('keeps the chosen split style (4 PPL days is push, pull, legs, push)', () => {
+    const focuses = buildWorkoutSplit(makeProfile({ workoutFrequency: 4, equipmentAccess: 'GYM' }), 'PUSH_PULL_LEGS')
+      .filter((d) => d.focus !== 'Rest')
+      .map((d) => d.focus);
+    expect(focuses).toEqual(['Push Day', 'Pull Day', 'Leg Day', 'Push Day']);
+  });
+
+  it('leaves the default layout alone when no frequency is set', () => {
+    const days = buildWorkoutSplit(makeProfile({ workoutFrequency: null, goal: 'MUSCLE_GAIN' }), 'PUSH_PULL_LEGS');
+    expect(countTrainingDays(days)).toBe(5);
   });
 });
 

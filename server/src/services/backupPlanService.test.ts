@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { Profile, WorkoutSplitStyle } from '@prisma/client';
 import { BACKUP_TEMPLATES } from '../data/backupWorkoutTemplates.js';
-import { selectBackupTemplate } from './backupPlanService.js';
-import { workoutDetailResponseSchema } from './workoutGenerationService.js';
+import { selectBackupTemplate, selectBackupDays } from './backupPlanService.js';
+import { countTrainingDays, workoutDetailResponseSchema } from './workoutGenerationService.js';
 
 const SPLITS: WorkoutSplitStyle[] = ['PUSH_PULL_LEGS', 'UPPER_LOWER', 'FULL_BODY'];
 
@@ -142,6 +142,24 @@ describe('selectBackupTemplate', () => {
     );
     expect(Math.abs(three.daysPerWeek - 3)).toBeLessThanOrEqual(Math.abs(six.daysPerWeek - 3));
     expect(six.daysPerWeek).toBeGreaterThanOrEqual(three.daysPerWeek);
+  });
+
+  it.each(SPLITS)('selectBackupDays hits the stated frequency for %s (3-6 days exactly)', (split) => {
+    for (let n = 3; n <= 6; n++) {
+      for (const goal of ['WEIGHT_LOSS', 'MUSCLE_GAIN', 'MAINTAIN_WEIGHT'] as const) {
+        const days = selectBackupDays(makeProfile({ workoutFrequency: n, goal }), split);
+        expect(days, `${split} ${goal} n=${n}`).toHaveLength(7);
+        expect(countTrainingDays(days), `${split} ${goal} n=${n}`).toBe(n);
+      }
+    }
+  });
+
+  it.each(SPLITS)('selectBackupDays trims to 1 or 2 days for %s, with no exercises on Rest days', (split) => {
+    for (const n of [1, 2]) {
+      const days = selectBackupDays(makeProfile({ workoutFrequency: n }), split);
+      expect(countTrainingDays(days)).toBe(n);
+      for (const day of days.filter((d) => d.focus === 'Rest')) expect(day.exercises).toHaveLength(0);
+    }
   });
 
   it('prefers a low-impact plan for older users', () => {

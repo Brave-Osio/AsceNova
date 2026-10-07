@@ -1,6 +1,6 @@
 import type { FitnessLevel, Profile, WorkoutSplitStyle } from '@prisma/client';
 import { BACKUP_TEMPLATES, type BackupTemplate } from '../data/backupWorkoutTemplates.js';
-import type { EnrichedWorkoutDay } from './workoutGenerationService.js';
+import { countTrainingDays, isRestDay, toRestDay, type EnrichedWorkoutDay } from './workoutGenerationService.js';
 
 const LEVEL_NUM: Record<FitnessLevel, number> = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3 };
 
@@ -53,14 +53,33 @@ export function scoreTemplate(template: BackupTemplate, profile: Profile): numbe
   return score;
 }
 
+/**
+ * How far a template is from a requested frequency. Templates with extra days are
+ * preferred (they can be trimmed to fit); ones with too few days rank far behind.
+ */
+function frequencyDistance(template: BackupTemplate, frequency: number): number {
+  return template.daysPerWeek >= frequency
+    ? template.daysPerWeek - frequency
+    : 1000 + (frequency - template.daysPerWeek);
+}
+
 /** Best-fitting template for the profile within the chosen split. Deterministic. */
 export function selectBackupTemplate(profile: Profile, splitStyle: WorkoutSplitStyle): BackupTemplate {
-  let best: { template: BackupTemplate; score: number } | null = null;
+  const candidates = BACKUP_TEMPLATES.filter(
+    (t) => t.splitStyle === splitStyle && scoreTemplate(t, profile) !== null,
+  );
 
-  for (const template of BACKUP_TEMPLATES) {
-    if (template.splitStyle !== splitStyle) continue;
-    const score = scoreTemplate(template, profile);
-    if (score === null) continue;
+  // The stated training frequency is a hard requirement, not just a scoring nudge.
+  let pool = candidates;
+  if (profile.workoutFrequency != null && candidates.length > 0) {
+    const frequency = profile.workoutFrequency;
+    const closest = Math.min(...candidates.map((t) => frequencyDistance(t, frequency)));
+    pool = candidates.filter((t) => frequencyDistance(t, frequency) === closest);
+  }
+
+  let best: { template: BackupTemplate; score: number } | null = null;
+  for (const template of pool) {
+    const score = scoreTemplate(template, profile) ?? 0;
     if (!best || score > best.score || (score === best.score && template.id < best.template.id)) {
       best = { template, score };
     }
@@ -72,6 +91,32 @@ export function selectBackupTemplate(profile: Profile, splitStyle: WorkoutSplitS
   return best.template;
 }
 
+const LIGHT_FOCUS = /cardio|mobility|light/i;
+
+/**
+ * Turns the lowest-value training days into Rest days until exactly `frequency`
+ * remain: cardio/mobility days go first, then the latest strength days. A
+ * template with fewer days than requested is returned as-is (none is longer).
+ */
+export function fitDaysToFrequency(days: EnrichedWorkoutDay[], frequency: number): EnrichedWorkoutDay[] {
+  const excess = countTrainingDays(days) - frequency;
+  if (excess <= 0) return days;
+
+  const dropOrder = days
+    .map((day, index) => ({ day, index }))
+    .filter(({ day }) => !isRestDay(day))
+    .sort((a, b) => {
+      const aLight = LIGHT_FOCUS.test(a.day.focus) ? 0 : 1;
+      const bLight = LIGHT_FOCUS.test(b.day.focus) ? 0 : 1;
+      return aLight - bLight || b.index - a.index;
+    })
+    .slice(0, excess)
+    .map(({ index }) => index);
+
+  return days.map((day, index) => (dropOrder.includes(index) ? toRestDay(day) : day));
+}
+
 export function selectBackupDays(profile: Profile, splitStyle: WorkoutSplitStyle): EnrichedWorkoutDay[] {
-  return selectBackupTemplate(profile, splitStyle).days;
+  const days = selectBackupTemplate(profile, splitStyle).days;
+  return profile.workoutFrequency != null ? fitDaysToFrequency(days, profile.workoutFrequency) : days;
 }
