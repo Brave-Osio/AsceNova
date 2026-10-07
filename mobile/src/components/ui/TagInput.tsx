@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { X } from 'lucide-react-native';
-import { spacing, radius, type ColorPalette } from '../../theme';
+import { fonts, spacing, radius, type ColorPalette } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 
 interface TagInputProps {
@@ -66,27 +66,28 @@ export default function TagInput({ label, value, onChange, placeholder }: TagInp
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     container: { marginBottom: spacing.md },
-    label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
+    label: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium, marginBottom: spacing.xs + 2 },
     tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.xs },
     tag: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
       backgroundColor: colors.primaryMuted,
-      borderRadius: radius.sm,
+      borderRadius: radius.full,
       paddingVertical: 4,
-      paddingHorizontal: spacing.sm,
+      paddingHorizontal: spacing.sm + 2,
     },
-    tagText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
+    tagText: { color: colors.primaryLight, fontSize: 12, fontFamily: fonts.semibold },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: radius.md,
       paddingHorizontal: spacing.md,
       paddingVertical: 12,
       color: colors.textPrimary,
       fontSize: 14,
+      fontFamily: fonts.regular,
     },
   });
 }

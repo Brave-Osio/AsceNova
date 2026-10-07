@@ -8,7 +8,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getErrorMessage } from '../../../lib/errors';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../schemas';
 import { useChangePassword } from '../hooks/useChangePassword';
-import { spacing, type ColorPalette } from '../../../theme';
+import { fonts, spacing, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
 const DEFAULT_VALUES: ChangePasswordFormValues = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -63,7 +63,7 @@ export default function ChangePasswordForm() {
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
-    note: { color: colors.textSecondary, fontSize: 13, lineHeight: 19 },
+    error: { color: colors.danger, fontSize: 13, fontFamily: fonts.regular, marginBottom: spacing.md, textAlign: 'center' },
+    note: { color: colors.textSecondary, fontSize: 13, fontFamily: fonts.regular, lineHeight: 19 },
   });
 }

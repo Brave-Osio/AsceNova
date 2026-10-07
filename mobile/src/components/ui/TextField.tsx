@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, type KeyboardTypeOptions } from 'react-native';
-import { spacing, radius, type ColorPalette } from '../../theme';
+import { spacing, radius, fonts, type ColorPalette } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 
 interface TextFieldProps {
@@ -54,19 +54,20 @@ export default function TextField({
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     container: { marginBottom: spacing.md },
-    label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
+    label: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium, marginBottom: spacing.xs + 2 },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: radius.md,
       paddingHorizontal: spacing.md,
-      paddingVertical: 12,
+      paddingVertical: 11,
       color: colors.textPrimary,
       fontSize: 15,
+      fontFamily: fonts.regular,
     },
     inputError: { borderColor: colors.danger },
-    error: { color: colors.danger, fontSize: 12, marginTop: spacing.xs },
-    helper: { color: colors.textMuted, fontSize: 12, marginTop: spacing.xs },
+    error: { color: colors.danger, fontSize: 12, fontFamily: fonts.regular, marginTop: spacing.xs },
+    helper: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.regular, marginTop: spacing.xs },
   });
 }

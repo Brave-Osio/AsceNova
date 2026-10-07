@@ -16,3 +16,10 @@ export const DEFAULT_PROGRESS: UserProgress = {
   lastLogDate: null,
   unlockedAchievementIds: [],
 };
+
+export interface AchievementDefinition {
+  id: string;
+  title: string;
+  description: string;
+  icon: string; // emoji or icon identifier, kept as data not markup
+}

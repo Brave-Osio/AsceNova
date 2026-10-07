@@ -1,17 +1,16 @@
-import { useMemo, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet } from 'react-native';
 import OptionSelector from '../../../components/ui/OptionSelector';
 import TagInput from '../../../components/ui/TagInput';
 import Button from '../../../components/ui/Button';
+import Card from '../../../components/ui/Card';
+import { SectionLabel } from '../../../components/ui/PageHeader';
 import { useChallenges } from '../hooks/useChallenges';
 import { useChallengeActions } from '../hooks/useChallengeActions';
-import { spacing, radius, typography, type ColorPalette } from '../../../theme';
-import { useAppTheme } from '../../../context/ThemeContext';
+import { spacing } from '../../../theme';
 
 /** Mirrors the web app's CreateChallengeForm.tsx. */
 export default function CreateChallengeForm() {
-  const { colors } = useAppTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
   const { catalog } = useChallenges();
   const { create, isCreating } = useChallengeActions();
   const [challengeId, setChallengeId] = useState('');
@@ -28,18 +27,17 @@ export default function CreateChallengeForm() {
   }
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.heading}>Start a Challenge</Text>
+    <Card style={styles.card}>
+      <SectionLabel>Start a Challenge</SectionLabel>
       <OptionSelector label="Challenge" value={challengeId || catalog[0].id} options={options} onChange={setChallengeId} />
-      <TagInput label="Invite friends by username (optional)" value={usernames} onChange={setUsernames} placeholder="Type a username" />
-      <Button onPress={handleSubmit} loading={isCreating}>Start Challenge</Button>
-    </View>
+      <TagInput label="Invite friends by username (optional)" value={usernames} onChange={setUsernames} placeholder="Type a username, press Enter" />
+      <Button fullWidth={false} onPress={handleSubmit} loading={isCreating}>
+        Start Challenge
+      </Button>
+    </Card>
   );
 }
 
-function createStyles(colors: ColorPalette) {
-  return StyleSheet.create({
-    card: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg },
-    heading: { ...typography.label, color: colors.textMuted, marginBottom: spacing.sm },
-  });
-}
+const styles = StyleSheet.create({
+  card: { gap: spacing.md },
+});

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { spacing, radius, type ColorPalette } from '../../theme';
+import { fonts, spacing, radius, type ColorPalette } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 
 interface TextAreaProps {
@@ -33,16 +33,17 @@ export default function TextArea({ label, value, onChangeText, placeholder }: Te
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     container: { marginBottom: spacing.md },
-    label: { color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginBottom: spacing.xs },
+    label: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium, marginBottom: spacing.xs + 2 },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: radius.md,
       paddingHorizontal: spacing.md,
       paddingVertical: 12,
       color: colors.textPrimary,
       fontSize: 15,
+      fontFamily: fonts.regular,
       minHeight: 80,
       textAlignVertical: 'top',
     },

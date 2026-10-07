@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Modal, View, Text, ScrollView, StyleSheet } from 'react-native';
 import Button from '../../../components/ui/Button';
 import { TERMS_SECTIONS, TERMS_TITLE } from '../../../constants/terms';
-import { spacing, radius, typography, type ColorPalette } from '../../../theme';
+import { fonts, spacing, radius, typography, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
 interface TermsModalProps {
@@ -40,14 +40,14 @@ function createStyles(colors: ColorPalette) {
     sheet: {
       maxHeight: '85%',
       backgroundColor: colors.bg,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
       padding: spacing.lg,
     },
     title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.md },
     body: { marginBottom: spacing.md },
     section: { marginBottom: spacing.md },
-    heading: { color: colors.textPrimary, fontWeight: '600', marginBottom: 4 },
-    text: { color: colors.textSecondary, lineHeight: 20 },
+    heading: { color: colors.textPrimary, fontSize: 14, fontFamily: fonts.semibold, marginBottom: 4 },
+    text: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.regular, lineHeight: 20 },
   });
 }

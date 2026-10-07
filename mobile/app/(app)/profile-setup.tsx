@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import TextField from '../../src/components/ui/TextField';
 import OptionSelector from '../../src/components/ui/OptionSelector';
 import Button from '../../src/components/ui/Button';
+import PageHeader from '../../src/components/ui/PageHeader';
 import { getErrorMessage } from '../../src/lib/errors';
 import {
   profileSchema,
@@ -20,7 +21,7 @@ import {
 } from '../../src/features/profile/schemas';
 import { useProfileForm, toFormValues } from '../../src/features/profile/hooks/useProfileForm';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
-import { spacing, typography, type ColorPalette } from '../../src/theme';
+import { spacing, typography, fonts, type ColorPalette } from '../../src/theme';
 import { useAppTheme } from '../../src/context/ThemeContext';
 
 const GENDER_LABELS: Record<(typeof genderOptions)[number], string> = {
@@ -125,9 +126,9 @@ export default function ProfileSetupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>{existingProfile ? 'Edit Profile' : 'Set Up Your Profile'}</Text>
+    <View style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <PageHeader title="Profile Setup" subtitle="Tell us a bit about yourself so we can build your plan." />
 
         <SectionHeading styles={styles}>Identity</SectionHeading>
         <Controller name="fullName" control={control} render={({ field }) => (
@@ -181,11 +182,11 @@ export default function ProfileSetupScreen() {
 
         {error && <Text style={styles.error}>{error}</Text>}
 
-        <Button onPress={handleSubmit(onSubmit)} loading={isPending}>
+        <Button size="md" fullWidth={false} onPress={handleSubmit(onSubmit)} loading={isPending}>
           {existingProfile ? 'Save Changes' : 'Generate My Plan'}
         </Button>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -193,9 +194,8 @@ function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.bg },
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-    container: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
-    title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
-    sectionHeading: { ...typography.label, color: colors.primaryLight, marginTop: spacing.md, marginBottom: spacing.sm },
-    error: { color: colors.danger, marginBottom: spacing.md, textAlign: 'center' },
+    container: { paddingHorizontal: spacing.md + 4, paddingBottom: spacing.xl * 2 },
+    sectionHeading: { ...typography.label, color: colors.primaryLight, marginTop: spacing.lg, marginBottom: spacing.md },
+    error: { color: colors.danger, fontSize: 14, fontFamily: fonts.regular, marginBottom: spacing.md },
   });
 }

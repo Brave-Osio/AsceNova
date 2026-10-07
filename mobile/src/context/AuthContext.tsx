@@ -3,6 +3,7 @@ import {
   loginRequest,
   registerRequest,
   logoutRequest,
+  googleLoginRequest,
   refreshRequest,
   meRequest,
   setStoredRefreshToken,
@@ -21,6 +22,7 @@ interface AuthContextValue {
   isAdmin: boolean;
   login: (input: { email: string; password: string }) => Promise<void>;
   register: (input: { email: string; password: string; fullName: string; recoveryEmail?: string }) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<{ isNewUser: boolean }>;
   logout: () => Promise<void>;
 }
 
@@ -86,6 +88,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated');
   }
 
+  async function loginWithGoogle(idToken: string) {
+    const { user: googleUser, accessToken, refreshToken, isNewUser } = await googleLoginRequest(idToken);
+    setAccessToken(accessToken);
+    await setStoredRefreshToken(refreshToken);
+    setUser(googleUser);
+    setStatus('authenticated');
+    return { isNewUser };
+  }
+
   async function logout() {
     try {
       await logoutRequest();
@@ -105,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: user?.role === 'ADMIN',
     login,
     register,
+    loginWithGoogle,
     logout,
   };
 

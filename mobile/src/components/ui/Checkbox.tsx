@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { Check, type LucideIcon } from 'lucide-react-native';
-import { spacing, radius, type ColorPalette } from '../../theme';
+import { fonts, spacing, radius, type ColorPalette } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 
 interface CheckboxRowProps {
@@ -18,7 +18,7 @@ export default function CheckboxRow({ label, icon: Icon, checked, onChange }: Ch
   return (
     <Pressable onPress={() => onChange(!checked)} style={[styles.row, checked && styles.rowChecked]}>
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-        {checked && <Check size={12} color="#fff" strokeWidth={3} />}
+        {checked && <Check size={13} color="#fff" strokeWidth={3} />}
       </View>
       <Icon size={16} color={colors.textSecondary} />
       <Text style={[styles.label, checked && styles.labelChecked]}>{label}</Text>
@@ -31,27 +31,27 @@ function createStyles(colors: ColorPalette) {
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.sm,
+      gap: 12,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
+      borderRadius: radius.md,
       paddingVertical: 12,
       paddingHorizontal: spacing.md,
-      marginBottom: spacing.xs,
     },
-    rowChecked: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
+    rowChecked: { borderColor: 'rgba(124,92,252,0.5)', backgroundColor: 'rgba(124,92,252,0.1)' },
     checkbox: {
-      width: 18,
-      height: 18,
+      width: 20,
+      height: 20,
       borderRadius: 5,
-      borderWidth: 1.5,
+      borderWidth: 1,
       borderColor: colors.border,
+      backgroundColor: colors.surfaceAlt,
       alignItems: 'center',
       justifyContent: 'center',
     },
     checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
-    label: { color: colors.textSecondary, fontSize: 14, fontWeight: '500' },
+    label: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium, flexShrink: 1 },
     labelChecked: { color: colors.textPrimary },
   });
 }

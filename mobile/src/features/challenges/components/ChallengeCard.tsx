@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import Button from '../../../components/ui/Button';
+import Card from '../../../components/ui/Card';
 import { useChallengeActions } from '../hooks/useChallengeActions';
 import type { ChallengeInvite } from '../../../types/challenge.types';
-import { spacing, radius, type ColorPalette } from '../../../theme';
+import { fonts, spacing, radius, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
 function daysLeft(periodEnd: string): number {
@@ -23,10 +24,13 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
   const expired = invite.status === 'EXPIRED';
 
   return (
-    <View style={styles.card}>
+    <Card>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>{invite.challenge.icon} {invite.challenge.title}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.icon}>{invite.challenge.icon}</Text>
+            <Text style={styles.title}>{invite.challenge.title}</Text>
+          </View>
           <Text style={styles.description}>{invite.challenge.description}</Text>
         </View>
         <View style={[styles.badge, expired && styles.badgeExpired]}>
@@ -40,11 +44,15 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
         {invite.participants.map((p) => {
           const pct = Math.min(100, Math.round((p.progressValue / invite.challenge.targetValue) * 100));
           return (
-            <View key={p.id} style={styles.participantRow}>
+            <View key={p.id}>
               <View style={styles.participantHeader}>
                 <Text style={styles.participantName}>{p.user.profile?.fullName ?? p.user.email}</Text>
                 <Text style={styles.participantStat}>
-                  {p.status === 'DECLINED' ? 'Declined' : p.status === 'INVITED' ? 'Invited' : `${p.progressValue}/${invite.challenge.targetValue}`}
+                  {p.status === 'DECLINED'
+                    ? 'Declined'
+                    : p.status === 'INVITED'
+                      ? 'Invited'
+                      : `${Math.min(p.progressValue, invite.challenge.targetValue)}/${invite.challenge.targetValue}`}
                 </Text>
               </View>
               {p.status === 'ACCEPTED' && (
@@ -59,33 +67,37 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
 
       {mine?.status === 'INVITED' && !expired && (
         <View style={styles.actions}>
-          <Button onPress={() => respond(invite.id, true)} loading={isPending}>Accept</Button>
-          <Button variant="ghost" onPress={() => respond(invite.id, false)} loading={isPending}>Decline</Button>
+          <Button size="sm" fullWidth={false} onPress={() => respond(invite.id, true)} loading={isPending}>
+            Accept
+          </Button>
+          <Button size="sm" fullWidth={false} variant="ghost" onPress={() => respond(invite.id, false)} loading={isPending}>
+            Decline
+          </Button>
         </View>
       )}
-    </View>
+    </Card>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    card: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
-    header: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
+    header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm + 4 },
     headerText: { flex: 1 },
-    title: { color: colors.textPrimary, fontWeight: '700', fontSize: 15 },
-    description: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
-    badge: { backgroundColor: colors.primaryMuted, borderRadius: radius.sm, paddingVertical: 2, paddingHorizontal: spacing.sm, alignSelf: 'flex-start' },
-    badgeExpired: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
-    badgeText: { color: colors.primaryLight, fontSize: 11, fontWeight: '600' },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    icon: { fontSize: 18 },
+    title: { flexShrink: 1, color: colors.textPrimary, fontFamily: fonts.bold, fontSize: 15 },
+    description: { color: colors.textSecondary, fontFamily: fonts.regular, fontSize: 14, marginTop: 4 },
+    badge: { backgroundColor: colors.primaryMuted, borderRadius: radius.full, paddingVertical: 2, paddingHorizontal: 8 },
+    badgeExpired: { backgroundColor: colors.cardAlt },
+    badgeText: { color: colors.primaryLight, fontSize: 12, fontFamily: fonts.semibold },
     badgeTextExpired: { color: colors.textMuted },
-    participants: { marginTop: spacing.sm, gap: spacing.sm },
-    participantRow: {},
-    participantHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-    participantName: { color: colors.textSecondary, fontSize: 12 },
-    participantStat: { color: colors.textMuted, fontSize: 12 },
-    progressTrack: { height: 6, backgroundColor: colors.border, borderRadius: 3, marginTop: 4, overflow: 'hidden' },
-    progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
-    progressFillDone: { backgroundColor: colors.success },
+    participants: { marginTop: spacing.md, gap: spacing.sm },
+    participantHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+    participantName: { flexShrink: 1, color: colors.textSecondary, fontSize: 12, fontFamily: fonts.regular },
+    participantStat: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.regular },
+    progressTrack: { height: 6, backgroundColor: colors.cardAlt, borderRadius: radius.full, marginTop: 4, overflow: 'hidden' },
+    progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: radius.full },
+    progressFillDone: { backgroundColor: '#10b981' },
     actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   });
 }

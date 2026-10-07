@@ -38,6 +38,15 @@ export async function loginRequest(input: { email: string; password: string }): 
   return res.data;
 }
 
+/** Exchanges a Google ID token for our own session; `isNewUser` means the account was just created. */
+export async function googleLoginRequest(idToken: string): Promise<AuthResponse & { isNewUser: boolean }> {
+  const res = await httpClient.post<AuthResponse & { isNewUser: boolean }>('/api/auth/google', {
+    idToken,
+    rememberMe: true,
+  });
+  return res.data;
+}
+
 export async function refreshRequest(): Promise<{ accessToken: string; refreshToken: string } | null> {
   const refreshToken = await getStoredRefreshToken();
   if (!refreshToken) return null;

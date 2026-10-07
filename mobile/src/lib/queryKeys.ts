@@ -21,6 +21,9 @@ export const queryKeys = {
   coach: {
     history: (userId: string) => ['coach', 'history', userId] as const,
   },
+  goals: {
+    list: (userId: string) => ['goals', userId] as const,
+  },
   notifications: {
     list: (userId: string) => ['notifications', userId] as const,
     unreadCount: (userId: string) => ['notifications', 'unread-count', userId] as const,

@@ -3,6 +3,14 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useAppTheme } from '../src/context/ThemeContext';
 import { queryClient } from '../src/lib/queryClient';
@@ -15,8 +23,16 @@ import { queryClient } from '../src/lib/queryClient';
 function RootNavigator() {
   const { isLoading, isAuthenticated } = useAuth();
   const { colors } = useAppTheme();
+  const [fontsLoaded, fontError] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
 
-  if (isLoading) {
+  // A font failure must not brick the app — fall through to the system font.
+  if (isLoading || (!fontsLoaded && !fontError)) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color={colors.primary} />
