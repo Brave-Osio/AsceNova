@@ -1,6 +1,12 @@
 import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
-import { generateExerciseDetail, WORKOUT_PROMPT_VERSION, type EnrichedWorkoutDay } from './workoutGenerationService.js';
+import {
+  generateExerciseDetail,
+  countTrainingDays,
+  REST_FOCUS,
+  WORKOUT_PROMPT_VERSION,
+  type EnrichedWorkoutDay,
+} from './workoutGenerationService.js';
 import * as dailyProgressService from './dailyProgressService.js';
 import { selectBackupDays } from './backupPlanService.js';
 import type { Profile, WorkoutSplitStyle, PlanSource } from '@prisma/client';
@@ -75,6 +81,72 @@ export interface GeneratedNutrition {
 
 const DEFAULT_SPLIT_STYLE: WorkoutSplitStyle = 'PUSH_PULL_LEGS';
 
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/** Weekday indexes (0 = Monday) trained for each weekly frequency, spread so hard days aren't all back to back. */
+const TRAINING_POSITIONS: Record<number, number[]> = {
+  1: [0],
+  2: [0, 3],
+  3: [0, 2, 4],
+  4: [0, 1, 3, 4],
+  5: [0, 1, 2, 4, 5],
+  6: [0, 1, 2, 3, 4, 5],
+  7: [0, 1, 2, 3, 4, 5, 6],
+};
+
+/**
+ * Builds the 7-day skeleton with exactly `frequency` non-Rest days, keeping the
+ * user's chosen split style. Slots beyond what the split needs for strength work
+ * become cardio / mobility days.
+ */
+function buildFrequencySplit(profile: Profile, splitStyle: WorkoutSplitStyle, frequency: number): GeneratedWorkoutDay[] {
+  const isWeightLoss = profile.goal === 'WEIGHT_LOSS';
+  const homeOnly = profile.equipmentAccess === 'HOME';
+  const positions = TRAINING_POSITIONS[Math.min(7, Math.max(1, Math.round(frequency)))];
+
+  const cardio = isWeightLoss ? 'Cardio Intervals' : 'Light Cardio';
+  const mobility = isWeightLoss ? 'Cardio + Core' : 'Mobility + Core';
+
+  let cycle: string[];
+  if (splitStyle === 'PUSH_PULL_LEGS') {
+    cycle = [
+      homeOnly ? 'Push Day (Bodyweight)' : 'Push Day',
+      homeOnly ? 'Pull Day (Bands/Bodyweight)' : 'Pull Day',
+      homeOnly ? 'Leg Day (Bodyweight)' : 'Leg Day',
+    ];
+  } else if (splitStyle === 'UPPER_LOWER') {
+    cycle = [homeOnly ? 'Upper Body (Bodyweight)' : 'Upper Body', homeOnly ? 'Lower Body (Bodyweight)' : 'Lower Body'];
+  } else {
+    cycle = [];
+  }
+
+  let focuses: string[];
+  if (cycle.length > 0) {
+    // A 7th day has no strength slot left in these splits, so it is a mobility day.
+    focuses = positions.map((_, i) => (i === 6 ? mobility : cycle[i % cycle.length]));
+  } else {
+    const fullBody = homeOnly ? 'Full Body (Bodyweight)' : 'Full Body Strength';
+    const strengthTarget = Math.min(positions.length, 3);
+    const strengthSlots = new Set<number>();
+    positions.forEach((pos, i) => {
+      const followsStrengthDay = i > 0 && strengthSlots.has(i - 1) && positions[i - 1] === pos - 1;
+      if (strengthSlots.size < strengthTarget && !followsStrengthDay) strengthSlots.add(i);
+    });
+    // Not enough non-adjacent slots (4+ days): fill the rest from the end of the week.
+    for (let i = positions.length - 1; i >= 0 && strengthSlots.size < strengthTarget; i--) {
+      strengthSlots.add(i);
+    }
+    let extras = 0;
+    focuses = positions.map((_, i) => {
+      if (strengthSlots.has(i)) return fullBody;
+      return extras++ % 2 === 0 ? cardio : mobility;
+    });
+  }
+
+  const byDay = new Map(positions.map((pos, i) => [pos, focuses[i]]));
+  return WEEKDAYS.map((day, i) => ({ day, focus: byDay.get(i) ?? REST_FOCUS }));
+}
+
 /**
  * Rule-based generator, ported from the frontend's old fitnessService.ts.
  * Lives server-side now since GEMINI_API_KEY (its eventual replacement)
@@ -82,6 +154,10 @@ const DEFAULT_SPLIT_STYLE: WorkoutSplitStyle = 'PUSH_PULL_LEGS';
  * later, but callers (generateAndSaveActivePlan) don't change.
  */
 export function buildWorkoutSplit(profile: Profile, splitStyle: WorkoutSplitStyle): GeneratedWorkoutDay[] {
+  if (profile.workoutFrequency != null) {
+    return buildFrequencySplit(profile, splitStyle, profile.workoutFrequency);
+  }
+
   const usesGym = profile.equipmentAccess === 'GYM' || profile.equipmentAccess === 'BOTH';
   const isWeightLoss = profile.goal === 'WEIGHT_LOSS';
 
@@ -200,6 +276,11 @@ export async function generateAndSaveActivePlan(userId: string, splitStyle?: Wor
 
   try {
     enrichedDays = await generateExerciseDetail(profile, skeleton, priorExerciseNames, adherence);
+    if (profile.workoutFrequency != null && countTrainingDays(enrichedDays) !== profile.workoutFrequency) {
+      throw new Error(
+        `Generated plan has ${countTrainingDays(enrichedDays)} training days, expected ${profile.workoutFrequency}`,
+      );
+    }
     source = 'GEMINI';
     promptVersion = WORKOUT_PROMPT_VERSION;
   } catch (err) {

@@ -4,7 +4,18 @@ import type { Profile } from '@prisma/client';
 import { generateStructuredContent } from '../lib/gemini.js';
 import type { GeneratedWorkoutDay, AdherenceSummary } from './planService.js';
 
-export const WORKOUT_PROMPT_VERSION = 'workout-gemini-v1';
+export const WORKOUT_PROMPT_VERSION = 'workout-gemini-v2';
+
+export const REST_FOCUS = 'Rest';
+
+export function isRestDay(day: { focus: string }): boolean {
+  return day.focus === REST_FOCUS;
+}
+
+/** Training days = every non-Rest day (cardio and mobility days count, matching the backup templates). */
+export function countTrainingDays(days: { focus: string }[]): number {
+  return days.filter((d) => !isRestDay(d)).length;
+}
 
 const DIFFICULTIES = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
@@ -132,6 +143,11 @@ export function buildPrompt(
     `- Height: ${profile.heightCm}cm, Weight: ${profile.currentWeightKg}kg`,
     `- Goal: ${profile.goal}, Fitness level: ${profile.fitnessLevel}`,
     `- Equipment access: ${profile.equipmentAccess} (HOME = bodyweight/bands only, GYM/BOTH = full gym equipment allowed)`,
+    ...(profile.workoutFrequency != null
+      ? [
+          `- Trains exactly ${profile.workoutFrequency} day(s) per week — the schedule below already reflects this. Days focused on "Rest" must have 0 exercises, and every other day must be a real session.`,
+        ]
+      : []),
     '',
     'FIXED 7-DAY SCHEDULE (return exactly 7 "days" entries, in this order, matching these days/foci)',
     formatSkeleton(skeleton),
@@ -172,5 +188,22 @@ export async function generateExerciseDetail(
   const raw = await generateStructuredContent<unknown>(prompt, workoutDetailGeminiSchema);
   const parsed = workoutDetailResponseSchema.parse(raw);
 
-  return skeleton.map((day, i) => ({ ...day, ...parsed.days[i] }));
+  // The skeleton decides which days are Rest — never let the model add training to one.
+  return skeleton.map((day, i) => (isRestDay(day) ? toRestDay(day) : { ...day, ...parsed.days[i] }));
+}
+
+/** A Rest day with no exercises, used wherever a day must be forced to rest. */
+export function toRestDay(day: GeneratedWorkoutDay): EnrichedWorkoutDay {
+  return {
+    day: day.day,
+    focus: 'Rest',
+    workoutName: 'Rest & Recover',
+    warmUp: null,
+    coolDown: null,
+    estimatedDurationMinutes: null,
+    estimatedCaloriesBurned: null,
+    coachingTips: ['Rest is when you adapt — sleep 7-9 hours and stay hydrated.', 'A relaxed walk is fine if you feel restless.'],
+    progressionAdvice: null,
+    exercises: [],
+  };
 }
