@@ -135,7 +135,7 @@ export default function ProfileSetupForm({
   }
 
   return (
-    <form onSubmit={handleSubmit((values) => mutate(values))} className="flex flex-col gap-8">
+    <form noValidate onSubmit={handleSubmit((values) => mutate(values))} className="flex flex-col gap-8">
       <section>
         <SectionHeading>Identity</SectionHeading>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -150,7 +150,7 @@ export default function ProfileSetupForm({
             name="age"
             control={control}
             render={({ field }) => (
-              <TextField label="Age" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="25" error={errors.age?.message} />
+              <TextField label="Age" type="number" min={13} max={100} step={1} value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="25" error={errors.age?.message} />
             )}
           />
           <Controller
@@ -170,21 +170,21 @@ export default function ProfileSetupForm({
             name="heightCm"
             control={control}
             render={({ field }) => (
-              <TextField label="Height (cm)" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="175" error={errors.heightCm?.message} />
+              <TextField label="Height (cm)" type="number" min={100} max={250} step="0.1" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="175" error={errors.heightCm?.message} />
             )}
           />
           <Controller
             name="currentWeightKg"
             control={control}
             render={({ field }) => (
-              <TextField label="Current Weight (kg)" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="70" error={errors.currentWeightKg?.message} />
+              <TextField label="Current Weight (kg)" type="number" min={30} max={300} step="0.1" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="70" error={errors.currentWeightKg?.message} />
             )}
           />
           <Controller
             name="goalWeightKg"
             control={control}
             render={({ field }) => (
-              <TextField label="Goal Weight (kg)" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="65" helperText="Optional" error={errors.goalWeightKg?.message} />
+              <TextField label="Goal Weight (kg)" type="number" min={30} max={300} step="0.1" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="65" helperText="Optional" error={errors.goalWeightKg?.message} />
             )}
           />
         </div>
@@ -205,7 +205,7 @@ export default function ProfileSetupForm({
             control={control}
             render={({ field }) => (
               <div className="max-w-xs">
-                <TextField label="Workout Days / Week" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="4" helperText="Optional" error={errors.workoutFrequency?.message} />
+                <TextField label="Workout Days / Week" type="number" min={1} max={7} step={1} value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="4" helperText="Optional, 1 to 7" error={errors.workoutFrequency?.message} />
               </div>
             )}
           />
@@ -221,7 +221,7 @@ export default function ProfileSetupForm({
             control={control}
             render={({ field }) => (
               <div className="max-w-xs">
-                <TextField label="Sleep Hours Target" type="number" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="8" helperText="Optional" error={errors.sleepHoursTarget?.message} />
+                <TextField label="Sleep Hours Target" type="number" min={3} max={12} step="0.5" value={field.value} onChange={field.onChange} onBlur={field.onBlur} placeholder="8" helperText="Optional, 3 to 12 hours" error={errors.sleepHoursTarget?.message} />
               </div>
             )}
           />

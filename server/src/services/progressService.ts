@@ -273,7 +273,7 @@ export async function applyDailyLog(userId: string, date: Date) {
         userId,
         type: 'RANK_UP',
         title: 'Rank Up!',
-        body: `You've reached ${newRank} rank — keep up the momentum!`,
+        body: `You've reached ${newRank} rank. Keep up the momentum!`,
       });
     }
 

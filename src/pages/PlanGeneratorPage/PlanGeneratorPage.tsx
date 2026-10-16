@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, RefreshCw, ArrowRight, User } from 'lucide-react';
+import { RefreshCw, ArrowRight, User } from 'lucide-react';
 import { ROUTES } from '../../constants/routes';
 import { usePlanGenerator } from '../../features/fitness-plan/hooks/usePlanGenerator';
 import WorkoutTable from '../../features/fitness-plan/components/WorkoutTable';
 import NutritionPanel from '../../features/fitness-plan/components/NutritionPanel';
 import SplitStylePicker from '../../features/fitness-plan/components/SplitStylePicker';
+import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import type { WorkoutSplitStyle } from '../../types/plan.types';
+import PageContainer from '../../components/layout/PageContainer';
 
 export default function PlanGeneratorPage() {
   const { plan, profile, isLoading, regenerate } = usePlanGenerator();
@@ -55,25 +57,17 @@ export default function PlanGeneratorPage() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <span className="chip chip-primary px-3 py-1 text-xs mb-3">
-              <Sparkles size={12} /> AI-Generated Plan
-            </span>
-            <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">Your Fitness Plan</h1>
-            <p className="mt-1.5 text-brand-text-secondary">
-              Tailored for <span className="text-brand-text font-semibold">{profile.fullName}</span>'s{' '}
-              <span className="text-brand-primary-light">{profile.goal.replace(/_/g, ' ').toLowerCase()}</span> goal
-            </p>
-          </div>
-        </div>
-      </motion.div>
+    <PageContainer>
+      <PageHeader
+        eyebrow="AI-Generated Plan"
+        title="Your Fitness Plan"
+        description={
+          <>
+            Tailored for <span className="font-semibold text-brand-text">{profile.fullName}</span>'s{' '}
+            <span className="text-brand-primary-light">{profile.goal.replace(/_/g, ' ').toLowerCase()}</span> goal
+          </>
+        }
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -119,6 +113,6 @@ export default function PlanGeneratorPage() {
           Go to Dashboard <ArrowRight size={14} />
         </Link>
       </motion.div>
-    </section>
+    </PageContainer>
   );
 }

@@ -27,7 +27,14 @@ export async function getChatHistory(): Promise<ChatMessage[]> {
   return res.data.messages.map(toChatMessage);
 }
 
-export async function sendCoachMessage(message: string): Promise<ChatMessage> {
-  const res = await httpClient.post<{ message: ApiChatMessage }>('/api/chat', { message });
+/**
+ * `retry` tells the backend this text was already saved by an earlier failed
+ * attempt, so it must not store the user's message a second time.
+ */
+export async function sendCoachMessage(message: string, retry = false): Promise<ChatMessage> {
+  const res = await httpClient.post<{ message: ApiChatMessage }>(
+    '/api/chat',
+    retry ? { message, retry: true } : { message },
+  );
   return toChatMessage(res.data.message);
 }

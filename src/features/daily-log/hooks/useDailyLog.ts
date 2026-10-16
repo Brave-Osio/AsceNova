@@ -8,7 +8,7 @@ import { showErrorToast } from '../../../lib/toast';
 import { fireConfetti } from '../../../lib/confetti';
 import { getRankForXp } from '../../../engines/rankEngine';
 import { getTodayDateString } from '../../../utils/dateUtils';
-import { validateNumberInRange } from '../../../utils/validation';
+import { validateWeightKg } from '../../../utils/validation';
 import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
 import type { UserProgress } from '../../../types/gamification.types';
 
@@ -56,7 +56,7 @@ export function useDailyLog() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const weightError = validateNumberInRange(Number(form.weightKg), 30, 300, 'Weight (kg)');
+    const weightError = validateWeightKg(form.weightKg, 'Weight');
     if (weightError) {
       setError(weightError);
       return;

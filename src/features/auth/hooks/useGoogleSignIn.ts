@@ -18,7 +18,7 @@ export function useGoogleSignIn() {
     mutationFn: (idToken: string) => loginWithGoogle({ idToken, rememberMe: true }),
     onSuccess: ({ isNewUser }) => {
       if (isNewUser) {
-        showSuccessToast('Account created — welcome to AsceNova!');
+        showSuccessToast('Account created. Welcome to AsceNova!');
         navigate(ROUTES.setup, { replace: true });
         return;
       }

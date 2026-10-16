@@ -8,23 +8,44 @@ import { z } from 'zod';
  * while typing and keeps ProfileFormValues a plain string-keyed type
  * with no RHF/zodResolver input-vs-output generic complexity.
  */
-const requiredNumberString = (min: number, max: number, label: string) =>
-  z
-    .string()
-    .trim()
-    .min(1, `${label} is required`)
-    .refine((v) => !Number.isNaN(Number(v)), `${label} must be a number`)
-    .refine((v) => Number(v) >= min && Number(v) <= max, `${label} must be between ${min} and ${max}`);
+interface NumberStringOptions {
+  required: boolean;
+  /** Reject decimals (age, days per week). */
+  integer?: boolean;
+}
 
-const optionalNumberString = (min: number, max: number, label: string) =>
+/**
+ * One validator for every numeric form field. Each failure has its own
+ * field-specific message, and nothing is silently clamped or coerced:
+ * empty, non-numeric, negative, fractional (when `integer`) and
+ * out-of-range input are all rejected as typed.
+ */
+const numberString = (min: number, max: number, label: string, { required, integer = false }: NumberStringOptions) =>
   z
     .string()
     .trim()
-    .refine((v) => v === '' || !Number.isNaN(Number(v)), `${label} must be a number`)
-    .refine(
-      (v) => v === '' || (Number(v) >= min && Number(v) <= max),
-      `${label} must be between ${min} and ${max}`,
-    );
+    .superRefine((v, ctx) => {
+      if (v === '') {
+        if (required) ctx.addIssue({ code: 'custom', message: `${label} is required` });
+        return;
+      }
+      const n = Number(v);
+      if (!Number.isFinite(n)) {
+        ctx.addIssue({ code: 'custom', message: `${label} must be a number` });
+      } else if (n < 0) {
+        ctx.addIssue({ code: 'custom', message: `${label} cannot be negative` });
+      } else if (integer && !Number.isInteger(n)) {
+        ctx.addIssue({ code: 'custom', message: `${label} must be a whole number` });
+      } else if (n < min || n > max) {
+        ctx.addIssue({ code: 'custom', message: `${label} must be between ${min} and ${max}` });
+      }
+    });
+
+const requiredNumberString = (min: number, max: number, label: string, integer = false) =>
+  numberString(min, max, label, { required: true, integer });
+
+const optionalNumberString = (min: number, max: number, label: string, integer = false) =>
+  numberString(min, max, label, { required: false, integer });
 
 export const genderOptions = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'] as const;
 export const goalOptions = ['WEIGHT_LOSS', 'MUSCLE_GAIN', 'MAINTAIN_WEIGHT'] as const;
@@ -42,21 +63,21 @@ export const preferredWorkoutTimeOptions = ['MORNING', 'AFTERNOON', 'EVENING'] a
 
 export const profileSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
-  age: requiredNumberString(13, 100, 'Age'),
+  age: requiredNumberString(13, 100, 'Age', true),
   gender: z.enum(genderOptions),
 
-  heightCm: requiredNumberString(100, 250, 'Height'),
-  currentWeightKg: requiredNumberString(30, 300, 'Weight'),
-  goalWeightKg: optionalNumberString(30, 300, 'Goal weight'),
+  heightCm: requiredNumberString(100, 250, 'Height (cm)'),
+  currentWeightKg: requiredNumberString(30, 300, 'Weight (kg)'),
+  goalWeightKg: optionalNumberString(30, 300, 'Goal weight (kg)'),
 
   goal: z.enum(goalOptions),
   fitnessLevel: z.enum(fitnessLevelOptions),
   equipmentAccess: z.enum(equipmentAccessOptions),
   activityLevel: z.enum(activityLevelOptions),
-  workoutFrequency: optionalNumberString(1, 7, 'Workout frequency'),
+  workoutFrequency: optionalNumberString(1, 7, 'Workout days per week', true),
   preferredSplitStyle: z.enum(splitStyleOptions),
 
   preferredWorkoutTime: z.enum(preferredWorkoutTimeOptions),
-  sleepHoursTarget: optionalNumberString(0, 24, 'Sleep hours'),
+  sleepHoursTarget: optionalNumberString(3, 12, 'Sleep hours'),
 });
 export type ProfileFormValues = z.infer<typeof profileSchema>;

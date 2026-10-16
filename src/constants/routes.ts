@@ -12,7 +12,6 @@ export const ROUTES = {
   dashboard: '/dashboard',
   log: '/log',
   leaderboard: '/leaderboard',
-  coach: '/coach',
   login: '/login',
   register: '/register',
   forgotPassword: '/forgot-password',
@@ -20,6 +19,7 @@ export const ROUTES = {
   admin: '/admin',
   settings: '/settings',
   challenges: '/challenges',
+  terms: '/terms',
   goals: '/goals',
 } as const;
 

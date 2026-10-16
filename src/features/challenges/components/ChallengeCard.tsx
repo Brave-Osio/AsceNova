@@ -1,5 +1,6 @@
 import { useAuth } from '../../../context/AuthContext';
 import Button from '../../../components/ui/Button';
+import { HideButton } from '../../../components/ui/HideControls';
 import { useChallengeActions } from '../hooks/useChallengeActions';
 import type { ChallengeInvite } from '../../../types/challenge.types';
 
@@ -7,7 +8,14 @@ function daysLeft(periodEnd: string): number {
   return Math.max(0, Math.ceil((new Date(periodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 }
 
-export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
+interface ChallengeCardProps {
+  invite: ChallengeInvite;
+  isHidden: boolean;
+  onHide: () => void;
+  onUnhide: () => void;
+}
+
+export default function ChallengeCard({ invite, isHidden, onHide, onUnhide }: ChallengeCardProps) {
   const { user } = useAuth();
   const { respond, pendingInviteId } = useChallengeActions();
 
@@ -16,7 +24,7 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
   const expired = invite.status === 'EXPIRED';
 
   return (
-    <div className="card rounded-2xl p-5">
+    <div className={`card rounded-2xl p-5 transition-opacity ${isHidden ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -70,6 +78,8 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
           </Button>
         </div>
       )}
+
+      <HideButton isHidden={isHidden} onHide={onHide} onUnhide={onUnhide} />
     </div>
   );
 }

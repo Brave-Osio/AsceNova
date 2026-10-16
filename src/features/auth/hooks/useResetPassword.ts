@@ -12,7 +12,7 @@ export function useResetPassword() {
     mutationFn: (values: ResetPasswordFormValues) =>
       resetPasswordRequest({ token: values.token, newPassword: values.newPassword }),
     onSuccess: () => {
-      showSuccessToast('Password reset — please log in.');
+      showSuccessToast('Password reset. Please log in.');
       navigate(ROUTES.login, { replace: true });
     },
   });

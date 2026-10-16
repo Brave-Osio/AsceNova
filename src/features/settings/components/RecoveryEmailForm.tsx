@@ -37,7 +37,7 @@ export default function RecoveryEmailForm() {
       className="space-y-4"
     >
       <p className="text-sm text-brand-text-secondary">
-        If you forget your password, we send the reset link to this Gmail. Not verified — double-check it's yours.
+        If you forget your password, we send the reset link to this Gmail. Not verified, so double-check it's yours.
       </p>
 
       <div className="text-sm">

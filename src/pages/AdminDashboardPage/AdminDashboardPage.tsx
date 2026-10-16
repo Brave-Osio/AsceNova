@@ -6,6 +6,7 @@ import SimpleBarChart from '../../components/charts/SimpleBarChart';
 import SimpleLineChart from '../../components/charts/SimpleLineChart';
 import Button from '../../components/ui/Button';
 import AiUsageCard from '../../features/admin/components/AiUsageCard';
+import PageContainer from '../../components/layout/PageContainer';
 
 const GOAL_LABEL: Record<string, string> = {
   WEIGHT_LOSS: 'Weight Loss',
@@ -40,7 +41,7 @@ export default function AdminDashboardPage() {
   const { stats, isLoading, isError, refetch } = useAdminStats();
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+    <PageContainer>
       <div>
         <p className="text-sm text-brand-text-muted mb-1">Admin</p>
         <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">Platform Overview</h1>
@@ -130,6 +131,6 @@ export default function AdminDashboardPage() {
       <div className="mt-8">
         <AchievementEditor />
       </div>
-    </section>
+    </PageContainer>
   );
 }

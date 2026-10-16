@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/ui/Button';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
+import { HideButton } from '../../../components/ui/HideControls';
 import { useGoalActions } from '../hooks/useGoalActions';
 import type { Goal } from '../../../types/goal.types';
 
@@ -19,7 +20,14 @@ const STATUS_BADGE: Record<string, string> = {
 /** After this many abandon clicks on one goal, the confirm modal adds a stronger warning. */
 const REPEAT_WARNING_THRESHOLD = 10;
 
-export default function GoalCard({ goal }: { goal: Goal }) {
+interface GoalCardProps {
+  goal: Goal;
+  isHidden: boolean;
+  onHide: () => void;
+  onUnhide: () => void;
+}
+
+export default function GoalCard({ goal, isHidden, onHide, onUnhide }: GoalCardProps) {
   const { complete, abandon, pendingGoalId } = useGoalActions();
   const isPending = pendingGoalId === goal.id;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -36,7 +44,7 @@ export default function GoalCard({ goal }: { goal: Goal }) {
   }
 
   return (
-    <div className="card rounded-2xl p-5">
+    <div className={`card rounded-2xl p-5 transition-opacity ${isHidden ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className="font-bold text-brand-text">{GOAL_LABEL[goal.goalType] ?? goal.goalType}</span>
@@ -63,11 +71,13 @@ export default function GoalCard({ goal }: { goal: Goal }) {
         </div>
       )}
 
+      <HideButton isHidden={isHidden} onHide={onHide} onUnhide={onUnhide} />
+
       <ConfirmDialog
         isOpen={isConfirmOpen}
         title="Abandon this goal?"
         description="It will be marked as abandoned and moved out of your active goals. This can't be undone."
-        warning={attempts >= REPEAT_WARNING_THRESHOLD ? `You've tried to abandon this goal ${attempts} times — please confirm only if you're sure.` : undefined}
+        warning={attempts >= REPEAT_WARNING_THRESHOLD ? `You've tried to abandon this goal ${attempts} times. Please confirm only if you're sure.` : undefined}
         confirmLabel="Yes, abandon"
         cancelLabel="Keep goal"
         isLoading={isPending}

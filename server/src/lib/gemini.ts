@@ -57,7 +57,7 @@ function toCoachHttpError(err: unknown): HttpError {
     case 429:
       return new HttpError(429, 'AI usage limit reached. Please try again later.');
     default:
-      return new HttpError(502, 'AI coach is temporarily unavailable — please try again');
+      return new HttpError(502, 'AI coach is temporarily unavailable. Please try again.');
   }
 }
 
@@ -91,7 +91,7 @@ export async function generateCoachReply(
     void recordAiUsage(response.usageMetadata);
     const text = response.text;
     if (!text) {
-      throw new HttpError(502, 'AI coach is temporarily unavailable — please try again');
+      throw new HttpError(502, 'AI coach is temporarily unavailable. Please try again.');
     }
     return text;
   } catch (err) {
@@ -125,7 +125,7 @@ export async function generateStructuredContent<T>(prompt: string, responseSchem
     void recordAiUsage(response.usageMetadata);
     const text = response.text;
     if (!text) {
-      throw new HttpError(502, 'AI generation is temporarily unavailable — please try again');
+      throw new HttpError(502, 'AI generation is temporarily unavailable. Please try again.');
     }
     return JSON.parse(text) as T;
   } catch (err) {
@@ -133,6 +133,6 @@ export async function generateStructuredContent<T>(prompt: string, responseSchem
       throw err;
     }
     console.error('Gemini structured request failed:', err);
-    throw new HttpError(502, 'AI generation is temporarily unavailable — please try again');
+    throw new HttpError(502, 'AI generation is temporarily unavailable. Please try again.');
   }
 }

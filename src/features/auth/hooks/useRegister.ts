@@ -18,7 +18,7 @@ export function useRegister() {
         recoveryEmail: values.recoveryEmail || undefined,
       }),
     onSuccess: () => {
-      showSuccessToast('Account created — welcome to AsceNova!');
+      showSuccessToast('Account created. Welcome to AsceNova!');
       navigate(ROUTES.setup, { replace: true });
     },
   });

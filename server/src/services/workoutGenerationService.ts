@@ -202,7 +202,7 @@ export function toRestDay(day: GeneratedWorkoutDay): EnrichedWorkoutDay {
     coolDown: null,
     estimatedDurationMinutes: null,
     estimatedCaloriesBurned: null,
-    coachingTips: ['Rest is when you adapt — sleep 7-9 hours and stay hydrated.', 'A relaxed walk is fine if you feel restless.'],
+    coachingTips: ['Rest is when you adapt, so sleep 7-9 hours and stay hydrated.', 'A relaxed walk is fine if you feel restless.'],
     progressionAdvice: null,
     exercises: [],
   };

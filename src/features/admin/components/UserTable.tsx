@@ -95,7 +95,7 @@ export default function UserTable() {
                 <tr key={u.id} className="workout-row border-b border-brand-border text-brand-text-secondary">
                   <td className="py-3 pr-4">
                     <Link to={adminUserDetailPath(u.id)} className="font-medium text-brand-text hover:text-brand-primary-light">
-                      {u.profile?.fullName ?? '—'}
+                      {u.profile?.fullName ?? '-'}
                     </Link>
                   </td>
                   <td className="py-3 pr-4 text-brand-text-secondary">{u.email}</td>
@@ -106,7 +106,7 @@ export default function UserTable() {
                   </td>
                   <td className="py-3 pr-4">{u.role}</td>
                   <td className="py-3 pr-4">
-                    {u.userProgress ? `${u.userProgress.totalXp} XP · ${u.userProgress.cachedRank}` : '—'}
+                    {u.userProgress ? `${u.userProgress.totalXp} XP · ${u.userProgress.cachedRank}` : '-'}
                   </td>
                   <td className="py-3 pr-4 text-brand-text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="py-3 pr-0">

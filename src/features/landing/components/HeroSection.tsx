@@ -51,8 +51,8 @@ export default function HeroSection() {
           transition={{ delay: 0.35, duration: 0.5 }}
           className="mt-6 text-lg text-brand-text-secondary sm:text-xl max-w-xl mx-auto leading-relaxed"
         >
-          Transform consistency into progress. Earn XP, build streaks, climb ranks —
-          your fitness game starts here.
+          Transform consistency into progress. Earn XP, build streaks, and climb ranks.
+          Your fitness game starts here.
         </motion.p>
 
         <motion.div

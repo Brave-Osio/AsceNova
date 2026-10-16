@@ -59,7 +59,7 @@ export default function WeightProgressCard() {
           <Stat label="Starting" value={`${firstWeight} kg`} />
           <Stat
             label="Change"
-            value={logs.length > 1 ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)} kg` : '—'}
+            value={logs.length > 1 ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)} kg` : '-'}
             valueClass={logs.length > 1 ? deltaClass : 'text-brand-text'}
           />
           {goalWeight != null && toGoal != null && (

@@ -76,7 +76,7 @@ export default function RegisterForm() {
             onBlur={field.onBlur}
             error={errors.recoveryEmail?.message}
             helperText={
-              errors.recoveryEmail ? undefined : 'Used only to send a password reset link — you can add it later in Settings'
+              errors.recoveryEmail ? undefined : 'Used only to send a password reset link. You can add it later in Settings'
             }
             placeholder="you@gmail.com"
           />
