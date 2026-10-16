@@ -20,17 +20,23 @@ export default function DailyLogForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      {/* Two columns from lg (weight, notes and save on the left, checklist on the right); DOM order stays weight, checklist, notes, save for keyboard users. */}
+      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-2 lg:gap-x-8">
+        <div className="lg:col-start-1">
         <TextField
           label="Current Weight (kg)"
           type="number"
           value={form.weightKg}
           onChange={(v) => updateField('weightKg', v)}
           placeholder="70"
+          min={30}
+          max={300}
+          step="0.1"
           error={error ?? undefined}
         />
+        </div>
 
-        <div>
+        <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <div className="mb-2 flex items-baseline justify-between">
             <span className="text-sm font-medium text-brand-text-secondary">Today's Checklist</span>
             <span className="text-xs text-brand-text-muted">{checkedCount} / {HABIT_ITEMS.length} done</span>
@@ -64,14 +70,16 @@ export default function DailyLogForm() {
           </div>
         </div>
 
-        <TextArea
-          label="Notes"
-          value={form.notes}
-          onChange={(v) => updateField('notes', v)}
-          placeholder="How did today go?"
-        />
+        <div className="lg:col-start-1">
+          <TextArea
+            label="Notes"
+            value={form.notes}
+            onChange={(v) => updateField('notes', v)}
+            placeholder="How did today go?"
+          />
+        </div>
 
-        <div>
+        <div className="lg:col-start-1">
           <Button type="submit" loading={isSubmitting}>Save Log</Button>
         </div>
       </form>

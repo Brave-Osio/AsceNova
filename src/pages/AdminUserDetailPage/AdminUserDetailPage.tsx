@@ -4,6 +4,7 @@ import { useAdminUserDetail } from '../../features/admin/hooks/useAdminUserDetai
 import { useAdminUserActions } from '../../features/admin/hooks/useAdminUserActions';
 import { ROUTES } from '../../constants/routes';
 import Button from '../../components/ui/Button';
+import PageContainer from '../../components/layout/PageContainer';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -31,7 +32,7 @@ export default function AdminUserDetailPage() {
   const isPending = pendingUserId === user.id;
 
   return (
-    <section className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+    <PageContainer>
       <Link to={ROUTES.admin} className="flex items-center gap-1 text-xs text-brand-text-muted hover:text-brand-text-secondary">
         <ArrowLeft size={12} /> Back to Admin
       </Link>
@@ -114,6 +115,6 @@ export default function AdminUserDetailPage() {
           <Row label="Active workout plans" value={String(user.workoutPlans.length)} />
         </div>
       </div>
-    </section>
+    </PageContainer>
   );
 }

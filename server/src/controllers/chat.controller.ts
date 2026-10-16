@@ -14,7 +14,7 @@ export async function getHistory(req: Request, res: Response, next: NextFunction
 export async function sendMessage(req: Request, res: Response, next: NextFunction) {
   try {
     const input = req.body as SendMessageInput;
-    const message = await chatService.sendMessage(req.user!.id, input.message);
+    const message = await chatService.sendMessage(req.user!.id, input.message, input.retry === true);
     res.json({ message });
   } catch (err) {
     next(err);

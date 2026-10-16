@@ -52,7 +52,7 @@ export async function sendPasswordResetEmail(input: {
     `Open this link to continue (it expires in ${input.expiresInMinutes} minutes and works once):`,
     resetUrl,
     '',
-    "If you didn't request this, you can safely ignore this email — your account is unchanged.",
+    "If you didn't request this, you can safely ignore this email. Your account is unchanged.",
   ].join('\n');
 
   const html = `
@@ -68,7 +68,7 @@ export async function sendPasswordResetEmail(input: {
         This link expires in ${input.expiresInMinutes} minutes and works once. If the button doesn't work, copy this URL into your browser:<br />
         <span style="word-break:break-all">${resetUrl}</span>
       </p>
-      <p style="font-size:13px;color:#555">If you didn't request this, you can safely ignore this email — your account is unchanged.</p>
+      <p style="font-size:13px;color:#555">If you didn't request this, you can safely ignore this email. Your account is unchanged.</p>
     </div>`;
 
   await sendEmail({

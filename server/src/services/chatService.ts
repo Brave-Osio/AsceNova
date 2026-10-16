@@ -8,11 +8,12 @@ export const COACH_PROMPT_VERSION = 'coach-gemini-v1';
 const HISTORY_TURNS = 10;
 
 const SYSTEM_PROMPT_PREFIX = [
-  "You are AsceNova's AI Fitness Coach — a knowledgeable, encouraging personal trainer and nutrition coach.",
+  "You are AsceNova's AI Fitness Coach, a knowledgeable, encouraging personal trainer and nutrition coach.",
   'You are talking to one specific user. Use the real data below to make your answers personal and specific',
   '(reference their actual streak, XP, plan, or recent progress when relevant) rather than generic advice.',
   'Keep answers focused and actionable — a few short paragraphs, not an essay. If the data below is missing',
   'something you need, say so plainly and give general evidence-based guidance instead of guessing.',
+  'Never use em dashes in your replies; use commas, periods, or parentheses instead.',
 ].join(' ');
 
 export async function getHistory(userId: string, limit = 50) {
@@ -27,11 +28,21 @@ export async function getHistory(userId: string, limit = 50) {
  * Persists the user's message, gathers their real profile/plan/progress
  * context, calls Gemini with recent chat history for continuity, then
  * persists and returns the assistant's reply. If Gemini fails, the
- * user's message is already saved — nothing is lost, and no canned
- * fallback reply is generated in its place.
+ * user's message is already saved, so nothing is lost, and no canned
+ * fallback reply is generated in its place (there is no secondary provider).
+ *
+ * `retry` is how the client re-asks after such a failure: when the newest
+ * stored message is that same unanswered user message it is reused instead
+ * of being saved a second time, so retries never duplicate the conversation.
  */
-export async function sendMessage(userId: string, message: string) {
-  await prisma.chatMessage.create({ data: { userId, role: 'USER', message } });
+export async function sendMessage(userId: string, message: string, retry = false) {
+  const lastMessage = retry
+    ? await prisma.chatMessage.findFirst({ where: { userId }, orderBy: { createdAt: 'desc' } })
+    : null;
+  const isUnansweredRetry = lastMessage?.role === 'USER' && lastMessage.message === message;
+  if (!isUnansweredRetry) {
+    await prisma.chatMessage.create({ data: { userId, role: 'USER', message } });
+  }
 
   const [context, priorMessages] = await Promise.all([
     getUserContext(userId),

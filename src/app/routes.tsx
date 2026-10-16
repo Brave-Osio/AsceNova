@@ -2,14 +2,13 @@ import type { RouteObject } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from './router/ProtectedRoute';
 import AdminRoute from './router/AdminRoute';
+import { Navigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import LandingPage from '../pages/LandingPage/LandingPage';
-import ProfileSetupPage from '../pages/ProfileSetupPage/ProfileSetupPage';
 import PlanGeneratorPage from '../pages/PlanGeneratorPage/PlanGeneratorPage';
 import DashboardPage from '../pages/DashboardPage/DashboardPage';
 import DailyLogPage from '../pages/DailyLogPage/DailyLogPage';
 import LeaderboardPage from '../pages/LeaderboardPage/LeaderboardPage';
-import CoachChatPage from '../pages/CoachChatPage/CoachChatPage';
 import LoginPage from '../pages/LoginPage/LoginPage';
 import RegisterPage from '../pages/RegisterPage/RegisterPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage/ForgotPasswordPage';
@@ -19,14 +18,15 @@ import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPag
 import SettingsPage from '../pages/SettingsPage/SettingsPage';
 import ChallengesPage from '../pages/ChallengesPage/ChallengesPage';
 import GoalsPage from '../pages/GoalsPage/GoalsPage';
+import TermsPage from '../pages/TermsPage/TermsPage';
 
 /**
  * All routes are flat children of the shared Layout (navbar + drawer).
  *
- * setup/plan/dashboard/log/leaderboard/coach all read backend-persisted,
- * per-user data, so they sit behind ProtectedRoute. Coach chat moved in
- * once its backend (Gemini-backed, real profile/plan/progress context)
- * replaced the old ungated demo mock.
+ * plan/dashboard/log/leaderboard/settings all read backend-persisted,
+ * per-user data, so they sit behind ProtectedRoute. /setup redirects to the
+ * unified Profile and Settings page; the AI coach is a floating side panel,
+ * not a route.
  */
 export const routes: RouteObject[] = [
   {
@@ -37,12 +37,11 @@ export const routes: RouteObject[] = [
       {
         element: <ProtectedRoute />,
         children: [
-          { path: ROUTES.setup.slice(1), element: <ProfileSetupPage /> },
+          { path: ROUTES.setup.slice(1), element: <Navigate to={ROUTES.settings} replace /> },
           { path: ROUTES.plan.slice(1), element: <PlanGeneratorPage /> },
           { path: ROUTES.dashboard.slice(1), element: <DashboardPage /> },
           { path: ROUTES.log.slice(1), element: <DailyLogPage /> },
           { path: ROUTES.leaderboard.slice(1), element: <LeaderboardPage /> },
-          { path: ROUTES.coach.slice(1), element: <CoachChatPage /> },
           { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
           { path: ROUTES.challenges.slice(1), element: <ChallengesPage /> },
           { path: ROUTES.goals.slice(1), element: <GoalsPage /> },
@@ -55,6 +54,7 @@ export const routes: RouteObject[] = [
           { path: `${ROUTES.admin.slice(1)}/users/:userId`, element: <AdminUserDetailPage /> },
         ],
       },
+      { path: ROUTES.terms.slice(1), element: <TermsPage /> },
       { path: ROUTES.login.slice(1), element: <LoginPage /> },
       { path: ROUTES.register.slice(1), element: <RegisterPage /> },
       { path: ROUTES.forgotPassword.slice(1), element: <ForgotPasswordPage /> },

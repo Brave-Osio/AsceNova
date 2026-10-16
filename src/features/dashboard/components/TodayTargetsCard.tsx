@@ -62,7 +62,7 @@ export default function TodayTargetsCard() {
             {done} <span className="font-medium text-brand-text-secondary">of {total} targets hit</span>
           </div>
           <div className={`mt-0.5 text-xs font-semibold ${isComplete ? 'text-emerald-400 light:text-emerald-700' : 'text-brand-text-muted'}`}>
-            {isComplete ? 'All targets hit — great day!' : `${remaining} remaining`}
+            {isComplete ? 'All targets hit. Great day!' : `${remaining} remaining`}
           </div>
         </div>
       </div>

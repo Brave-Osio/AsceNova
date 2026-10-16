@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { Zap } from 'lucide-react';
 import { ROUTES } from '../../constants/routes';
 import { NAV_LINKS } from '../../constants/navLinks';
 import AuthNavControls from '../../features/auth/components/AuthNavControls';
 import ThemeToggle from '../ui/ThemeToggle';
+import BrandLogo from '../ui/BrandLogo';
 
 /**
- * Public (logged-out) top bar only — authenticated users navigate via
+ * Public (logged-out) top bar only. Authenticated users navigate via
  * Sidebar instead. Shows just the links that don't require auth.
  */
 export default function Navbar() {
@@ -15,11 +15,9 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-brand-border bg-brand-bg">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <NavLink to={ROUTES.landing} className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary/15 text-brand-primary-light">
-            <Zap size={16} strokeWidth={2.5} />
-          </div>
-          <span className="text-sm font-bold tracking-tight text-brand-text">AsceNova</span>
+        <NavLink to={ROUTES.landing} className="flex items-center gap-2.5" aria-label="ASCENOVA home">
+          <BrandLogo size={32} />
+          <span className="text-sm font-bold tracking-tight text-brand-text">ASCENOVA</span>
         </NavLink>
 
         <nav className="hidden items-center gap-1 sm:flex">

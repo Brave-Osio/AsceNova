@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import OptionSelector from '../../../components/ui/OptionSelector';
+import ChallengePicker from './ChallengePicker';
 import TagInput from '../../../components/ui/TagInput';
 import Button from '../../../components/ui/Button';
 import { useChallenges } from '../hooks/useChallenges';
@@ -10,8 +10,6 @@ export default function CreateChallengeForm() {
   const { create, isCreating } = useChallengeActions();
   const [challengeId, setChallengeId] = useState('');
   const [usernames, setUsernames] = useState<string[]>([]);
-
-  const options = catalog.map((c) => ({ value: c.id, label: `${c.icon} ${c.title}` }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,10 +22,10 @@ export default function CreateChallengeForm() {
   return (
     <form onSubmit={handleSubmit} className="card flex flex-col gap-4 rounded-2xl p-5">
       <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Start a Challenge</div>
-      <OptionSelector
+      <ChallengePicker
         label="Challenge"
+        catalog={catalog}
         value={challengeId || catalog[0].id}
-        options={options}
         onChange={setChallengeId}
       />
       <TagInput

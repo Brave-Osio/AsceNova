@@ -161,7 +161,7 @@ export function formatContextAsPromptText(context: CoachContext): string {
     lines.push(`- Goal: ${p.goal}, Fitness level: ${p.fitnessLevel}, Equipment: ${p.equipmentAccess}`);
     if (p.activityLevel) lines.push(`- Activity level: ${p.activityLevel}`);
   } else {
-    lines.push('USER PROFILE: not set up yet — encourage them to complete onboarding for personalized advice.');
+    lines.push('USER PROFILE: not set up yet, so encourage them to complete onboarding for personalized advice.');
   }
 
   lines.push('');

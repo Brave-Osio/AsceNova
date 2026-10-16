@@ -61,7 +61,7 @@ export const SPLIT_STYLE_OPTIONS: SplitStyleOption[] = [
   {
     value: 'FULL_BODY',
     label: 'Full Body',
-    description: 'Trains your whole body each session — efficient with fewer days.',
+    description: 'Trains your whole body each session, which is efficient with fewer days.',
   },
 ];
 

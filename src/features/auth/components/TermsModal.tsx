@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import Button from '../../../components/ui/Button';
-import { TERMS_SECTIONS, TERMS_TITLE } from '../../../constants/terms';
+import { Link } from 'react-router-dom';
+import { TERMS_LAST_UPDATED, TERMS_TITLE } from '../../../constants/terms';
+import { ROUTES } from '../../../constants/routes';
+import TermsContent from './TermsContent';
 
 interface TermsModalProps {
   isOpen: boolean;
@@ -26,18 +29,19 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="terms-modal-title"
-        className="card relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl p-6 shadow-xl"
+        className="card relative flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl p-6 shadow-xl"
       >
         <h2 id="terms-modal-title" className="text-lg font-bold text-brand-text">
           {TERMS_TITLE}
         </h2>
-        <div className="mt-4 space-y-4 overflow-y-auto pr-1 text-sm text-brand-text-secondary">
-          {TERMS_SECTIONS.map((section) => (
-            <section key={section.heading}>
-              <h3 className="font-semibold text-brand-text">{section.heading}</h3>
-              <p className="mt-1">{section.body}</p>
-            </section>
-          ))}
+        <p className="mt-1 text-xs text-brand-text-muted">
+          Last updated {TERMS_LAST_UPDATED}.{' '}
+          <Link to={ROUTES.terms} target="_blank" rel="noreferrer" className="font-semibold text-brand-primary-light underline">
+            Open as a full page
+          </Link>
+        </p>
+        <div className="mt-4 overflow-y-auto pr-1">
+          <TermsContent headingLevel="h3" />
         </div>
         <div className="mt-5">
           <Button type="button" variant="primary" fullWidth onClick={onClose}>

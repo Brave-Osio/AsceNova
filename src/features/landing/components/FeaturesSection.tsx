@@ -12,13 +12,13 @@ const FEATURES: { icon: LucideIcon; title: string; description: string; accent: 
   {
     icon: Zap,
     title: 'XP & Ranks',
-    description: 'Earn XP for showing up, not just for hitting the scale. Climb from Iron to Radiant — 9 tiers of glory.',
+    description: 'Earn XP for showing up, not just for hitting the scale. Climb from Iron to Radiant across 9 tiers of glory.',
     accent: 'text-brand-primary-light bg-brand-primary/15',
   },
   {
     icon: Award,
     title: 'Achievements',
-    description: 'Unlock badges for milestones — first workout, 7-day streaks, rank promotions, and rare feats of discipline.',
+    description: 'Unlock badges for milestones like your first workout, 7-day streaks, rank promotions, and rare feats of discipline.',
     accent: 'text-amber-400 light:text-amber-700 bg-amber-500/15',
   },
   {

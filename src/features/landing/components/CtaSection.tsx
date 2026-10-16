@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Rocket, ArrowRight, Bot } from 'lucide-react';
+import { Rocket, ArrowRight, LogIn } from 'lucide-react';
 import { ROUTES } from '../../../constants/routes';
 
 export default function CtaSection() {
@@ -21,7 +21,7 @@ export default function CtaSection() {
             Ready to build the streak?
           </h2>
           <p className="mt-4 text-brand-text-secondary max-w-md mx-auto leading-relaxed">
-            Your rank doesn't care how much you weigh. It only cares whether you show up — every single day.
+            Your rank doesn't care how much you weigh. It only cares whether you show up, every single day.
           </p>
           <div className="mt-8 flex flex-wrap gap-3 justify-center">
             <Link
@@ -31,10 +31,10 @@ export default function CtaSection() {
               Start Your Journey <ArrowRight size={16} />
             </Link>
             <Link
-              to={ROUTES.coach}
+              to={ROUTES.login}
               className="flex items-center gap-2 rounded-full border border-brand-border bg-brand-card-alt px-8 py-3.5 text-sm font-bold text-brand-text-secondary transition-colors hover:text-brand-text"
             >
-              <Bot size={16} /> Talk to Coach
+              <LogIn size={16} /> Log In
             </Link>
           </div>
         </div>

@@ -24,7 +24,7 @@ export default function AppDownloadSection() {
           </span>
           <h2 className="mt-4 text-2xl font-extrabold text-brand-text sm:text-3xl">Get the Android app</h2>
           <p className="mx-auto mt-4 max-w-md leading-relaxed text-brand-text-secondary">
-            Take your streak with you. Install AsceNova on your Android phone — no setup needed, just an internet
+            Take your streak with you. Install AsceNova on your Android phone. No setup needed, just an internet
             connection.
           </p>
           <div className="mt-8 flex justify-center">

@@ -51,7 +51,7 @@ function loadEnv() {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
     console.error('Invalid environment configuration:', parsed.error.flatten().fieldErrors);
-    throw new Error('Invalid environment configuration — see errors above.');
+    throw new Error('Invalid environment configuration, see errors above.');
   }
   return parsed.data;
 }

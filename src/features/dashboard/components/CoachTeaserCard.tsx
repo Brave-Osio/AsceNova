@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { Bot, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { getChatHistory } from '../../../services/coachService';
 import { queryKeys } from '../../../lib/queryKeys';
-import { ROUTES } from '../../../constants/routes';
+import { useCoachPanel } from '../../coach-chat/CoachPanelContext';
 
 /**
  * Coach messages are Markdown (bold, bullet lists — see MessageBubble.tsx,
@@ -25,12 +24,13 @@ function stripMarkdown(text: string): string {
 }
 
 /**
- * Reuses the same query key useCoachChat uses, so if /coach was already
- * visited this session the cache is shared and this loads instantly —
- * no new Gemini call, just surfacing the last real exchange.
+ * Reuses the same query key useCoachChat uses, so once the coach panel
+ * has loaded this session the cache is shared and this loads instantly,
+ * with no new Gemini call, just surfacing the last real exchange.
  */
 export default function CoachTeaserCard() {
   const { user } = useAuth();
+  const { open } = useCoachPanel();
   const { data: messages, isLoading } = useQuery({
     queryKey: queryKeys.coach.history(user?.id ?? ''),
     queryFn: getChatHistory,
@@ -58,12 +58,13 @@ export default function CoachTeaserCard() {
           </p>
         )}
       </div>
-      <Link
-        to={ROUTES.coach}
+      <button
+        type="button"
+        onClick={open}
         className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-light hover:text-brand-text hover:underline focus-visible:text-brand-text focus-visible:underline focus-visible:outline-none active:text-brand-primary"
       >
         Continue chatting <ArrowRight size={12} />
-      </Link>
+      </button>
     </div>
   );
 }

@@ -8,6 +8,6 @@ export const upsertDailyProgressSchema = z.object({
   hitProteinGoal: z.boolean().default(false),
   slept7PlusHours: z.boolean().default(false),
   reachedStepGoal: z.boolean().default(false),
-  notes: z.string().trim().optional(),
+  notes: z.string().trim().max(1000, 'Notes must be 1000 characters or fewer').optional(),
 });
 export type UpsertDailyProgressInput = z.infer<typeof upsertDailyProgressSchema>;

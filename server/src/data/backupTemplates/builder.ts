@@ -184,7 +184,7 @@ function buildStrengthExercise(entry: PoolExercise, key: PoolKey, ctx: BuildCtx)
 
 function buildTips(kind: DayKind, ctx: BuildCtx): string[] {
   if (kind === 'REST') {
-    return ['Rest is when you adapt — sleep 7-9 hours and stay hydrated.', 'A relaxed walk is fine if you feel restless.'];
+    return ['Rest is when you adapt, so sleep 7-9 hours and stay hydrated.', 'A relaxed walk is fine if you feel restless.'];
   }
   const goalTip: Record<FitnessGoal, string> = {
     WEIGHT_LOSS: 'Keep rests short and move with purpose; your heart rate staying up is the point.',
@@ -197,7 +197,7 @@ function buildTips(kind: DayKind, ctx: BuildCtx): string[] {
     3: 'Work top sets around RPE 8-9 and log your numbers to keep progressing.',
   };
   const tips = [goalTip[ctx.goal], levelTip[ctx.level]];
-  if (ctx.spec.lowImpact) tips.push('Everything here is low impact — skip any move that bothers your joints.');
+  if (ctx.spec.lowImpact) tips.push('Everything here is low impact, so skip any move that bothers your joints.');
   return tips;
 }
 

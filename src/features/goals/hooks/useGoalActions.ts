@@ -21,14 +21,17 @@ export function useGoalActions() {
     }
   }
 
-  async function create(input: CreateGoalInput) {
+  /** Resolves true only when the goal was saved, so the form can keep the user's input on failure. */
+  async function create(input: CreateGoalInput): Promise<boolean> {
     setIsCreating(true);
     try {
       await createGoal(input);
       invalidate();
       showSuccessToast('Goal created!');
+      return true;
     } catch (err) {
       showErrorToast(err);
+      return false;
     } finally {
       setIsCreating(false);
     }

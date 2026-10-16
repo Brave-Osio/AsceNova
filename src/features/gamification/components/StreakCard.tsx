@@ -19,7 +19,7 @@ export default function StreakCard() {
         {streak === 0
           ? 'Log today to start your streak!'
           : streak >= 7
-          ? 'Week streak — legendary!'
+          ? 'Week streak, legendary!'
           : 'Keep it going!'}
       </div>
     </div>

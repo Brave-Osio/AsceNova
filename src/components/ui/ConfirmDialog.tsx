@@ -1,6 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import Button from './Button';
+import { modalBackdrop, modalPanel } from '../../lib/motion';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -43,12 +45,23 @@ export default function ConfirmDialog({
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, isLoading, onCancel]);
 
-  if (!isOpen) return null;
-
   return (
+    <AnimatePresence>
+      {isOpen && (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={isLoading ? undefined : onCancel} />
-      <div
+      <motion.div
+        className="absolute inset-0 bg-black/60"
+        variants={modalBackdrop}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={isLoading ? undefined : onCancel}
+      />
+      <motion.div
+        variants={modalPanel}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
@@ -80,7 +93,9 @@ export default function ConfirmDialog({
             {confirmLabel}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
+      )}
+    </AnimatePresence>
   );
 }

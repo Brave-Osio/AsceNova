@@ -25,7 +25,7 @@ export default function ForgotPasswordForm() {
         <p className="text-sm text-brand-text-secondary">{data.message}</p>
         {data.devResetToken && (
           <div className="rounded-lg bg-amber-500/10 p-3 text-left text-xs text-amber-300 light:text-amber-700">
-            <p className="font-semibold">Dev mode only — email isn't configured, so the reset link is shown here instead:</p>
+            <p className="font-semibold">Dev mode only: email isn't configured, so the reset link is shown here instead:</p>
             <Link
               to={`${ROUTES.resetPassword}?token=${data.devResetToken}`}
               className="mt-1 block break-all underline"
@@ -78,7 +78,7 @@ export default function ForgotPasswordForm() {
       {error && <p className="text-sm text-red-400 light:text-red-700">{getErrorMessage(error)}</p>}
 
       <p className="text-xs text-brand-text-muted">
-        No Gmail saved on your account, or signed up with Google? Reset links can't be sent for those — Google sign-in
+        No Gmail saved on your account, or signed up with Google? Reset links can't be sent for those. Google sign-in
         users can use Continue with Google instead.
       </p>
 

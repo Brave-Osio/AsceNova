@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Flame, Dumbbell, Scale, ClipboardList, Target } from 'lucide-react';
+import { Flame, Dumbbell, Scale, Target } from 'lucide-react';
 import { useProfile } from '../../features/profile/hooks/useProfile';
-import { useUserProgress } from '../../features/gamification/hooks/useUserProgress';
-import { getEquippedTitle } from '../../constants/titles';
 import { ROUTES } from '../../constants/routes';
 import RankCard from '../../features/gamification/components/RankCard';
 import XpCard from '../../features/gamification/components/XpCard';
@@ -16,6 +14,7 @@ import TodayTargetsCard from '../../features/dashboard/components/TodayTargetsCa
 import WeeklySummaryCard from '../../features/dashboard/components/WeeklySummaryCard';
 import WorkoutCalendarCard from '../../features/dashboard/components/WorkoutCalendarCard';
 import CoachTeaserCard from '../../features/dashboard/components/CoachTeaserCard';
+import PageContainer from '../../components/layout/PageContainer';
 
 const GOAL_LABEL: Record<string, string> = {
   WEIGHT_LOSS: 'Weight Loss',
@@ -40,8 +39,6 @@ function GroupHeading({ children }: { children: React.ReactNode }) {
 
 export default function DashboardPage() {
   const { data: profile, isLoading } = useProfile();
-  const { unlockedAchievementIds } = useUserProgress();
-  const equippedTitle = getEquippedTitle(unlockedAchievementIds);
 
   if (isLoading) return null;
 
@@ -66,7 +63,7 @@ export default function DashboardPage() {
   const GoalIcon = GOAL_ICON[profile.goal] ?? Target;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+    <PageContainer>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -75,15 +72,10 @@ export default function DashboardPage() {
         className="flex flex-wrap items-start justify-between gap-4"
       >
         <div>
-          <p className="text-sm text-brand-text-muted mb-1">Dashboard</p>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-brand-text-muted/80">Dashboard</p>
           <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">
             Welcome back, {profile.fullName}
           </h1>
-          {equippedTitle && (
-            <span className="mt-1.5 inline-flex items-center gap-1 chip chip-accent px-2.5 py-0.5 text-xs">
-              {equippedTitle}
-            </span>
-          )}
           <div className="mt-2 flex items-center gap-1.5">
             <GoalIcon size={15} className="text-brand-text-secondary" />
             <span className="text-sm text-brand-text-secondary">
@@ -91,12 +83,6 @@ export default function DashboardPage() {
             </span>
           </div>
         </div>
-        <Link
-          to={ROUTES.plan}
-          className="flex-shrink-0 flex items-center gap-1.5 rounded-full bg-brand-card-alt px-4 py-2 text-xs font-bold text-brand-primary-light hover:bg-brand-card transition-colors"
-        >
-          <ClipboardList size={14} /> View Plan
-        </Link>
       </motion.div>
 
       {/* Hero: today's target */}
@@ -147,6 +133,6 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </motion.div>
-    </section>
+    </PageContainer>
   );
 }
