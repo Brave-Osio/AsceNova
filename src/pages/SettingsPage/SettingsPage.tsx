@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { KeyRound, Mail, UserRound } from 'lucide-react';
+import { KeyRound, Mail, Trash2, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/ui/PageHeader';
 import PageContainer from '../../components/layout/PageContainer';
@@ -8,6 +8,8 @@ import { ROUTES } from '../../constants/routes';
 import AccountInfoPanel from '../../features/settings/components/AccountInfoPanel';
 import ChangePasswordForm from '../../features/settings/components/ChangePasswordForm';
 import RecoveryEmailForm from '../../features/settings/components/RecoveryEmailForm';
+import DeleteAccountPanel from '../../features/settings/components/DeleteAccountPanel';
+import BmiCard from '../../features/profile/components/BmiCard';
 import ProfileSetupForm from '../../features/profile/components/ProfileSetupForm';
 import { useProfile } from '../../features/profile/hooks/useProfile';
 import { listContainer, listItem } from '../../lib/motion';
@@ -79,6 +81,10 @@ export default function SettingsPage() {
         {!isOnboarding && (
           <div className="space-y-6">
             <motion.div variants={listItem}>
+              <BmiCard />
+            </motion.div>
+
+            <motion.div variants={listItem}>
               <AccountInfoPanel />
             </motion.div>
 
@@ -88,6 +94,14 @@ export default function SettingsPage() {
 
             <SectionCard title="Change password" icon={<KeyRound size={18} />}>
               <ChangePasswordForm />
+            </SectionCard>
+
+            <SectionCard
+              title="Delete account"
+              description="Permanently remove your account and personal data."
+              icon={<Trash2 size={18} />}
+            >
+              <DeleteAccountPanel />
             </SectionCard>
 
             <motion.p variants={listItem} className="px-1 text-xs text-brand-text-muted">

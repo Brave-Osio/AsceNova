@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { usePlanGenerator } from '../../fitness-plan/hooks/usePlanGenerator';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { useProfile } from '../../profile/hooks/useProfile';
-import { getTodayDateString } from '../../../utils/dateUtils';
+import { useToday } from '../../../hooks/useToday';
 import { ROUTES } from '../../../constants/routes';
 import type { DailyHabits } from '../../../types/log.types';
 
@@ -34,12 +34,13 @@ export default function TodayTargetsCard() {
   const { plan, isLoading: isPlanLoading } = usePlanGenerator();
   const { data: logs, isLoading: isLogsLoading } = useLogs();
   const { data: profile } = useProfile();
+  const today = useToday();
 
   if (isPlanLoading || isLogsLoading) {
     return <div className="card h-56 animate-pulse rounded-3xl" aria-busy="true" aria-label="Loading today's target" />;
   }
 
-  const todayLog = logs?.find((l) => l.date === getTodayDateString());
+  const todayLog = logs?.find((l) => l.date === today);
   const items = buildItems(plan?.nutrition.waterLiters, plan?.nutrition.proteinGrams, profile?.sleepHoursTarget);
   const done = todayLog ? items.filter((item) => todayLog.habits[item.key]).length : 0;
   const total = items.length;

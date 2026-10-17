@@ -14,6 +14,9 @@ export const queryKeys = {
     active: (userId: string) => ['plan', 'active', userId] as const,
     history: (userId: string) => ['plan', 'history', userId] as const,
   },
+  workoutDay: {
+    byDate: (userId: string, date: string) => ['workout-day', userId, date] as const,
+  },
   logs: {
     list: (userId: string, range?: string) => ['logs', userId, range ?? null] as const,
     byDate: (userId: string, date: string) => ['logs', userId, date] as const,
@@ -46,6 +49,7 @@ export const queryKeys = {
     users: (filters: Record<string, unknown>) => ['admin', 'users', filters] as const,
     userDetail: (id: string) => ['admin', 'user', id] as const,
     achievements: () => ['admin', 'achievements'] as const,
+    auditLogs: (filters: Record<string, unknown>) => ['admin', 'audit-logs', filters] as const,
   },
   challenges: {
     catalog: () => ['challenges', 'catalog'] as const,

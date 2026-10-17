@@ -2,9 +2,14 @@ import type { Request, Response, NextFunction } from 'express';
 import type { AccountStatus } from '@prisma/client';
 import * as adminService from '../services/adminService.js';
 import * as aiUsageService from '../services/aiUsageService.js';
-import type { UpdateAchievementInput } from '../validators/admin.validators.js';
+import * as auditService from '../services/auditService.js';
+import { auditLogQuerySchema, type UpdateAchievementInput } from '../validators/admin.validators.js';
 
 const VALID_STATUSES: AccountStatus[] = ['ACTIVE', 'SUSPENDED', 'DELETED'];
+
+function adminCtx(req: Request) {
+  return { actorId: req.user!.id, requestId: req.requestId };
+}
 
 export async function getStats(_req: Request, res: Response, next: NextFunction) {
   try {
@@ -43,7 +48,7 @@ export async function getUserDetail(req: Request, res: Response, next: NextFunct
 
 export async function suspendUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await adminService.suspendUser(req.user!.id, req.params.id);
+    const user = await adminService.suspendUser(adminCtx(req), req.params.id);
     res.json({ user });
   } catch (err) {
     next(err);
@@ -52,7 +57,7 @@ export async function suspendUser(req: Request, res: Response, next: NextFunctio
 
 export async function reactivateUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await adminService.reactivateUser(req.user!.id, req.params.id);
+    const user = await adminService.reactivateUser(adminCtx(req), req.params.id);
     res.json({ user });
   } catch (err) {
     next(err);
@@ -61,7 +66,7 @@ export async function reactivateUser(req: Request, res: Response, next: NextFunc
 
 export async function grantAdmin(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await adminService.setUserRole(req.user!.id, req.params.id, 'ADMIN');
+    const user = await adminService.setUserRole(adminCtx(req), req.params.id, 'ADMIN');
     res.json({ user });
   } catch (err) {
     next(err);
@@ -70,7 +75,7 @@ export async function grantAdmin(req: Request, res: Response, next: NextFunction
 
 export async function revokeAdmin(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await adminService.setUserRole(req.user!.id, req.params.id, 'USER');
+    const user = await adminService.setUserRole(adminCtx(req), req.params.id, 'USER');
     res.json({ user });
   } catch (err) {
     next(err);
@@ -79,16 +84,16 @@ export async function revokeAdmin(req: Request, res: Response, next: NextFunctio
 
 export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
-    await adminService.softDeleteUser(req.user!.id, req.params.id);
+    await adminService.softDeleteUser(adminCtx(req), req.params.id);
     res.json({ success: true });
   } catch (err) {
     next(err);
   }
 }
 
-export async function exportUsersCsv(_req: Request, res: Response, next: NextFunction) {
+export async function exportUsersCsv(req: Request, res: Response, next: NextFunction) {
   try {
-    const csv = await adminService.exportUsersCsv();
+    const csv = await adminService.exportUsersCsv(adminCtx(req));
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="users.csv"');
     res.send(csv);
@@ -109,7 +114,7 @@ export async function listAchievements(_req: Request, res: Response, next: NextF
 export async function updateAchievement(req: Request, res: Response, next: NextFunction) {
   try {
     const input = req.body as UpdateAchievementInput;
-    const achievement = await adminService.updateAchievement(req.params.id, input);
+    const achievement = await adminService.updateAchievement(adminCtx(req), req.params.id, input);
     res.json({ achievement });
   } catch (err) {
     next(err);
@@ -119,6 +124,15 @@ export async function updateAchievement(req: Request, res: Response, next: NextF
 export async function getAiUsage(_req: Request, res: Response, next: NextFunction) {
   try {
     res.json(await aiUsageService.getAiUsage());
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listAuditLogs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = auditLogQuerySchema.parse(req.query);
+    res.json(await auditService.listAuditLogs(query));
   } catch (err) {
     next(err);
   }

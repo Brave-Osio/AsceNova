@@ -7,6 +7,9 @@ import SimpleLineChart from '../../components/charts/SimpleLineChart';
 import Button from '../../components/ui/Button';
 import AiUsageCard from '../../features/admin/components/AiUsageCard';
 import PageContainer from '../../components/layout/PageContainer';
+import { Link } from 'react-router-dom';
+import { ScrollText } from 'lucide-react';
+import { ROUTES } from '../../constants/routes';
 
 const GOAL_LABEL: Record<string, string> = {
   WEIGHT_LOSS: 'Weight Loss',
@@ -42,9 +45,17 @@ export default function AdminDashboardPage() {
 
   return (
     <PageContainer>
-      <div>
-        <p className="text-sm text-brand-text-muted mb-1">Admin</p>
-        <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">Platform Overview</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-brand-text-muted mb-1">Admin</p>
+          <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">Platform Overview</h1>
+        </div>
+        <Link
+          to={ROUTES.adminAuditLogs}
+          className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-card px-4 py-2 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-card-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60"
+        >
+          <ScrollText size={14} /> Audit logs
+        </Link>
       </div>
 
       {isLoading ? (
@@ -102,6 +113,23 @@ export default function AdminDashboardPage() {
               )}
             </ChartCard>
 
+            <ChartCard
+              title="Daily Active Users"
+              description="Distinct users with a daily check-in each day, past 30 days (UTC)."
+            >
+              <SimpleBarChart
+                unitLabel="active users"
+                data={stats.engagementByDay.map((d) => ({ label: shortDate(d.date), value: d.activeUsers }))}
+              />
+            </ChartCard>
+
+            <ChartCard title="Workouts Completed per Day" description="Daily check-ins with the workout marked done, past 30 days (UTC).">
+              <SimpleBarChart
+                unitLabel="workouts"
+                data={stats.engagementByDay.map((d) => ({ label: shortDate(d.date), value: d.workoutsCompleted }))}
+              />
+            </ChartCard>
+
             <ChartCard title="User Growth" description="Total accounts over the past 30 days.">
               <SimpleLineChart
                 unitLabel=" users"
@@ -117,6 +145,12 @@ export default function AdminDashboardPage() {
             <StatCard label="Total Users" value={String(stats.totalUsers)} hint={`${stats.adminUsers} administrator${stats.adminUsers === 1 ? '' : 's'}`} />
             <StatCard label="New Users (Past 7 Days)" value={String(stats.newUsers7d)} />
             <StatCard label="New Users (Past 30 Days)" value={String(stats.newUsers30d)} />
+            <StatCard label="Active Users (7 Days)" value={String(stats.activeUsers7d)} hint="with a daily check-in" />
+            <StatCard label="Active Users (30 Days)" value={String(stats.activeUsers30d)} hint="with a daily check-in" />
+            <StatCard label="Workout Plans Generated" value={String(stats.workoutPlansGenerated)} hint="all time, including replaced plans" />
+            <StatCard label="Workouts Completed" value={String(stats.totalWorkoutsCompleted)} hint="all time" />
+            <StatCard label="Challenge Participants" value={String(stats.challengeParticipants)} hint="accepted participations" />
+            <StatCard label="Challenges Completed" value={String(stats.challengeCompletions)} hint="participations finished" />
             <StatCard label="Workout Completion" value={`${Math.round(stats.workoutCompletionRate * 100)}%`} hint="of all daily logs" />
             <StatCard label="Avg XP" value={String(stats.avgTotalXp)} />
             <StatCard label="Avg Streak" value={`${stats.avgStreak} days`} />

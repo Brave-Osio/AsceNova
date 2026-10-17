@@ -37,6 +37,16 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v && Number.isFinite(Number(v)) && Number(v) > 0 ? Math.floor(Number(v)) : undefined)),
+  // Shared secret Vercel Cron presents to /api/internal/cron/*. Unset = scheduled jobs disabled (503).
+  // Blank (as in .env.example) counts as unset.
+  CRON_SECRET: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(16).optional()),
+  // The retention purge only deletes when this is exactly "false"; otherwise it just reports (dry run).
+  RETENTION_DRY_RUN: z
+    .string()
+    .default('true')
+    .transform((v) => v !== 'false'),
+  SOFT_DELETE_RETENTION_DAYS: z.coerce.number().int().min(1).default(30),
+  CHAT_RETENTION_DAYS: z.coerce.number().int().min(1).default(90),
   ENABLE_SIMULATE_PROGRESS: z
     .string()
     .default('false')

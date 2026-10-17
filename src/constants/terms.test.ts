@@ -21,7 +21,10 @@ describe('terms content', () => {
   it('flags retention, security and acceptance gaps instead of claiming them', () => {
     const gapTitles = TERMS_SECTIONS.flatMap((s) => s.blocks).filter((b) => b.kind === 'gap');
     expect(gapTitles.length).toBeGreaterThanOrEqual(3);
-    expect(allText).toContain('no self-service');
+    // Deletion is self-service now, but the copy must still not overclaim: backups and the AI provider are out of our hands.
+    expect(allText).not.toContain('no self-service');
+    expect(allText).toContain('We do not claim backups are erased immediately');
+    expect(allText).toContain('cannot delete it from the provider');
     expect(allText).toContain('not certified');
   });
 });

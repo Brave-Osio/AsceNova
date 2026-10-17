@@ -66,3 +66,15 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
 });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+// Re-authentication is a password for password accounts, or a fresh Google ID token for Google-only accounts.
+export const deleteAccountSchema = z
+  .object({
+    confirmation: z.literal('DELETE', { message: 'Type DELETE to confirm' }),
+    password: z.string().min(1).max(200).optional(),
+    idToken: z.string().min(1).max(5000).optional(),
+  })
+  .refine((v) => Boolean(v.password) !== Boolean(v.idToken), {
+    message: 'Provide either your password or a Google credential',
+  });
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

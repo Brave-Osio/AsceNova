@@ -11,6 +11,7 @@ import {
   setRecoveryEmailSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  deleteAccountSchema,
 } from '../validators/auth.validators.js';
 
 export const authRouter = Router();
@@ -41,3 +42,10 @@ authRouter.put(
   authController.setRecoveryEmail,
 );
 authRouter.get('/me', requireAuth, authController.me);
+authRouter.delete(
+  '/account',
+  requireAuth,
+  authRateLimiter,
+  validateRequest(deleteAccountSchema),
+  authController.deleteAccount,
+);

@@ -3,8 +3,7 @@
 // in mobile/src/constants/terms.ts (separate package) and is not kept in sync by this file.
 //
 // Statements are limited to behavior verified in server/ and src/. Anything the code does not do
-// (self-service deletion, retention purges, audit logs, consent records) is listed as a gap, never
-// described as a feature.
+// (consent records, 2FA, per-view audit of personal data) is listed as a gap, never described as a feature.
 
 /** Block types a section can contain. `gap` renders as a highlighted "not implemented yet" callout. */
 export type TermsBlock =
@@ -123,7 +122,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
         items: [
           'You, through your signed-in account. Backend queries for your data are scoped to your user ID.',
           'Other signed-in users see only your leaderboard entry (name, rank, XP, streak) and, if you share a challenge, your name or login username and your challenge progress.',
-          'Administrators (accounts with the admin role) can use the admin panel to see account lists and a user detail view: account fields (not password hashes), profile, XP and rank, the active plan, and counts of logs and chat messages. The panel does not display chat message content.',
+          'Administrators (accounts with the admin role) can use the admin panel to see aggregate platform statistics and a minimal account list: a system-generated user ID, your login username, role, status, join date, XP and rank, and counts of check-ins and completed workouts. The server returns only those fields. The panel does not show your recovery Gmail, full name, profile or health details, passwords, session tokens or chat conversations. Administrative actions are recorded in an append-only audit log.',
           'Anyone with direct access to the project\'s database or hosting accounts (for example the developers) can technically reach stored data. Access to those accounts is controlled outside this application.',
         ],
       },
@@ -147,17 +146,20 @@ export const TERMS_SECTIONS: TermsSection[] = [
         items: [
           'Workout, log, goal, challenge, chat and achievement history stays on your account while the account exists.',
           'Refresh-token sessions expire after a configured period (30 days by default) and are revoked when you log out. Reset tokens expire and become unusable after one use.',
-          'When an administrator deletes an account, it is soft-deleted: the account is marked deleted and can no longer sign in or use the API. The underlying records are not erased by the application.',
+          'Self-service deletion: in Settings you can permanently delete your account after typing DELETE and re-entering your password (or confirming with Google). This immediately signs you out everywhere and erases your profile, plans, logs, weight and water history, XP, ranks, achievements, goals, notifications, chat messages and sign-in details. A random-ID placeholder row with no name, email or credentials remains so that shared records such as a challenge you started are not destroyed for other participants.',
+          'When an administrator deletes an account, it is soft-deleted first: it can no longer sign in or use the API, and its data is permanently erased by the retention job after the soft-delete period (30 days by default).',
+          'A retention job runs automatically every night. It permanently removes expired or revoked session tokens and used or expired reset tokens (after a 7-day grace period), and deletes AI chat messages older than 90 days.',
+          'Administrator actions (sign-ins, suspensions, role changes, deletions, achievement edits, exports) are recorded in an append-only audit log containing IDs, times and outcomes, never passwords, tokens or message content.',
         ],
       },
       {
         kind: 'gap',
-        title: 'Known gaps in the current system',
+        title: 'Limits of deletion and retention',
         items: [
-          'There is no self-service "delete my account" button. Deletion is currently done by an administrator on request.',
-          'The application has no scheduled job that permanently erases soft-deleted accounts, old chat messages, or expired session and reset-token records.',
-          'Backup retention and deletion delays are determined by the database host and are not documented or controlled by this application.',
-          'Recommended: publish a retention schedule, permanently purge soft-deleted accounts and their data after a defined period, clean up expired tokens, limit how long chat history is kept, and document the host\'s backup retention.',
+          'Retention periods (30 days for administrator-deleted accounts, 90 days for chat messages) are the current defaults and may be changed by the operators. Data that passed these periods before the nightly job was switched on is removed on its first runs, in batches, so removal may take a few days.',
+          'Backup retention and deletion delays are determined by the database host. Deleted data can persist in backups until they expire on the host\'s own schedule, which this application neither controls nor documents. We do not claim backups are erased immediately.',
+          'Text sent to the AI provider to generate plans or coach replies is processed under that provider\'s own terms. The application cannot delete it from the provider\'s systems.',
+          'Audit log entries are kept and store only opaque IDs; usernames shown next to them are looked up from the live account and disappear once an account is erased.',
         ],
       },
     ],
@@ -173,7 +175,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
         items: [
           'Passwords are hashed with bcrypt (cost configurable, 12 by default) and password hashes are never returned by the API.',
           'On every API request the server re-checks that your account still exists, is active and not deleted, so a suspended or deleted account loses access immediately.',
-          'Role-based authorization: all admin routes require the admin role, which is re-read from the database on each request. Administrators cannot suspend, delete or change the role of their own account.',
+          'Role-based authorization: all admin routes require the admin role, which is re-read from the database on each request. Administrators cannot suspend, delete or change the role of their own account through the admin panel, and the last remaining administrator cannot delete their account.',
           'Refresh tokens are random values; only their SHA-256 hash is stored. They rotate on use, reuse of a revoked token revokes your other sessions, and logout revokes the token. On the web the token is in an httpOnly, SameSite=Lax cookie that is marked Secure in production, and the access token is held only in memory. The mobile app keeps its refresh token in the device\'s secure storage.',
           'Password reset tokens are random, stored only as hashes, time-limited and single-use. Reset links are sent only to the recovery Gmail you saved, and only when email delivery is configured.',
           'All request bodies are validated on the server with Zod schemas, and database access goes through Prisma, which uses parameterized queries.',
@@ -191,7 +193,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
           'HTTPS and encryption at rest depend on the hosting and database configuration. The application does not itself enforce HTTPS or set security headers such as HSTS or a content security policy.',
           'Only authentication routes are rate limited. Rate limits for other API routes are not implemented.',
           'The recovery Gmail address and login username are not email-verified, and there is no two-factor authentication.',
-          'There is no audit log recording when administrators view personal data.',
+          'The audit log records administrative actions, not every page view. Administrators cannot view personal profile or chat data through the admin panel at all.',
           'Database access restrictions (who holds the database credentials, network rules) are managed outside the application and are not verified here.',
         ],
       },
@@ -293,7 +295,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
         items: [
           'Access: you can see most of your data in the app (profile, logs, plans, goals, challenges, chat history, progress).',
           'Correction: you can edit your profile and preferences in Settings and update your recovery Gmail and password.',
-          'Deletion and other requests: you may ask for your account and data to be deleted, or exercise other data-subject rights that apply to you under the law. At the moment these requests are handled manually by an administrator (see section D for what deletion currently does).',
+          'Deletion and other requests: you may ask for your account and data to be deleted, or exercise other data-subject rights that apply to you under the law. Deletion is self-service in Settings (see section D for exactly what it erases and what it cannot). For other requests, contact the operators.',
         ],
       },
       {

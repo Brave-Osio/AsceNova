@@ -7,6 +7,7 @@ import { upsertDailyProgressSchema } from '../validators/dailyProgress.validator
 export const dailyProgressRouter = Router();
 
 dailyProgressRouter.get('/', requireAuth, dailyProgressController.list);
+dailyProgressRouter.get('/day', requireAuth, dailyProgressController.getForDate);
 dailyProgressRouter.put(
   '/',
   requireAuth,

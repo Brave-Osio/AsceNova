@@ -6,6 +6,8 @@ import { generateOpaqueToken, sha256Hex } from '../lib/crypto.js';
 import { verifyGoogleIdToken } from '../lib/googleAuth.js';
 import { isEmailConfigured, sendPasswordResetEmail } from '../lib/email.js';
 import { HttpError } from '../middleware/errorHandler.js';
+import * as auditService from './auditService.js';
+import { eraseUserData } from './userErasureService.js';
 import { env } from '../config/env.js';
 import type {
   RegisterInput,
@@ -15,11 +17,13 @@ import type {
   SetRecoveryEmailInput,
   ResetPasswordInput,
   ChangePasswordInput,
+  DeleteAccountInput,
 } from '../validators/auth.validators.js';
 
 interface RequestMeta {
   ip?: string;
   userAgent?: string;
+  requestId?: string;
 }
 
 interface TokenPair {
@@ -64,6 +68,29 @@ function createUserWithProgress(data: Prisma.UserCreateInput) {
   });
 }
 
+/** Admin sign-ins (and failed attempts against admin accounts) are security-relevant — record them. Never blocks auth. */
+async function auditAdminAuth(
+  userId: string,
+  action: 'ADMIN_LOGIN' | 'ADMIN_LOGOUT',
+  outcome: auditService.AuditOutcome,
+  description: string,
+  meta: RequestMeta,
+): Promise<void> {
+  try {
+    await auditService.record({
+      actorId: userId,
+      action,
+      targetType: 'USER',
+      targetId: userId,
+      outcome,
+      description,
+      requestId: meta.requestId,
+    });
+  } catch (err) {
+    console.error('Failed to record admin auth audit event:', err instanceof Error ? err.message : 'unknown error');
+  }
+}
+
 export async function register(input: RegisterInput, meta: RequestMeta): Promise<TokenPair & { userId: string }> {
   const passwordHash = await hashPassword(input.password);
 
@@ -98,10 +125,16 @@ export async function login(
 
   const valid = await comparePassword(input.password, user.passwordHash);
   if (!valid) {
+    if (user.role === 'ADMIN') {
+      await auditAdminAuth(user.id, 'ADMIN_LOGIN', 'FAILURE', 'Failed administrator sign-in (wrong password)', meta);
+    }
     throw new HttpError(401, 'Invalid email or password');
   }
 
   const tokens = await issueTokenPair(user.id, user.role, input.rememberMe, meta);
+  if (user.role === 'ADMIN') {
+    await auditAdminAuth(user.id, 'ADMIN_LOGIN', 'SUCCESS', 'Administrator signed in', meta);
+  }
   return { ...tokens, userId: user.id, role: user.role };
 }
 
@@ -172,6 +205,9 @@ export async function googleLogin(
   }
 
   const tokens = await issueTokenPair(user.id, user.role, input.rememberMe, meta);
+  if (user.role === 'ADMIN') {
+    await auditAdminAuth(user.id, 'ADMIN_LOGIN', 'SUCCESS', 'Administrator signed in with Google', meta);
+  }
   return {
     ...tokens,
     userId: user.id,
@@ -220,12 +256,73 @@ export async function refresh(rawRefreshToken: string, meta: RequestMeta): Promi
   return issueTokenPair(existing.userId, existing.user.role, rememberMe, meta);
 }
 
-export async function logout(rawRefreshToken: string): Promise<void> {
+export async function logout(rawRefreshToken: string, meta: RequestMeta = {}): Promise<void> {
   const tokenHash = sha256Hex(rawRefreshToken);
-  await prisma.refreshToken.updateMany({
+  const { count } = await prisma.refreshToken.updateMany({
     where: { tokenHash, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+  if (count > 0) {
+    // Only a real, previously-active session ending is logged — replays of a dead token are not.
+    const owner = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      select: { user: { select: { id: true, role: true } } },
+    });
+    if (owner?.user.role === 'ADMIN') {
+      await auditAdminAuth(owner.user.id, 'ADMIN_LOGOUT', 'SUCCESS', 'Administrator signed out', meta);
+    }
+  }
+}
+
+const DELETE_FAILED_MESSAGE = 'We could not confirm your identity. Check your details and try again.';
+
+/**
+ * Self-service permanent account deletion. The target is ALWAYS the authenticated user (from the
+ * verified token, never the request body), and the user must re-prove identity: their password,
+ * or a fresh Google ID token for Google-only accounts. Erases personal data and revokes every
+ * session in one transaction (see userErasureService). The next request with the old access token
+ * fails in requireAuth because the account is now deleted.
+ */
+export async function deleteAccount(userId: string, input: DeleteAccountInput): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.deleted) {
+    throw new HttpError(404, 'User not found');
+  }
+
+  if (user.passwordHash) {
+    if (!input.password || !(await comparePassword(input.password, user.passwordHash))) {
+      throw new HttpError(401, DELETE_FAILED_MESSAGE);
+    }
+  } else {
+    if (!input.idToken || !user.googleId) {
+      throw new HttpError(401, DELETE_FAILED_MESSAGE);
+    }
+    const identity = await verifyGoogleIdToken(input.idToken);
+    if (identity.googleId !== user.googleId) {
+      throw new HttpError(401, DELETE_FAILED_MESSAGE);
+    }
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      if (user.role === 'ADMIN') {
+        // One global lock for "removing an administrator", so two admins deleting at once can't both
+        // see the other as the remaining admin and leave the system with none.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('admin-removal'))`;
+        const otherAdmins = await tx.user.count({
+          where: { role: 'ADMIN', deleted: false, status: 'ACTIVE', id: { not: userId } },
+        });
+        if (otherAdmins === 0) {
+          throw new HttpError(
+            409,
+            'You are the only administrator. Promote another administrator before deleting this account.',
+          );
+        }
+      }
+      await eraseUserData(tx, userId);
+    },
+    { maxWait: 10_000, timeout: 30_000 },
+  );
 }
 
 export async function getMe(userId: string) {

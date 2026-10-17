@@ -555,3 +555,9 @@ Schema-free (no migration): `Profile.birthday` column is left in place but no lo
 ## UI/UX refinement pass (web only)
 
 Frontend-led, no schema changes. Profile and Settings are one page at `/settings` (`/setup` redirects there; a user with no profile sees it as onboarding). The AI coach is a floating launcher plus right-side panel mounted in `Layout` (`features/coach-chat/components/CoachPanel.tsx`); the `/coach` route and nav item are gone. There is no secondary AI provider, so a failed chat request shows an error with Retry; the retry sends `retry: true` to `POST /api/chat`, and `chatService.sendMessage` reuses the already-saved unanswered user message instead of storing it twice. Shared `PageHeader`, motion tokens (`lib/motion.ts`, reduced motion via `MotionConfig`), leaderboard pagination (10 per page, client-side) with podium styling and wings, and tightened validation on both sides (profile ints and ranges, daily-log weight, goal target value and non-past target date). Mobile app not touched.
+
+## Phase 15 — Compliance & activity features (Oct 2026)
+
+✅ Implemented (web + server; **mobile parity pending**): BMI card (computed on read from profile height/weight), admin dashboard engagement metrics with minimal-data user list, append-only admin audit log + `/admin/audit-logs` page, scheduled workout + idempotent "Mark as Done" in Daily Logs, dashboard "today" rollover (`useToday`), self-service account deletion, retention job. Details and limits: `docs/DATA_RETENTION.md`.
+
+Requires manual steps: apply migration `20261017120000_add_audit_logs_and_workout_log_unique`, `npx prisma generate`, and set `CRON_SECRET` / `RETENTION_DRY_RUN=false` to enable the purge.

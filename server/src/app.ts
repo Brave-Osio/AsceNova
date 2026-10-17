@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { requestId } from './middleware/requestId.js';
 import { authRouter } from './routes/auth.routes.js';
 import { profileRouter } from './routes/profile.routes.js';
 import { planRouter } from './routes/plan.routes.js';
@@ -14,6 +15,8 @@ import { notificationRouter } from './routes/notification.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { challengeRouter } from './routes/challenge.routes.js';
 import { goalRouter } from './routes/goal.routes.js';
+import { internalRouter } from './routes/internal.routes.js';
+import { workoutRouter } from './routes/workout.routes.js';
 
 export const app = express();
 
@@ -27,6 +30,7 @@ app.use(
     credentials: true, // required so the httpOnly refresh-token cookie is sent/received
   }),
 );
+app.use(requestId);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -45,5 +49,7 @@ app.use('/api/notifications', notificationRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/challenges', challengeRouter);
 app.use('/api/goals', goalRouter);
+app.use('/api/internal', internalRouter);
+app.use('/api/workouts', workoutRouter);
 
 app.use(errorHandler);

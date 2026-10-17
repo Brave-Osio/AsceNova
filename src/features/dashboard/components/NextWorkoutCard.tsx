@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock, ArrowRight } from 'lucide-react';
 import { usePlanGenerator } from '../../fitness-plan/hooks/usePlanGenerator';
 import { ROUTES } from '../../../constants/routes';
+import { useToday } from '../../../hooks/useToday';
 import type { WorkoutDay } from '../../../types/plan.types';
 
 const WEEKDAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -12,6 +13,7 @@ function isRestDay(day: WorkoutDay): boolean {
 
 export default function NextWorkoutCard() {
   const { plan, isLoading } = usePlanGenerator();
+  const today = useToday();
 
   if (isLoading) return null;
 
@@ -26,7 +28,7 @@ export default function NextWorkoutCard() {
     );
   }
 
-  const todayLabel = WEEKDAY_LABELS[new Date().getDay()];
+  const todayLabel = WEEKDAY_LABELS[new Date(`${today}T00:00:00`).getDay()];
   const todayIndex = plan.workoutDays.findIndex((d) => d.day === todayLabel);
   const anchorIndex = todayIndex === -1 ? 0 : todayIndex;
 

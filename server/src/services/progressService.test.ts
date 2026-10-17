@@ -17,6 +17,13 @@ describe('progressService.getRankForXp', () => {
   });
 });
 
+describe('progressService.calculateStreak backfill', () => {
+  it('does not reset or advance the streak when an earlier day is logged', () => {
+    const result = calculateStreak(20, 25, new Date('2026-01-10'), new Date('2026-01-07'));
+    expect(result).toEqual({ currentStreak: 20, longestStreak: 25 });
+  });
+});
+
 describe('progressService.calculateStreak', () => {
   it('starts a streak at 1 on the first-ever log', () => {
     const result = calculateStreak(0, 0, null, new Date('2026-01-01'));
