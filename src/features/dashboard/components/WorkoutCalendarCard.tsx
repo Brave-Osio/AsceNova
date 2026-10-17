@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { toDateString } from '../../../utils/dateUtils';
+import { useToday } from '../../../hooks/useToday';
 
 const DAYS_TO_SHOW = 28;
 
@@ -24,14 +25,14 @@ const STATE_LABEL: Record<DayState, string> = {
 
 export default function WorkoutCalendarCard() {
   const { data: logs = [], isLoading } = useLogs();
+  const todayStr = useToday();
   // Set by hover, keyboard focus or tap, so the details never depend on hover alone.
   const [activeDate, setActiveDate] = useState<string | null>(null);
 
   if (isLoading) return <div className="card h-full min-h-48 animate-pulse rounded-2xl" aria-busy="true" />;
 
   const logsByDate = new Map(logs.map((l) => [l.date, l]));
-  const today = new Date();
-  const todayStr = toDateString(today);
+  const today = new Date(`${todayStr}T00:00:00`);
 
   const days = Array.from({ length: DAYS_TO_SHOW }, (_, i) => {
     const d = new Date(today);

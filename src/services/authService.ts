@@ -102,3 +102,13 @@ export async function changePasswordRequest(input: {
   const res = await httpClient.post<{ message: string }>('/api/auth/change-password', input);
   return res.data;
 }
+
+/** Permanently deletes the signed-in account. Re-authentication is a password, or a fresh Google credential for Google-only accounts. */
+export async function deleteAccountRequest(input: {
+  confirmation: 'DELETE';
+  password?: string;
+  idToken?: string;
+}): Promise<{ message: string }> {
+  const res = await httpClient.delete<{ message: string }>('/api/auth/account', { data: input });
+  return res.data;
+}

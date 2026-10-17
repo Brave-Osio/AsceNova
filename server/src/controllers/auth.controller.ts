@@ -11,13 +11,14 @@ import type {
   SetRecoveryEmailInput,
   ResetPasswordInput,
   ChangePasswordInput,
+  DeleteAccountInput,
 } from '../validators/auth.validators.js';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
 const REFRESH_COOKIE_PATH = '/api/auth';
 
 function requestMeta(req: Request) {
-  return { ip: req.ip, userAgent: req.headers['user-agent'] };
+  return { ip: req.ip, userAgent: req.headers['user-agent'], requestId: req.requestId };
 }
 
 function setRefreshCookie(res: Response, token: string, expiresAt: Date) {
@@ -103,7 +104,7 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
   try {
     const raw = req.cookies?.[REFRESH_COOKIE_NAME] ?? req.body?.refreshToken;
     if (raw) {
-      await authService.logout(raw);
+      await authService.logout(raw, requestMeta(req));
     }
     clearRefreshCookie(res);
     res.status(204).send();
@@ -161,6 +162,17 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
     const input = req.body as ChangePasswordInput;
     await authService.changePassword(req.user!.id, input);
     res.json({ message: 'Password changed successfully.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = req.body as DeleteAccountInput;
+    await authService.deleteAccount(req.user!.id, input);
+    clearRefreshCookie(res);
+    res.json({ message: 'Your account has been deleted.' });
   } catch (err) {
     next(err);
   }

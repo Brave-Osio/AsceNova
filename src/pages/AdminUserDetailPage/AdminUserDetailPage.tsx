@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAdminUserDetail } from '../../features/admin/hooks/useAdminUserDetail';
 import { useAdminUserActions } from '../../features/admin/hooks/useAdminUserActions';
 import { ROUTES } from '../../constants/routes';
 import Button from '../../components/ui/Button';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import PageContainer from '../../components/layout/PageContainer';
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -19,6 +21,7 @@ export default function AdminUserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
   const { detail, isLoading } = useAdminUserDetail(userId ?? '');
   const { suspendUser, reactivateUser, deleteUser, pendingUserId } = useAdminUserActions();
+  const [pending, setPending] = useState<'suspend' | 'delete' | null>(null);
 
   if (isLoading || !detail) {
     return (
@@ -28,8 +31,14 @@ export default function AdminUserDetailPage() {
     );
   }
 
-  const { user, dailyProgressCount, chatMessageCount } = detail;
+  const { user, checkIns, workoutPlans, workoutsCompleted } = detail;
   const isPending = pendingUserId === user.id;
+
+  async function confirmPending() {
+    if (pending === 'suspend') await suspendUser(user.id);
+    else if (pending === 'delete') await deleteUser(user.id);
+    setPending(null);
+  }
 
   return (
     <PageContainer>
@@ -38,9 +47,9 @@ export default function AdminUserDetailPage() {
       </Link>
 
       <div className="mt-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-brand-text">{user.profile?.fullName ?? user.email}</h1>
-          <p className="mt-1 text-sm text-brand-text-muted">{user.email}</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-extrabold text-brand-text">{user.email}</h1>
+          <p className="mt-1 break-all font-mono text-xs text-brand-text-muted">{user.id}</p>
         </div>
         <div className="flex gap-2">
           {user.status === 'SUSPENDED' ? (
@@ -48,29 +57,19 @@ export default function AdminUserDetailPage() {
               Reactivate
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant="secondary"
-              loading={isPending}
-              onClick={() => {
-                if (window.confirm(`Suspend ${user.email}?`)) suspendUser(user.id);
-              }}
-            >
+            <Button size="sm" variant="secondary" loading={isPending} onClick={() => setPending('suspend')}>
               Suspend
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            loading={isPending}
-            onClick={() => {
-              if (window.confirm(`Delete ${user.email}? This can't be undone from this panel.`)) deleteUser(user.id);
-            }}
-          >
+          <Button size="sm" variant="ghost" loading={isPending} onClick={() => setPending('delete')}>
             Delete
           </Button>
         </div>
       </div>
+
+      <p className="mt-3 text-xs text-brand-text-muted">
+        Administrators see the username, account status and aggregate activity only — not recovery emails, names, health details or coach conversations.
+      </p>
 
       <div className="card mt-6 rounded-2xl p-5">
         <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Account</div>
@@ -80,20 +79,6 @@ export default function AdminUserDetailPage() {
           <Row label="Joined" value={new Date(user.createdAt).toLocaleDateString()} />
         </div>
       </div>
-
-      {user.profile && (
-        <div className="card mt-4 rounded-2xl p-5">
-          <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Profile</div>
-          <div className="mt-2">
-            <Row label="Goal" value={user.profile.goal} />
-            <Row label="Fitness Level" value={user.profile.fitnessLevel} />
-            <Row label="Current Weight" value={`${user.profile.currentWeightKg} kg`} />
-            {user.profile.goalWeightKg != null && (
-              <Row label="Goal Weight" value={`${user.profile.goalWeightKg} kg`} />
-            )}
-          </div>
-        </div>
-      )}
 
       {user.userProgress && (
         <div className="card mt-4 rounded-2xl p-5">
@@ -110,11 +95,25 @@ export default function AdminUserDetailPage() {
       <div className="card mt-4 rounded-2xl p-5">
         <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Activity</div>
         <div className="mt-2">
-          <Row label="Daily logs" value={String(dailyProgressCount)} />
-          <Row label="Coach messages" value={String(chatMessageCount)} />
-          <Row label="Active workout plans" value={String(user.workoutPlans.length)} />
+          <Row label="Daily check-ins" value={String(checkIns)} />
+          <Row label="Workouts completed" value={String(workoutsCompleted)} />
+          <Row label="Workout plans generated" value={String(workoutPlans)} />
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={pending !== null}
+        title={pending === 'delete' ? 'Delete this account?' : 'Suspend this account?'}
+        description={
+          pending === 'delete'
+            ? 'The account is deactivated now and permanently erased after the retention period. This is recorded in the audit log.'
+            : 'The user will not be able to sign in until reactivated. This is recorded in the audit log.'
+        }
+        confirmLabel={pending === 'delete' ? 'Delete' : 'Suspend'}
+        isLoading={isPending}
+        onConfirm={confirmPending}
+        onCancel={() => setPending(null)}
+      />
     </PageContainer>
   );
 }

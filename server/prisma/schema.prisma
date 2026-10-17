@@ -408,6 +408,9 @@ model WorkoutLog {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutDay WorkoutDay? @relation(fields: [workoutDayId], references: [id])
 
+  // One completion per user, scheduled workout day and calendar date: makes
+  // "Mark as Done" idempotent at the database level (retries/concurrent clicks).
+  @@unique([userId, workoutDayId, date])
   @@index([userId, date])
   @@map("workout_logs")
 }
@@ -700,4 +703,26 @@ model SystemSetting {
   updatedBy User? @relation("SettingsUpdatedBy", fields: [updatedByUserId], references: [id])
 
   @@map("system_settings")
+}
+
+// Append-only record of administrative actions. actorId/targetId are plain
+// strings (no FK) on purpose: history must survive the deletion/purge of the
+// referenced accounts. Rows are immutable — a DB trigger (see the
+// add_audit_logs migration) rejects UPDATE and DELETE. Never store tokens,
+// passwords, request bodies or chat content here.
+model AuditLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  actorId     String
+  action      String
+  targetType  String?
+  targetId    String?
+  outcome     String
+  description String
+  requestId   String?
+
+  @@index([createdAt(sort: Desc)])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
 }

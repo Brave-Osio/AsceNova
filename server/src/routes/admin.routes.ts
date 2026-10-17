@@ -11,6 +11,7 @@ adminRouter.use(requireAuth, requireRole('ADMIN'));
 
 adminRouter.get('/stats', adminController.getStats);
 adminRouter.get('/ai-usage', adminController.getAiUsage);
+adminRouter.get('/audit-logs', adminController.listAuditLogs); // read-only: there is deliberately no write/delete route
 adminRouter.get('/users/export', adminController.exportUsersCsv); // before /:id — avoids route collision
 adminRouter.get('/users/:id', adminController.getUserDetail);
 adminRouter.get('/users', adminController.listUsers);

@@ -65,7 +65,9 @@ export function calculateStreak(
 
   const gap = daysBetween(lastLogDate, newLogDate);
 
-  if (gap === 0) {
+  // Same day, or an earlier day than the latest one logged (a backfill): the streak is anchored to the
+  // latest logged day, so neither resets nor advances.
+  if (gap <= 0) {
     return { currentStreak, longestStreak };
   }
 
@@ -74,7 +76,7 @@ export function calculateStreak(
     return { currentStreak: next, longestStreak: Math.max(next, longestStreak) };
   }
 
-  // gap > 1 (or negative) — broken streak, restart at 1.
+  // gap > 1 — broken streak, restart at 1.
   return { currentStreak: 1, longestStreak: Math.max(1, longestStreak) };
 }
 
@@ -181,6 +183,10 @@ export async function applyDailyLog(userId: string, date: Date) {
   }
 
   return prisma.$transaction(async (tx) => {
+    // Serialise concurrent applications for one user (double-clicks, retries): the per-day XP
+    // de-duplication below reads then writes, so two racing transactions must not interleave.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+
     const current = await tx.userProgress.upsert({
       where: { userId },
       create: { userId },
@@ -192,14 +198,29 @@ export async function applyDailyLog(userId: string, date: Date) {
 
     const streak = calculateStreak(current.currentStreak, current.longestStreak, current.lastLogDate, date);
 
-    const xpGrants: { amount: number; reason: XpSource; sourceRefId?: string }[] = [
+    // Each per-day reward is keyed by its calendar date (sourceRefId), so re-applying the same day —
+    // a retry, a double click, or the workout button followed by the daily-log form — never pays twice.
+    const dateKey = date.toISOString().slice(0, 10);
+    const dailyGrants: { amount: number; reason: XpSource }[] = [
       { amount: XP_REWARDS.DAILY_CHECK_IN, reason: 'DAILY_CHECK_IN' },
     ];
-    if (dailyLog.workoutCompleted) xpGrants.push({ amount: XP_REWARDS.WORKOUT_COMPLETED, reason: 'WORKOUT_COMPLETED' });
-    if (dailyLog.hitWaterGoal) xpGrants.push({ amount: XP_REWARDS.HIT_WATER_GOAL, reason: 'HIT_WATER_GOAL' });
-    if (dailyLog.hitProteinGoal) xpGrants.push({ amount: XP_REWARDS.HIT_PROTEIN_GOAL, reason: 'HIT_PROTEIN_GOAL' });
-    if (dailyLog.slept7PlusHours) xpGrants.push({ amount: XP_REWARDS.SLEPT_7_PLUS_HOURS, reason: 'SLEPT_7_PLUS_HOURS' });
-    if (dailyLog.reachedStepGoal) xpGrants.push({ amount: XP_REWARDS.REACHED_STEP_GOAL, reason: 'REACHED_STEP_GOAL' });
+    if (dailyLog.workoutCompleted) dailyGrants.push({ amount: XP_REWARDS.WORKOUT_COMPLETED, reason: 'WORKOUT_COMPLETED' });
+    if (dailyLog.hitWaterGoal) dailyGrants.push({ amount: XP_REWARDS.HIT_WATER_GOAL, reason: 'HIT_WATER_GOAL' });
+    if (dailyLog.hitProteinGoal) dailyGrants.push({ amount: XP_REWARDS.HIT_PROTEIN_GOAL, reason: 'HIT_PROTEIN_GOAL' });
+    if (dailyLog.slept7PlusHours) dailyGrants.push({ amount: XP_REWARDS.SLEPT_7_PLUS_HOURS, reason: 'SLEPT_7_PLUS_HOURS' });
+    if (dailyLog.reachedStepGoal) dailyGrants.push({ amount: XP_REWARDS.REACHED_STEP_GOAL, reason: 'REACHED_STEP_GOAL' });
+
+    const alreadyPaid = new Set(
+      (
+        await tx.xpHistory.findMany({
+          where: { userId, sourceRefId: dateKey, reason: { in: dailyGrants.map((g) => g.reason) } },
+          select: { reason: true },
+        })
+      ).map((r) => r.reason),
+    );
+    const xpGrants: { amount: number; reason: XpSource; sourceRefId?: string }[] = dailyGrants
+      .filter((g) => !alreadyPaid.has(g.reason))
+      .map((g) => ({ ...g, sourceRefId: dateKey }));
 
     const totalXpBeforeAchievements = current.totalXp + xpGrants.reduce((sum, g) => sum + g.amount, 0);
 
@@ -258,7 +279,8 @@ export async function applyDailyLog(userId: string, date: Date) {
         totalXp,
         currentStreak: streak.currentStreak,
         longestStreak: streak.longestStreak,
-        lastLogDate: date,
+        // Never move lastLogDate backwards when a past day is backfilled.
+        lastLogDate: current.lastLogDate && current.lastLogDate > date ? current.lastLogDate : date,
         cachedRank: newRank,
       },
     });

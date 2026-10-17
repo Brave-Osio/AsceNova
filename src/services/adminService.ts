@@ -7,6 +7,8 @@ import type {
   AdminUserListResult,
   AdminAchievement,
   UpdateAchievementInput,
+  AuditLogFilters,
+  AuditLogResult,
 } from '../types/admin.types';
 
 /**
@@ -77,5 +79,10 @@ export async function revokeAdmin(userId: string): Promise<void> {
 
 export async function getAiUsage(): Promise<AiUsage> {
   const res = await httpClient.get<AiUsage>('/api/admin/ai-usage');
+  return res.data;
+}
+
+export async function listAuditLogs(filters: AuditLogFilters): Promise<AuditLogResult> {
+  const res = await httpClient.get<AuditLogResult>('/api/admin/audit-logs', { params: filters });
   return res.data;
 }

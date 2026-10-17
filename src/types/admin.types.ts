@@ -14,16 +14,27 @@ export interface AdminStats {
   goalDistribution: { goal: string; count: number }[];
   adminUsers: number;
   signupsByDay: { date: string; count: number; total: number }[];
+  /** Users with at least one daily check-in in the window (distinct, non-deleted accounts). */
+  activeUsers7d: number;
+  activeUsers30d: number;
+  workoutPlansGenerated: number;
+  totalWorkoutsCompleted: number;
+  challengeParticipants: number;
+  challengeCompletions: number;
+  /** Last 30 UTC days, oldest first. */
+  engagementByDay: { date: string; activeUsers: number; workoutsCompleted: number }[];
 }
 
+/** Deliberately minimal: id and username (the login name) only — no recovery email, name or profile data reaches the admin UI. */
 export interface AdminUserListItem {
   id: string;
   email: string;
   role: UserRole;
   status: AccountStatus;
   createdAt: string;
-  profile: { fullName: string } | null;
   userProgress: { totalXp: number; cachedRank: string } | null;
+  checkIns: number;
+  workoutsCompleted: number;
 }
 
 export interface AdminUserListResult {
@@ -33,14 +44,6 @@ export interface AdminUserListResult {
   pageSize: number;
 }
 
-export interface AdminUserDetailProfile {
-  fullName: string;
-  goal: string;
-  fitnessLevel: string;
-  currentWeightKg: number;
-  goalWeightKg: number | null;
-}
-
 export interface AdminUserDetail {
   user: {
     id: string;
@@ -48,12 +51,64 @@ export interface AdminUserDetail {
     role: UserRole;
     status: AccountStatus;
     createdAt: string;
-    profile: AdminUserDetailProfile | null;
-    userProgress: { totalXp: number; currentStreak: number; longestStreak: number; cachedRank: string } | null;
-    workoutPlans: { id: string; splitStyle: string; workoutDays: { id: string }[] }[];
+    userProgress: {
+      totalXp: number;
+      currentStreak: number;
+      longestStreak: number;
+      cachedRank: string;
+      lastLogDate: string | null;
+    } | null;
   };
-  dailyProgressCount: number;
-  chatMessageCount: number;
+  checkIns: number;
+  workoutPlans: number;
+  workoutsCompleted: number;
+}
+
+export type AuditAction =
+  | 'ADMIN_LOGIN'
+  | 'ADMIN_LOGOUT'
+  | 'USER_SUSPEND'
+  | 'USER_REACTIVATE'
+  | 'USER_GRANT_ADMIN'
+  | 'USER_REVOKE_ADMIN'
+  | 'USER_DELETE'
+  | 'ACHIEVEMENT_UPDATE'
+  | 'USER_EXPORT';
+export type AuditOutcome = 'SUCCESS' | 'FAILURE';
+
+export interface AuditEvent {
+  id: string;
+  /** ISO 8601, UTC. */
+  createdAt: string;
+  actorId: string;
+  /** Resolved when read; null if the account no longer exists. */
+  actorUsername: string | null;
+  action: AuditAction;
+  targetType: string | null;
+  targetId: string | null;
+  targetUsername: string | null;
+  outcome: AuditOutcome;
+  description: string;
+  requestId: string | null;
+}
+
+export interface AuditLogFilters {
+  /** Username (partial) or administrator id. */
+  actor?: string;
+  action?: AuditAction;
+  outcome?: AuditOutcome;
+  /** ISO datetimes (UTC) — the page converts the picked calendar days into these bounds. */
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface AuditLogResult {
+  events: AuditEvent[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface AdminUserFilters {

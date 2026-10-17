@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { NotebookPen } from 'lucide-react';
@@ -5,10 +6,18 @@ import { useProfile } from '../../features/profile/hooks/useProfile';
 import { ROUTES } from '../../constants/routes';
 import PageHeader from '../../components/ui/PageHeader';
 import DailyLogForm from '../../features/daily-log/components/DailyLogForm';
+import ScheduledWorkoutCard from '../../features/workouts/components/ScheduledWorkoutCard';
+import { useToday } from '../../hooks/useToday';
+import { toDateString } from '../../utils/dateUtils';
 import PageContainer from '../../components/layout/PageContainer';
 
 export default function DailyLogPage() {
   const { data: profile, isLoading } = useProfile();
+  const today = useToday();
+  // null = "follow today", so a page left open past midnight moves on to the new day by itself.
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+  const selectedDate = pickedDate && pickedDate <= today ? pickedDate : today;
+  const earliest = toDateString(new Date(new Date(`${today}T00:00:00`).getTime() - 7 * 24 * 60 * 60 * 1000));
 
   if (isLoading) return null;
 
@@ -32,7 +41,26 @@ export default function DailyLogPage() {
 
   return (
     <PageContainer>
-      <PageHeader eyebrow="Daily Check-In" title="Daily Log" description="Log today's progress to keep your streak alive." />
+      <PageHeader eyebrow="Daily Check-In" title="Daily Log" description="See your scheduled workout, mark it done, and log today's progress to keep your streak alive." />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="mt-8 space-y-4"
+      >
+        <label className="block max-w-xs">
+          <span className="mb-1.5 block text-sm font-medium text-brand-text-secondary">Workout day</span>
+          <input
+            type="date"
+            value={selectedDate}
+            min={earliest}
+            max={today}
+            onChange={(e) => setPickedDate(e.target.value && e.target.value !== today ? e.target.value : null)}
+            className="w-full rounded-xl border border-brand-border bg-brand-card px-4 py-2.5 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/60"
+          />
+        </label>
+        <ScheduledWorkoutCard date={selectedDate} />
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

@@ -2,11 +2,23 @@ import { prisma } from '../lib/prismaClient.js';
 import type { UpsertDailyProgressInput } from '../validators/dailyProgress.validators.js';
 
 export async function upsertLog(userId: string, input: UpsertDailyProgressInput) {
+  // A workout recorded via "Mark as Done" is a fact; a later check-in that leaves the box unticked must not erase it.
+  const completedViaWorkoutLog = await prisma.workoutLog.findFirst({
+    where: { userId, date: input.date, workoutDayId: { not: null } },
+    select: { id: true },
+  });
+  const data = completedViaWorkoutLog ? { ...input, workoutCompleted: true } : input;
+
   return prisma.dailyProgress.upsert({
     where: { userId_date: { userId, date: input.date } },
-    create: { userId, ...input },
-    update: { ...input },
+    create: { userId, ...data },
+    update: { ...data },
   });
+}
+
+/** One day's record (or null) — the dashboard reads "today" from here so a new day naturally starts empty. */
+export async function getLogForDate(userId: string, date: Date) {
+  return prisma.dailyProgress.findUnique({ where: { userId_date: { userId, date } } });
 }
 
 export async function listLogs(userId: string) {

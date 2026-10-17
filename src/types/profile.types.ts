@@ -11,6 +11,14 @@ export type ActivityLevel =
 export type WorkoutSplitStylePreference = 'PUSH_PULL_LEGS' | 'UPPER_LOWER' | 'FULL_BODY';
 export type PreferredWorkoutTime = 'MORNING' | 'AFTERNOON' | 'EVENING';
 
+export type BmiCategory = 'UNDERWEIGHT' | 'NORMAL' | 'OVERWEIGHT' | 'OBESE';
+
+/** Computed by the API from the current profile height/weight on every read; null when either is missing/invalid. */
+export interface Bmi {
+  value: number;
+  category: BmiCategory;
+}
+
 export interface DailySchedule {
   preferredWorkoutTime?: PreferredWorkoutTime;
 }
@@ -44,10 +52,12 @@ export interface Profile {
 
   createdAt: string;
   updatedAt: string;
+
+  bmi: Bmi | null;
 }
 
 /**
  * Input shape for creating/updating a profile — only the fields the
  * onboarding form actually collects; the server fills id/userId/timestamps.
  */
-export type ProfileInput = Omit<Profile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
+export type ProfileInput = Omit<Profile, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'bmi'>;

@@ -1,5 +1,6 @@
 import { useLogs } from '../../daily-log/hooks/useLogs';
-import { daysBetween, getTodayDateString } from '../../../utils/dateUtils';
+import { daysBetween } from '../../../utils/dateUtils';
+import { useToday } from '../../../hooks/useToday';
 
 function Row({ label, value, valueClass = 'text-brand-text' }: { label: string; value: string; valueClass?: string }) {
   return (
@@ -12,10 +13,10 @@ function Row({ label, value, valueClass = 'text-brand-text' }: { label: string; 
 
 export default function WeeklySummaryCard() {
   const { data: logs = [], isLoading } = useLogs();
+  const today = useToday();
 
   if (isLoading) return null;
 
-  const today = getTodayDateString();
   const last7 = logs.filter((l) => {
     const diff = daysBetween(l.date, today);
     return diff >= 0 && diff < 7;
