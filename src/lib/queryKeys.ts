@@ -50,6 +50,12 @@ export const queryKeys = {
     userDetail: (id: string) => ['admin', 'user', id] as const,
     achievements: () => ['admin', 'achievements'] as const,
     auditLogs: (filters: Record<string, unknown>) => ['admin', 'audit-logs', filters] as const,
+    coaches: () => ['admin', 'coaches'] as const,
+    coachClients: (coachId: string) => ['admin', 'coach-clients', coachId] as const,
+  },
+  coaching: {
+    clients: (filters: Record<string, unknown>) => ['coaching', 'clients', filters] as const,
+    dashboard: (clientId: string) => ['coaching', 'dashboard', clientId] as const,
   },
   challenges: {
     catalog: () => ['challenges', 'catalog'] as const,

@@ -22,9 +22,15 @@ export const ROUTES = {
   challenges: '/challenges',
   terms: '/terms',
   goals: '/goals',
+  coach: '/coach',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+
+/** Read-only dashboard of one client, opened from the coach tab. */
+export function coachClientPath(clientId: string): string {
+  return `/coach/clients/${clientId}`;
+}
 
 /** No other route in this app is id-based yet, so this stays a standalone helper rather than a ROUTES entry. */
 export function adminUserDetailPath(userId: string): string {

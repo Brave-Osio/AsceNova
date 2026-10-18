@@ -9,6 +9,7 @@ import {
   Target,
   Settings,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 import { ROUTES } from './routes';
 
@@ -19,6 +20,8 @@ export interface NavLink {
   /** Hidden from the public (logged-out) nav — these all point at ProtectedRoute pages. */
   requiresAuth?: boolean;
   adminOnly?: boolean;
+  /** Visible to coaches and admins. */
+  coachOnly?: boolean;
 }
 
 /**
@@ -35,5 +38,6 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'Challenges', to: ROUTES.challenges, icon: Swords, requiresAuth: true },
   { label: 'Goals', to: ROUTES.goals, icon: Target, requiresAuth: true },
   { label: 'Settings', to: ROUTES.settings, icon: Settings, requiresAuth: true },
+  { label: 'Coach', to: ROUTES.coach, icon: Users, requiresAuth: true, coachOnly: true },
   { label: 'Admin', to: ROUTES.admin, icon: ShieldCheck, requiresAuth: true, adminOnly: true },
 ];

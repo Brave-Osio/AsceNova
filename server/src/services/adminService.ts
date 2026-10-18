@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prismaClient.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { withAudit, record, type AdminContext } from './auditService.js';
-import type { AccountStatus, Prisma } from '@prisma/client';
+import type { AccountStatus, Prisma, Role } from '@prisma/client';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * DAY_MS;
@@ -113,15 +113,17 @@ export async function getStats() {
 export interface ListUsersInput {
   search?: string;
   status?: AccountStatus;
+  role?: Role;
   page: number;
   pageSize: number;
 }
 
 /** Deliberately minimal: id, username (the login name), role/status, join date and aggregate counts. No recovery email, name or profile data. */
-export async function listUsers({ search, status, page, pageSize }: ListUsersInput) {
+export async function listUsers({ search, status, role, page, pageSize }: ListUsersInput) {
   const where: Prisma.UserWhereInput = {
     deleted: false,
     ...(status && { status }),
+    ...(role && { role }),
     ...(search && { OR: [{ id: { contains: search } }, { email: { contains: search, mode: 'insensitive' as const } }] }),
   };
 
@@ -174,7 +176,14 @@ export async function getUserDetail(userId: string) {
       userProgress: {
         select: { totalXp: true, cachedRank: true, currentStreak: true, longestStreak: true, lastLogDate: true },
       },
-      _count: { select: { dailyProgress: true, workoutPlans: true } },
+      coachAssignment: { select: { active: true, coachId: true } },
+      _count: {
+        select: {
+          dailyProgress: true,
+          workoutPlans: true,
+          coachClients: { where: { active: true, client: { deleted: false } } },
+        },
+      },
     },
   });
   if (!user) {
@@ -182,8 +191,16 @@ export async function getUserDetail(userId: string) {
   }
   const workoutsCompleted = await prisma.dailyProgress.count({ where: { userId, workoutCompleted: true } });
 
-  const { _count, ...rest } = user;
-  return { user: rest, checkIns: _count.dailyProgress, workoutPlans: _count.workoutPlans, workoutsCompleted };
+  const { _count, coachAssignment, ...rest } = user;
+  return {
+    user: rest,
+    checkIns: _count.dailyProgress,
+    workoutPlans: _count.workoutPlans,
+    workoutsCompleted,
+    // Only the coach's id — the admin UI resolves it from the coach list. Null when unassigned.
+    coachId: coachAssignment?.active ? coachAssignment.coachId : null,
+    clientCount: user.role === 'COACH' ? _count.coachClients : null,
+  };
 }
 
 function assertNotSelf(actingAdminId: string, targetUserId: string) {
@@ -258,28 +275,142 @@ export async function softDeleteUser(ctx: AdminContext, userId: string) {
  * requireAuth). Admins can't change their own role (prevents accidental
  * self-lockout), and only active accounts can be promoted.
  */
-export async function setUserRole(ctx: AdminContext, userId: string, role: 'ADMIN' | 'USER') {
+export async function setUserRole(ctx: AdminContext, userId: string, role: 'ADMIN' | 'COACH' | 'USER') {
   return withAudit(
     ctx,
     {
-      action: role === 'ADMIN' ? 'USER_GRANT_ADMIN' : 'USER_REVOKE_ADMIN',
+      action: role === 'ADMIN' ? 'USER_GRANT_ADMIN' : role === 'COACH' ? 'USER_GRANT_COACH' : 'USER_REVOKE_ADMIN',
       targetType: 'USER',
       targetId: userId,
-      description: role === 'ADMIN' ? 'Granted administrator role' : 'Revoked administrator role',
+      description:
+        role === 'ADMIN'
+          ? 'Granted administrator role'
+          : role === 'COACH'
+            ? 'Granted coach role'
+            : 'Revoked administrator role',
     },
     async (tx) => {
       assertNotSelf(ctx.actorId, userId);
       await lockAdminRemoval(tx);
       const target = await findActiveUserOrThrow(tx, userId);
       if (target.role === role) {
-        throw new HttpError(409, role === 'ADMIN' ? 'User is already an administrator' : 'User is not an administrator');
+        throw new HttpError(409, `User already has the ${role.toLowerCase()} role`);
       }
-      if (role === 'ADMIN' && target.status !== 'ACTIVE') {
-        throw new HttpError(400, 'Only active accounts can be made administrators');
+      // Revoking admin must only ever take away admin; coaches are demoted through revokeCoach.
+      if (role === 'USER' && target.role !== 'ADMIN') {
+        throw new HttpError(409, 'User is not an administrator');
+      }
+      if (role !== 'USER' && target.status !== 'ACTIVE') {
+        throw new HttpError(400, 'Only active accounts can be promoted');
+      }
+      if (role === 'COACH' && target.role !== 'USER') {
+        throw new HttpError(409, 'Only regular users can be made coaches. Revoke the administrator role first.');
+      }
+      // Moving a coach up to admin ends their supervision; admins see everyone anyway.
+      if (target.role === 'COACH') {
+        await tx.coachAssignment.updateMany({ where: { coachId: userId, active: true }, data: { active: false } });
       }
       return tx.user.update({ where: { id: userId }, data: { role }, select: SAFE_USER_SELECT });
     },
   );
+}
+
+/** Demotes a coach to a regular user and deactivates their client assignments. */
+export async function revokeCoach(ctx: AdminContext, userId: string) {
+  return withAudit(
+    ctx,
+    { action: 'USER_REVOKE_COACH', targetType: 'USER', targetId: userId, description: 'Revoked coach role' },
+    async (tx) => {
+      assertNotSelf(ctx.actorId, userId);
+      const target = await findActiveUserOrThrow(tx, userId);
+      if (target.role !== 'COACH') {
+        throw new HttpError(409, 'User is not a coach');
+      }
+      await tx.coachAssignment.updateMany({ where: { coachId: userId, active: true }, data: { active: false } });
+      return tx.user.update({ where: { id: userId }, data: { role: 'USER' }, select: SAFE_USER_SELECT });
+    },
+  );
+}
+
+/** Assigns a regular user to a coach. A client has one coach, so an existing assignment is moved. */
+export async function assignClient(ctx: AdminContext, coachId: string, clientId: string) {
+  return withAudit(
+    ctx,
+    {
+      action: 'COACH_ASSIGN_CLIENT',
+      targetType: 'USER',
+      targetId: clientId,
+      description: `Assigned a client to coach ${coachId}`,
+    },
+    async (tx) => {
+      const coach = await findActiveUserOrThrow(tx, coachId);
+      if (coach.role !== 'COACH') {
+        throw new HttpError(400, 'The selected account is not a coach');
+      }
+      const client = await findActiveUserOrThrow(tx, clientId);
+      if (client.role !== 'USER') {
+        throw new HttpError(400, 'Only regular users can be assigned as clients');
+      }
+      return tx.coachAssignment.upsert({
+        where: { clientId },
+        create: { coachId, clientId, assignedById: ctx.actorId },
+        update: { coachId, active: true, assignedById: ctx.actorId },
+        select: { coachId: true, clientId: true, active: true },
+      });
+    },
+  );
+}
+
+export async function unassignClient(ctx: AdminContext, coachId: string, clientId: string) {
+  return withAudit(
+    ctx,
+    {
+      action: 'COACH_UNASSIGN_CLIENT',
+      targetType: 'USER',
+      targetId: clientId,
+      description: `Unassigned a client from coach ${coachId}`,
+    },
+    async (tx) => {
+      // Soft removal: the assignment row stays (active = false), like every other deletion in this codebase.
+      const { count } = await tx.coachAssignment.updateMany({
+        where: { coachId, clientId, active: true },
+        data: { active: false },
+      });
+      if (count === 0) {
+        throw new HttpError(404, 'That client is not assigned to this coach');
+      }
+      return { coachId, clientId, active: false };
+    },
+  );
+}
+
+/** Active coaches with their client counts. */
+export async function listCoaches() {
+  const coaches = await prisma.user.findMany({
+    where: { role: 'COACH', deleted: false },
+    select: {
+      id: true,
+      email: true,
+      status: true,
+      _count: { select: { coachClients: { where: { active: true, client: { deleted: false } } } } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+  return { coaches: coaches.map(({ _count, ...c }) => ({ ...c, clientCount: _count.coachClients })) };
+}
+
+/** A coach's active clients — same minimal fields as the admin user list. */
+export async function listCoachClients(coachId: string) {
+  const coach = await prisma.user.findFirst({ where: { id: coachId, deleted: false, role: 'COACH' }, select: { id: true } });
+  if (!coach) {
+    throw new HttpError(404, 'Coach not found');
+  }
+  const rows = await prisma.coachAssignment.findMany({
+    where: { coachId, active: true, client: { deleted: false } },
+    select: { client: { select: { id: true, email: true, status: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+  return { clients: rows.map((r) => r.client) };
 }
 
 export async function listAchievements() {

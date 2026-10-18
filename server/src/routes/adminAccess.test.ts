@@ -120,6 +120,13 @@ describe('admin user list privacy', () => {
     expect(selected).toEqual(expect.arrayContaining(['id', 'email', 'status', 'createdAt']));
   });
 
+  it('filters by role server-side and ignores unknown roles', async () => {
+    await call('/api/admin/users?role=COACH', 'admin');
+    expect(prismaMock.user.findMany.mock.calls[0][0].where).toMatchObject({ role: 'COACH' });
+    await call('/api/admin/users?role=SUPERUSER', 'admin');
+    expect(prismaMock.user.findMany.mock.calls[1][0].where).not.toHaveProperty('role');
+  });
+
   it('searches by id or username only — never by recovery email or full name', async () => {
     await call('/api/admin/users?search=bob', 'admin');
     const where = prismaMock.user.findMany.mock.calls[0][0].where;

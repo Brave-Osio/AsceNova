@@ -44,6 +44,12 @@ export async function eraseUserData(tx: Prisma.TransactionClient, userId: string
   await tx.workoutPlan.deleteMany(owned); // SAFE: cascades to the plan's days, exercises and nutrition targets
   await tx.profile.deleteMany(owned); // SAFE: name, birthday, body measurements
 
+  // Soft removal: the tombstone row stays, so end any coaching relationship it was part of.
+  await tx.coachAssignment.updateMany({
+    where: { OR: [{ coachId: userId }, { clientId: userId }] },
+    data: { active: false },
+  });
+
   const existing = await tx.user.findUnique({ where: { id: userId }, select: { deletedAt: true } });
   await tx.user.update({
     where: { id: userId },

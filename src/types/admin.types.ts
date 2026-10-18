@@ -1,5 +1,5 @@
 export type AccountStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED';
-export type UserRole = 'USER' | 'ADMIN';
+export type UserRole = 'USER' | 'COACH' | 'ADMIN';
 
 export interface AdminStats {
   totalUsers: number;
@@ -62,6 +62,23 @@ export interface AdminUserDetail {
   checkIns: number;
   workoutPlans: number;
   workoutsCompleted: number;
+  /** The assigned coach's id, or null. */
+  coachId: string | null;
+  /** Active client count for a coach; null for other roles. */
+  clientCount: number | null;
+}
+
+export interface AdminCoach {
+  id: string;
+  email: string;
+  status: AccountStatus;
+  clientCount: number;
+}
+
+export interface AdminCoachClient {
+  id: string;
+  email: string;
+  status: AccountStatus;
 }
 
 export type AuditAction =
@@ -73,7 +90,13 @@ export type AuditAction =
   | 'USER_REVOKE_ADMIN'
   | 'USER_DELETE'
   | 'ACHIEVEMENT_UPDATE'
-  | 'USER_EXPORT';
+  | 'USER_EXPORT'
+  | 'USER_GRANT_COACH'
+  | 'USER_REVOKE_COACH'
+  | 'COACH_ASSIGN_CLIENT'
+  | 'COACH_UNASSIGN_CLIENT'
+  | 'COACH_VIEW_CLIENT_LIST'
+  | 'COACH_VIEW_CLIENT_DASHBOARD';
 export type AuditOutcome = 'SUCCESS' | 'FAILURE';
 
 export interface AuditEvent {
@@ -114,6 +137,7 @@ export interface AuditLogResult {
 export interface AdminUserFilters {
   search?: string;
   status?: AccountStatus;
+  role?: UserRole;
   page: number;
   pageSize: number;
 }

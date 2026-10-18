@@ -6,6 +6,7 @@ import PageContainer from '../../components/layout/PageContainer';
 import PageHeader from '../../components/ui/PageHeader';
 import TextField from '../../components/ui/TextField';
 import Button from '../../components/ui/Button';
+import Tooltip from '../../components/ui/Tooltip';
 import { ROUTES } from '../../constants/routes';
 import type { AuditAction, AuditEvent, AuditOutcome } from '../../types/admin.types';
 
@@ -19,6 +20,12 @@ const ACTION_LABEL: Record<AuditAction, string> = {
   USER_DELETE: 'User deleted',
   ACHIEVEMENT_UPDATE: 'Achievement edited',
   USER_EXPORT: 'User export',
+  USER_GRANT_COACH: 'Coach role granted',
+  USER_REVOKE_COACH: 'Coach role revoked',
+  COACH_ASSIGN_CLIENT: 'Client assigned to coach',
+  COACH_UNASSIGN_CLIENT: 'Client unassigned from coach',
+  COACH_VIEW_CLIENT_LIST: 'Coach viewed client list',
+  COACH_VIEW_CLIENT_DASHBOARD: 'Coach viewed client dashboard',
 };
 
 const OUTCOME_BADGE: Record<AuditOutcome, string> = {
@@ -40,6 +47,11 @@ function shortId(id: string): string {
 
 function person(username: string | null, id: string): string {
   return username ?? `${shortId(id)} (deleted account)`;
+}
+
+/** Tooltip text for an account cell: the full name (when the account still exists) plus its ID. */
+function personTip(username: string | null, id: string): string {
+  return username ? `${username} · User ID: ${id}` : `Deleted account · User ID: ${id}`;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -211,7 +223,7 @@ export default function AdminAuditLogsPage() {
               <tr className="border-b border-brand-border text-xs uppercase tracking-wider text-brand-text-muted">
                 <th scope="col" className="py-2 pr-4 font-semibold">Time</th>
                 <th scope="col" className="py-2 pr-4 font-semibold">Action</th>
-                <th scope="col" className="py-2 pr-4 font-semibold">Administrator</th>
+                <th scope="col" className="py-2 pr-4 font-semibold">Performed by</th>
                 <th scope="col" className="py-2 pr-4 font-semibold">Target</th>
                 <th scope="col" className="py-2 pr-4 font-semibold">Outcome</th>
                 <th scope="col" className="py-2 pr-0 text-right font-semibold">Details</th>
@@ -246,17 +258,36 @@ export default function AdminAuditLogsPage() {
               ) : (
                 result.events.map((event) => (
                   <tr key={event.id} className="workout-row border-b border-brand-border text-brand-text-secondary">
-                    <td className="whitespace-nowrap py-3 pr-4" title={event.createdAt}>
-                      {formatLocal(event.createdAt)}
+                    <td className="whitespace-nowrap py-3 pr-4">
+                      <Tooltip label={`${event.createdAt} (UTC)`} side="bottom">
+                        <span>{formatLocal(event.createdAt)}</span>
+                      </Tooltip>
                     </td>
                     <td className="py-3 pr-4 font-medium text-brand-text">{ACTION_LABEL[event.action] ?? event.action}</td>
-                    <td className="py-3 pr-4" title={event.actorId}>
-                      {person(event.actorUsername, event.actorId)}
+                    <td className="py-3 pr-4">
+                      <Tooltip label={personTip(event.actorUsername, event.actorId)} side="bottom">
+                        <span>{person(event.actorUsername, event.actorId)}</span>
+                      </Tooltip>
                     </td>
-                    <td className="py-3 pr-4" title={event.targetId ?? undefined}>
-                      {event.targetType === 'USER' && event.targetId
-                        ? person(event.targetUsername, event.targetId)
-                        : (event.targetType ?? '—')}
+                    <td className="py-3 pr-4">
+                      {event.targetId ? (
+                        <Tooltip
+                          label={
+                            event.targetType === 'USER'
+                              ? personTip(event.targetUsername, event.targetId)
+                              : `${event.targetType ?? 'Target'} ID: ${event.targetId}`
+                          }
+                          side="bottom"
+                        >
+                          <span>
+                            {event.targetType === 'USER'
+                              ? person(event.targetUsername, event.targetId)
+                              : (event.targetType ?? '—')}
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        (event.targetType ?? '—')
+                      )}
                     </td>
                     <td className="py-3 pr-4">
                       <span className={`chip px-2 py-0.5 text-xs ${OUTCOME_BADGE[event.outcome]}`}>{event.outcome}</span>

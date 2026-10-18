@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, type Role } from '@prisma/client';
 import { prisma } from '../lib/prismaClient.js';
 import { hashPassword, comparePassword } from '../lib/password.js';
 import { signAccessToken } from '../lib/jwt.js';
@@ -36,7 +36,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 async function issueTokenPair(
   userId: string,
-  role: 'USER' | 'ADMIN',
+  role: Role,
   rememberMe: boolean,
   meta: RequestMeta,
 ): Promise<TokenPair> {
@@ -107,7 +107,7 @@ export async function register(input: RegisterInput, meta: RequestMeta): Promise
 export async function login(
   input: LoginInput,
   meta: RequestMeta,
-): Promise<TokenPair & { userId: string; role: 'USER' | 'ADMIN' }> {
+): Promise<TokenPair & { userId: string; role: Role }> {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
 
   if (!user || user.deleted) {
@@ -147,7 +147,7 @@ export async function googleLogin(
   input: GoogleLoginInput,
   meta: RequestMeta,
 ): Promise<
-  TokenPair & { userId: string; email: string; role: 'USER' | 'ADMIN'; hasPassword: boolean; isNewUser: boolean }
+  TokenPair & { userId: string; email: string; role: Role; hasPassword: boolean; isNewUser: boolean }
 > {
   const { googleId, email } = await verifyGoogleIdToken(input.idToken);
 
