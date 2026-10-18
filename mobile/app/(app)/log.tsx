@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Dumbbell, Droplet, Beef, Moon, Footprints, NotebookPen } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
@@ -11,9 +11,15 @@ import Card from '../../src/components/ui/Card';
 import PageHeader from '../../src/components/ui/PageHeader';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
 import { useDailyLog } from '../../src/features/daily-log/hooks/useDailyLog';
+import ScheduledWorkoutCard from '../../src/features/workouts/components/ScheduledWorkoutCard';
+import { useToday } from '../../src/hooks/useToday';
+import { toDateString } from '../../src/utils/dateUtils';
 import type { DailyHabits } from '../../src/types/log.types';
 import { fonts, spacing, radius, typography, type ColorPalette } from '../../src/theme';
 import { useAppTheme } from '../../src/context/ThemeContext';
+
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const BACKFILL_DAYS = 7;
 
 const HABIT_ITEMS: { key: keyof DailyHabits; label: string; Icon: LucideIcon }[] = [
   { key: 'workoutCompleted', label: 'Workout Completed', Icon: Dumbbell },
@@ -29,6 +35,15 @@ export default function LogScreen() {
   const { data: profile, isLoading: isProfileLoading } = useProfile();
   const { form, error, lastResult, isSubmitting, updateField, toggleHabit, handleSubmit } = useDailyLog();
   const checkedCount = Object.values(form.habits).filter(Boolean).length;
+  const today = useToday();
+  // null = "follow today", so a screen left open past midnight moves on to the new day by itself.
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+  const selectedDate = pickedDate && pickedDate <= today ? pickedDate : today;
+  const days = Array.from({ length: BACKFILL_DAYS + 1 }, (_, i) => {
+    const d = new Date(`${today}T00:00:00`);
+    d.setDate(d.getDate() - (BACKFILL_DAYS - i));
+    return { dateStr: toDateString(d), weekday: WEEKDAY_SHORT[d.getDay()], dayNumber: d.getDate() };
+  });
 
   if (isProfileLoading) {
     return <View style={styles.flex} />;
@@ -41,7 +56,7 @@ export default function LogScreen() {
           <NotebookPen size={40} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>No profile yet</Text>
           <Text style={styles.emptyBody}>Set up your profile before logging a day.</Text>
-          <Button size="lg" fullWidth={false} onPress={() => router.push('/(app)/profile-setup')}>
+          <Button size="lg" fullWidth={false} onPress={() => router.push('/(app)/settings')}>
             Set Up Profile
           </Button>
         </Card>
@@ -52,11 +67,31 @@ export default function LogScreen() {
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.chip}>
-          <NotebookPen size={12} color={colors.primaryLight} />
-          <Text style={styles.chipText}>Daily Check-In</Text>
+        <PageHeader eyebrow="Daily Check-In" title="Daily Log" subtitle="See your scheduled workout, mark it done, and log today's progress to keep your streak alive." />
+
+        <Text style={styles.dayPickerLabel}>Workout day</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayPicker}>
+          {days.map((d) => {
+            const selected = d.dateStr === selectedDate;
+            return (
+              <Pressable
+                key={d.dateStr}
+                onPress={() => setPickedDate(d.dateStr === today ? null : d.dateStr)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${d.weekday} ${d.dayNumber}${d.dateStr === today ? ', today' : ''}`}
+                style={[styles.dayChip, selected && styles.dayChipSelected]}
+              >
+                <Text style={[styles.dayChipWeekday, selected && styles.dayChipTextSelected]}>{d.weekday}</Text>
+                <Text style={[styles.dayChipNumber, selected && styles.dayChipTextSelected]}>{d.dayNumber}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.workoutBlock}>
+          <ScheduledWorkoutCard date={selectedDate} />
         </View>
-        <PageHeader title="Daily Log" subtitle="Log today's progress to keep your streak alive." />
 
         <View style={styles.form}>
           <TextField
@@ -124,18 +159,23 @@ function createStyles(colors: ColorPalette) {
     emptyCard: { alignItems: 'center', gap: spacing.sm, alignSelf: 'stretch', paddingVertical: spacing.xl },
     emptyTitle: { ...typography.h2, color: colors.textPrimary, marginTop: spacing.sm },
     emptyBody: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
-    chip: {
-      flexDirection: 'row',
+    dayPickerLabel: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium, marginTop: spacing.md, marginBottom: spacing.sm },
+    dayPicker: { gap: spacing.sm, paddingBottom: spacing.xs },
+    dayChip: {
       alignItems: 'center',
-      alignSelf: 'flex-start',
-      gap: 4,
-      backgroundColor: colors.primaryMuted,
-      borderRadius: radius.full,
-      paddingHorizontal: 12,
-      paddingVertical: 4,
-      marginBottom: 12,
+      minWidth: 52,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardAlt,
     },
-    chipText: { color: colors.primaryLight, fontSize: 12, fontFamily: fonts.semibold },
+    dayChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+    dayChipWeekday: { color: colors.textMuted, fontSize: 11, fontFamily: fonts.medium },
+    dayChipNumber: { color: colors.textPrimary, fontSize: 16, fontFamily: fonts.bold },
+    dayChipTextSelected: { color: '#ffffff' },
+    workoutBlock: { marginTop: spacing.md, marginBottom: spacing.lg },
     form: { gap: spacing.sm },
     checklist: { marginBottom: spacing.md },
     checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.sm },

@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { Alert, View, Text, StyleSheet } from 'react-native';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
+import { HideButton } from '../../../components/ui/HideControls';
 import { useGoalActions } from '../hooks/useGoalActions';
 import type { Goal } from '../../../types/goal.types';
 import { fonts, spacing, radius, type ColorPalette } from '../../../theme';
@@ -16,8 +17,15 @@ const GOAL_LABEL: Record<string, string> = {
 /** After this many abandon taps on one goal, the confirm dialog adds a stronger warning. */
 const REPEAT_WARNING_THRESHOLD = 10;
 
+interface GoalCardProps {
+  goal: Goal;
+  isHidden: boolean;
+  onHide: () => void;
+  onUnhide: () => void;
+}
+
 /** Mirrors the web app's GoalCard.tsx. */
-export default function GoalCard({ goal }: { goal: Goal }) {
+export default function GoalCard({ goal, isHidden, onHide, onUnhide }: GoalCardProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { complete, abandon, pendingGoalId } = useGoalActions();
@@ -28,7 +36,7 @@ export default function GoalCard({ goal }: { goal: Goal }) {
     attempts.current += 1;
     const warning =
       attempts.current >= REPEAT_WARNING_THRESHOLD
-        ? `\n\nYou've tried to abandon this goal ${attempts.current} times — please confirm only if you're sure.`
+        ? `\n\nYou've tried to abandon this goal ${attempts.current} times. Please confirm only if you're sure.`
         : '';
     Alert.alert(
       'Abandon this goal?',
@@ -50,7 +58,7 @@ export default function GoalCard({ goal }: { goal: Goal }) {
         : styles.badgeTextActive;
 
   return (
-    <Card>
+    <Card style={isHidden ? styles.hidden : undefined}>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.title}>
@@ -76,12 +84,15 @@ export default function GoalCard({ goal }: { goal: Goal }) {
           </Button>
         </View>
       )}
+
+      <HideButton isHidden={isHidden} onHide={onHide} onUnhide={onUnhide} />
     </Card>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
+    hidden: { opacity: 0.6 },
     header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm + 4 },
     headerText: { flex: 1 },
     title: { color: colors.textPrimary, fontFamily: fonts.bold, fontSize: 15 },

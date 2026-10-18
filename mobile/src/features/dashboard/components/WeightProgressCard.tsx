@@ -43,7 +43,7 @@ export default function WeightProgressCard() {
   const stats: { label: string; value: string; color?: string }[] = [
     { label: 'Current', value: `${latestWeight} kg` },
     { label: 'Starting', value: `${firstWeight} kg` },
-    { label: 'Change', value: logs.length > 1 ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)} kg` : '—', color: deltaColor },
+    { label: 'Change', value: logs.length > 1 ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)} kg` : '-', color: deltaColor },
   ];
   if (goalWeight != null && toGoal != null) {
     stats.push({

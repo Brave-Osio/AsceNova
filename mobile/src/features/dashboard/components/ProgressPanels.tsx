@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Trophy, Zap, Flame, Award, Shield } from 'lucide-react-native';
 import { useUserProgress } from '../../gamification/hooks/useUserProgress';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { ACHIEVEMENTS } from '../../../constants/achievements';
 import { RANK_COLOR, RANK_ICON } from '../../../constants/rankVisuals';
-import { daysBetween, getTodayDateString, toDateString } from '../../../utils/dateUtils';
+import { daysBetween, toDateString } from '../../../utils/dateUtils';
+import { useToday } from '../../../hooks/useToday';
 import { fonts, radius, spacing, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
@@ -124,43 +125,97 @@ export function AchievementsPanel() {
 
 const DAYS_TO_SHOW = 28;
 
+type DayState = 'workout' | 'logged' | 'none';
+
+const MONTH_SHORT = new Intl.DateTimeFormat('en-US', { month: 'short' });
+const RANGE_FORMAT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const FULL_FORMAT = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+const STATE_LABEL: Record<DayState, string> = {
+  workout: 'Workout completed',
+  logged: 'Logged, no workout',
+  none: 'No entry',
+};
+
 export function WorkoutCalendarPanel() {
   const { colors, styles } = usePanelStyles();
   const { data: logs = [], isLoading } = useLogs();
+  const todayStr = useToday();
+  // Set by tap, so the details never depend on hover.
+  const [activeDate, setActiveDate] = useState<string | null>(null);
   if (isLoading) return <View style={[styles.panel, { minHeight: 192 }]} />;
 
   const logsByDate = new Map(logs.map((l) => [l.date, l]));
-  const today = new Date();
-  const todayStr = toDateString(today);
+  const today = new Date(`${todayStr}T00:00:00`);
   const days = Array.from({ length: DAYS_TO_SHOW }, (_, i) => {
     const d = new Date(today);
     d.setDate(d.getDate() - (DAYS_TO_SHOW - 1 - i));
     const dateStr = toDateString(d);
-    return { dateStr, log: logsByDate.get(dateStr) };
+    const log = logsByDate.get(dateStr);
+    const state: DayState = log?.habits.workoutCompleted ? 'workout' : log ? 'logged' : 'none';
+    return { date: d, dateStr, log, state };
   });
+
   const noEntry = 'rgba(138,132,153,0.2)';
   const logged = 'rgba(124,92,252,0.25)';
+  const toneBg: Record<DayState, string> = { workout: colors.primary, logged, none: noEntry };
+  const toneFg: Record<DayState, string> = { workout: '#ffffff', logged: colors.textPrimary, none: colors.textMuted };
+
+  const completedCount = days.filter((d) => d.state === 'workout').length;
+  const rangeLabel = `${RANGE_FORMAT.format(days[0].date)} to ${RANGE_FORMAT.format(days[days.length - 1].date)}`;
+  const active = days.find((d) => d.dateStr === activeDate);
+  const activeHabits = active?.log ? Object.values(active.log.habits).filter(Boolean).length : 0;
+  const activeHabitTotal = active?.log ? Object.keys(active.log.habits).length : 0;
 
   return (
     <View style={styles.panel}>
       <Text style={styles.label}>Workout Calendar</Text>
-      <Text style={styles.tiny}>Last {DAYS_TO_SHOW} days</Text>
+      <Text style={styles.tiny}>
+        {rangeLabel} · {completedCount} {completedCount === 1 ? 'workout' : 'workouts'} completed
+      </Text>
       <View style={styles.calGrid}>
-        {days.map(({ dateStr, log }) => (
-          <View key={dateStr} style={styles.calCell}>
-            <View
-              style={[
-                styles.calInner,
-                { backgroundColor: log?.habits.workoutCompleted ? colors.primary : log ? logged : noEntry },
-                dateStr === todayStr && { borderWidth: 1, borderColor: colors.primaryLight },
-              ]}
-            />
-          </View>
-        ))}
+        {days.map(({ date, dateStr, state }) => {
+          const isActive = dateStr === activeDate;
+          return (
+            <View key={dateStr} style={styles.calCell}>
+              <Pressable
+                onPress={() => setActiveDate(isActive ? null : dateStr)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={`${FULL_FORMAT.format(date)}: ${STATE_LABEL[state].toLowerCase()}`}
+                style={[
+                  styles.calInner,
+                  styles.calTile,
+                  { backgroundColor: toneBg[state] },
+                  dateStr === todayStr && { borderWidth: 1, borderColor: colors.primaryLight },
+                  isActive && { borderWidth: 2, borderColor: colors.primaryLight },
+                ]}
+              >
+                <Text style={[styles.calDay, { color: toneFg[state] }]}>{date.getDate()}</Text>
+                <Text style={[styles.calMonth, { color: toneFg[state] }]}>{MONTH_SHORT.format(date)}</Text>
+              </Pressable>
+            </View>
+          );
+        })}
       </View>
+
+      {/* Fixed-height details line: filled by tapping a day, never shifts the layout. */}
+      <Text style={styles.calDetails} accessibilityLiveRegion="polite">
+        {active ? (
+          <>
+            <Text style={styles.calDetailsStrong}>{FULL_FORMAT.format(active.date)}</Text>
+            {': '}
+            {STATE_LABEL[active.state]}
+            {active.log ? `, ${active.log.weightKg} kg, ${activeHabits} of ${activeHabitTotal} habits` : ''}
+          </>
+        ) : (
+          'Tap a day for details.'
+        )}
+      </Text>
+
       <View style={styles.legend}>
         {[
-          { c: colors.primary, t: 'Workout' },
+          { c: colors.primary, t: 'Workout done' },
           { c: logged, t: 'Logged' },
           { c: noEntry, t: 'No entry' },
         ].map((l) => (
@@ -177,9 +232,9 @@ export function WorkoutCalendarPanel() {
 export function WeeklySummaryPanel() {
   const { colors, styles } = usePanelStyles();
   const { data: logs = [], isLoading } = useLogs();
+  const today = useToday();
   if (isLoading) return null;
 
-  const today = getTodayDateString();
   const last7 = logs.filter((l) => {
     const diff = daysBetween(l.date, today);
     return diff >= 0 && diff < 7;
@@ -235,7 +290,7 @@ export function StreakPanel() {
         <Text style={styles.bigUnit}>days</Text>
       </View>
       <Text style={[styles.muted, styles.mt8]}>
-        {streak === 0 ? 'Log today to start your streak!' : streak >= 7 ? 'Week streak — legendary!' : 'Keep it going!'}
+        {streak === 0 ? 'Log today to start your streak!' : streak >= 7 ? 'Week streak, legendary!' : 'Keep it going!'}
       </Text>
     </View>
   );
@@ -273,6 +328,11 @@ function createStyles(colors: ColorPalette) {
     calGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, marginHorizontal: -3 },
     calCell: { width: `${100 / 7}%`, aspectRatio: 1, padding: 3 },
     calInner: { flex: 1, borderRadius: 6 },
+    calTile: { alignItems: 'center', justifyContent: 'center' },
+    calDay: { fontSize: 11, fontFamily: fonts.bold, lineHeight: 13 },
+    calMonth: { fontSize: 7, fontFamily: fonts.semibold, textTransform: 'uppercase', letterSpacing: 0.4, opacity: 0.75, marginTop: 1 },
+    calDetails: { marginTop: 12, minHeight: 36, fontSize: 11, lineHeight: 16, fontFamily: fonts.regular, color: colors.textMuted },
+    calDetailsStrong: { color: colors.textPrimary, fontFamily: fonts.semibold },
     legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     legendSwatch: { width: 8, height: 8, borderRadius: 2 },

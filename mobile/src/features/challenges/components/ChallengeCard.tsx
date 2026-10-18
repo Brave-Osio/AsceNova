@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
+import { HideButton } from '../../../components/ui/HideControls';
 import { useChallengeActions } from '../hooks/useChallengeActions';
 import type { ChallengeInvite } from '../../../types/challenge.types';
 import { fonts, spacing, radius, type ColorPalette } from '../../../theme';
@@ -12,8 +13,15 @@ function daysLeft(periodEnd: string): number {
   return Math.max(0, Math.ceil((new Date(periodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 }
 
+interface ChallengeCardProps {
+  invite: ChallengeInvite;
+  isHidden: boolean;
+  onHide: () => void;
+  onUnhide: () => void;
+}
+
 /** Mirrors the web app's ChallengeCard.tsx. */
-export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
+export default function ChallengeCard({ invite, isHidden, onHide, onUnhide }: ChallengeCardProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
@@ -24,7 +32,7 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
   const expired = invite.status === 'EXPIRED';
 
   return (
-    <Card>
+    <Card style={isHidden ? styles.hidden : undefined}>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <View style={styles.titleRow}>
@@ -75,12 +83,15 @@ export default function ChallengeCard({ invite }: { invite: ChallengeInvite }) {
           </Button>
         </View>
       )}
+
+      <HideButton isHidden={isHidden} onHide={onHide} onUnhide={onUnhide} />
     </Card>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
+    hidden: { opacity: 0.6 },
     header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm + 4 },
     headerText: { flex: 1 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

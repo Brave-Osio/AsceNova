@@ -6,6 +6,7 @@ import {
   googleLoginRequest,
   refreshRequest,
   meRequest,
+  deleteAccountRequest,
   setStoredRefreshToken,
   type AuthUser,
 } from '../services/authService';
@@ -24,6 +25,8 @@ interface AuthContextValue {
   register: (input: { email: string; password: string; fullName: string; recoveryEmail?: string }) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<{ isNewUser: boolean }>;
   logout: () => Promise<void>;
+  /** Permanently deletes the signed-in account, then drops all local session state. Throws if the server refuses. */
+  deleteAccount: (input: { confirmation: 'DELETE'; password?: string; idToken?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -108,6 +111,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function deleteAccount(input: { confirmation: 'DELETE'; password?: string; idToken?: string }) {
+    await deleteAccountRequest(input);
+    // The server has revoked every session and erased the account; nothing here may keep acting as it.
+    setAccessToken(null);
+    await setStoredRefreshToken(null);
+    setUser(null);
+    setStatus('unauthenticated');
+  }
+
   const value: AuthContextValue = {
     user,
     status,
@@ -118,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     loginWithGoogle,
     logout,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

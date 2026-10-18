@@ -58,7 +58,7 @@ export default function ForgotPasswordScreen() {
             </Text>
             {result.devResetToken && (
               <Text style={styles.info}>
-                Dev mode only — email isn&apos;t configured. Open this path on the web app:{'\n'}
+                Dev mode only: email isn&apos;t configured. Open this path on the web app:{'\n'}
                 /reset-password?token={result.devResetToken}
               </Text>
             )}

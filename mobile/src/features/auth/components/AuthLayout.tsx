@@ -1,9 +1,9 @@
 import { useMemo, type ReactNode } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Zap } from 'lucide-react-native';
+import BrandLogo from '../../../components/ui/BrandLogo';
 import Card from '../../../components/ui/Card';
-import { fonts, radius, spacing, typography, type ColorPalette } from '../../../theme';
+import { fonts, spacing, typography, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
 interface AuthLayoutProps {
@@ -27,9 +27,7 @@ export default function AuthLayout({ title, subtitle, children, footer }: AuthLa
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoRow}>
-          <View style={styles.logoBox}>
-            <Zap size={18} color={colors.primaryLight} />
-          </View>
+          <BrandLogo size={34} />
           <Text style={styles.logoText}>AsceNova</Text>
         </View>
         <Text style={styles.title}>{title}</Text>
@@ -48,14 +46,6 @@ function createStyles(colors: ColorPalette) {
     flex: { flex: 1, backgroundColor: colors.bg },
     container: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing.md + 4 },
     logoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginBottom: spacing.lg },
-    logoBox: {
-      width: 34,
-      height: 34,
-      borderRadius: radius.md - 2,
-      backgroundColor: colors.primaryMuted,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     logoText: { color: colors.textPrimary, fontSize: 20, fontFamily: fonts.extrabold },
     title: { ...typography.h1, color: colors.textPrimary, textAlign: 'center' },
     subtitle: { ...typography.subtitle, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs },

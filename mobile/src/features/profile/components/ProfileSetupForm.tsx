@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import TextField from '../../src/components/ui/TextField';
-import OptionSelector from '../../src/components/ui/OptionSelector';
-import Button from '../../src/components/ui/Button';
-import PageHeader from '../../src/components/ui/PageHeader';
-import { getErrorMessage } from '../../src/lib/errors';
+import TextField from '../../../components/ui/TextField';
+import OptionSelector from '../../../components/ui/OptionSelector';
+import Button from '../../../components/ui/Button';
+import { getErrorMessage } from '../../../lib/errors';
 import {
   profileSchema,
   genderOptions,
@@ -18,11 +17,11 @@ import {
   splitStyleOptions,
   preferredWorkoutTimeOptions,
   type ProfileFormValues,
-} from '../../src/features/profile/schemas';
-import { useProfileForm, toFormValues } from '../../src/features/profile/hooks/useProfileForm';
-import { useProfile } from '../../src/features/profile/hooks/useProfile';
-import { spacing, typography, fonts, type ColorPalette } from '../../src/theme';
-import { useAppTheme } from '../../src/context/ThemeContext';
+} from '../schemas';
+import { useProfileForm, toFormValues } from '../hooks/useProfileForm';
+import { useProfile } from '../hooks/useProfile';
+import { spacing, typography, fonts, type ColorPalette } from '../../../theme';
+import { useAppTheme } from '../../../context/ThemeContext';
 
 const GENDER_LABELS: Record<(typeof genderOptions)[number], string> = {
   MALE: 'Male',
@@ -88,7 +87,13 @@ function SectionHeading({ children, styles }: { children: string; styles: Return
   return <Text style={styles.sectionHeading}>{children}</Text>;
 }
 
-export default function ProfileSetupScreen() {
+interface ProfileSetupFormProps {
+  /** True for a user with no profile yet: saving then continues to the plan (like the web's onboarding). */
+  redirectOnSave?: boolean;
+}
+
+/** The profile form. Embedded in Settings, which doubles as onboarding for a brand-new user (mirrors the web). */
+export default function ProfileSetupForm({ redirectOnSave = false }: ProfileSetupFormProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: existingProfile, isLoading: isProfileLoading } = useProfile();
@@ -111,7 +116,7 @@ export default function ProfileSetupScreen() {
     setError(null);
     try {
       await mutateAsync(values);
-      router.replace('/(app)');
+      if (redirectOnSave) router.replace('/(app)/plan');
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -126,10 +131,8 @@ export default function ProfileSetupScreen() {
   }
 
   return (
-    <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <PageHeader title="Profile Setup" subtitle="Tell us a bit about yourself so we can build your plan." />
-
+    <View>
+      <View>
         <SectionHeading styles={styles}>Identity</SectionHeading>
         <Controller name="fullName" control={control} render={({ field }) => (
           <TextField label="Full Name" value={field.value} onChangeText={field.onChange} autoCapitalize="words" placeholder="Juan Dela Cruz" error={errors.fullName?.message} />
@@ -169,7 +172,7 @@ export default function ProfileSetupScreen() {
           <OptionSelector label="Preferred Workout Split" value={field.value} options={toOptions(splitStyleOptions, SPLIT_STYLE_LABELS)} onChange={field.onChange} />
         )} />
         <Controller name="workoutFrequency" control={control} render={({ field }) => (
-          <TextField label="Workout Days / Week" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="4" helperText="Optional" error={errors.workoutFrequency?.message} />
+          <TextField label="Workout Days / Week" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="4" helperText="Optional, 1 to 7" error={errors.workoutFrequency?.message} />
         )} />
 
         <SectionHeading styles={styles}>Schedule</SectionHeading>
@@ -177,7 +180,7 @@ export default function ProfileSetupScreen() {
           <OptionSelector label="Preferred Workout Time" value={field.value} options={toOptions(preferredWorkoutTimeOptions, WORKOUT_TIME_LABELS)} onChange={field.onChange} />
         )} />
         <Controller name="sleepHoursTarget" control={control} render={({ field }) => (
-          <TextField label="Sleep Hours Target" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="8" helperText="Optional" error={errors.sleepHoursTarget?.message} />
+          <TextField label="Sleep Hours Target" value={field.value} onChangeText={field.onChange} keyboardType="number-pad" placeholder="8" helperText="Optional, 3 to 12 hours" error={errors.sleepHoursTarget?.message} />
         )} />
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -185,17 +188,15 @@ export default function ProfileSetupScreen() {
         <Button size="md" fullWidth={false} onPress={handleSubmit(onSubmit)} loading={isPending}>
           {existingProfile ? 'Save Changes' : 'Generate My Plan'}
         </Button>
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    flex: { flex: 1, backgroundColor: colors.bg },
-    loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-    container: { paddingHorizontal: spacing.md + 4, paddingBottom: spacing.xl * 2 },
-    sectionHeading: { ...typography.label, color: colors.primaryLight, marginTop: spacing.lg, marginBottom: spacing.md },
+    loading: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl },
+    sectionHeading: { ...typography.label, color: colors.primaryLight, marginTop: spacing.md, marginBottom: spacing.md },
     error: { color: colors.danger, fontSize: 14, fontFamily: fonts.regular, marginBottom: spacing.md },
   });
 }
