@@ -5,8 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Menu,
   X,
-  Zap,
-  UserRound,
   ClipboardList,
   LayoutDashboard,
   NotebookPen,
@@ -23,7 +21,10 @@ import {
 import { fonts, radius, spacing, type ColorPalette } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import BrandLogo from '../ui/BrandLogo';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
+import CoachPanel from '../../features/coach-chat/components/CoachPanel';
+import { CoachPanelProvider, useCoachPanel } from '../../features/coach-chat/CoachPanelContext';
 
 interface NavItem {
   label: string;
@@ -34,22 +35,29 @@ interface NavItem {
 
 /** Same order as the web's NAV_LINKS (minus Home/Admin, which the app doesn't have). */
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Profile', path: '/profile-setup', icon: UserRound },
   { label: 'Plan', path: '/plan', icon: ClipboardList },
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Daily Log', path: '/log', icon: NotebookPen },
   { label: 'Leaderboard', path: '/leaderboard', icon: Trophy },
   { label: 'Challenges', path: '/challenges', icon: Swords },
   { label: 'Goals', path: '/goals', icon: Target },
-  { label: 'Coach', path: '/coach', icon: Bot },
   { label: 'Settings', path: '/settings', icon: SettingsIcon },
 ];
 
 const DRAWER_WIDTH = 256;
 const TOP_BAR_HEIGHT = 56;
 
-/** The web's phone-width chrome: sticky top bar (hamburger + logo) and an off-canvas drawer. */
+/** The web's phone-width chrome: sticky top bar (hamburger + logo + coach launcher) and an off-canvas drawer. */
 export default function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <CoachPanelProvider>
+      <AppShellInner>{children}</AppShellInner>
+    </CoachPanelProvider>
+  );
+}
+
+function AppShellInner({ children }: { children: ReactNode }) {
+  const { open: openCoach } = useCoachPanel();
   const { colors, theme, toggleTheme } = useAppTheme();
   const { logout } = useAuth();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -103,11 +111,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <Menu size={20} color={colors.textPrimary} />
         </Pressable>
         <View style={styles.logoRow}>
-          <View style={styles.logoBox}>
-            <Zap size={16} color={colors.primaryLight} />
-          </View>
+          <BrandLogo size={30} />
           <Text style={styles.logoText}>AsceNova</Text>
         </View>
+        <Pressable onPress={openCoach} accessibilityRole="button" accessibilityLabel="Open AI coach chat" style={styles.coachButton}>
+          <Bot size={20} color="#fff" />
+        </Pressable>
       </View>
 
       {/* Android draws edge-to-edge, so the OS no longer resizes the window for the keyboard — pad here, once, for every screen. */}
@@ -118,6 +127,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       >
         {children}
       </KeyboardAvoidingView>
+
+      <CoachPanel />
 
       {mounted && (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}>
@@ -132,9 +143,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           >
             <View style={styles.drawerHeader}>
               <View style={styles.logoRow}>
-                <View style={styles.logoBox}>
-                  <Zap size={16} color={colors.primaryLight} />
-                </View>
+                <BrandLogo size={30} />
                 <Text style={styles.logoText}>AsceNova</Text>
               </View>
               <Pressable onPress={closeDrawer} accessibilityLabel="Close menu" style={styles.closeButton}>
@@ -211,15 +220,16 @@ function createStyles(colors: ColorPalette) {
       justifyContent: 'center',
       backgroundColor: colors.cardAlt,
     },
-    logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    logoBox: {
-      width: 30,
-      height: 30,
-      borderRadius: radius.md - 4,
-      backgroundColor: colors.primaryMuted,
+    coachButton: {
+      marginLeft: 'auto',
+      width: 40,
+      height: 40,
+      borderRadius: radius.full,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: colors.primary,
     },
+    logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     logoText: { color: colors.textPrimary, fontSize: 17, fontFamily: fonts.extrabold },
     backdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.6)' },
     drawer: {

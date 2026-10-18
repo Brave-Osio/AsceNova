@@ -41,7 +41,7 @@ export interface SplitStyleOption {
 export const SPLIT_STYLE_OPTIONS: SplitStyleOption[] = [
   { value: 'PUSH_PULL_LEGS', label: 'Push / Pull / Legs', description: 'Classic 3-way gym split, repeated across the week.' },
   { value: 'UPPER_LOWER', label: 'Upper / Lower', description: 'Alternates upper body and lower body days.' },
-  { value: 'FULL_BODY', label: 'Full Body', description: 'Trains your whole body each session — efficient with fewer days.' },
+  { value: 'FULL_BODY', label: 'Full Body', description: 'Trains your whole body each session, which is efficient with fewer days.' },
 ];
 
 export interface NutritionPlan {

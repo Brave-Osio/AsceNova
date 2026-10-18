@@ -6,11 +6,21 @@ import { fonts, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 
 /** The web's small bold primary-light links ("View full plan →"). */
-export default function TextLink({ href, children, arrow = true }: { href: Href; children: string; arrow?: boolean }) {
+export default function TextLink({
+  href,
+  onPress,
+  children,
+  arrow = true,
+}: {
+  href?: Href;
+  onPress?: () => void;
+  children: string;
+  arrow?: boolean;
+}) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <Pressable onPress={() => router.push(href)} style={styles.row} hitSlop={8}>
+    <Pressable onPress={() => (onPress ? onPress() : href ? router.push(href) : undefined)} style={styles.row} hitSlop={8}>
       <Text style={styles.text}>{children}</Text>
       {arrow && <ArrowRight size={12} color={colors.primaryLight} />}
     </Pressable>

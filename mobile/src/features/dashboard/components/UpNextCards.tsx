@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Clock, Bot } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useToday } from '../../../hooks/useToday';
+import { useCoachPanel } from '../../coach-chat/CoachPanelContext';
 import Card from '../../../components/ui/Card';
 import { useAuth } from '../../../context/AuthContext';
 import { usePlanGenerator } from '../../fitness-plan/hooks/usePlanGenerator';
@@ -37,6 +39,7 @@ function useCardStyles() {
 export function NextWorkoutCard() {
   const { styles, colors } = useCardStyles();
   const { plan, isLoading } = usePlanGenerator();
+  const today = useToday();
   if (isLoading) return null;
 
   if (!plan || plan.workoutDays.length === 0) {
@@ -48,7 +51,7 @@ export function NextWorkoutCard() {
     );
   }
 
-  const todayLabel = WEEKDAY_LABELS[new Date().getDay()];
+  const todayLabel = WEEKDAY_LABELS[new Date(`${today}T00:00:00`).getDay()];
   const todayIndex = plan.workoutDays.findIndex((d) => d.day === todayLabel);
   const anchorIndex = todayIndex === -1 ? 0 : todayIndex;
   let target = plan.workoutDays[anchorIndex];
@@ -91,6 +94,7 @@ export function NextWorkoutCard() {
 
 export function CoachTeaserCard() {
   const { styles, colors } = useCardStyles();
+  const { open: openCoach } = useCoachPanel();
   const { user } = useAuth();
   const { data: messages, isLoading } = useQuery({
     queryKey: queryKeys.coach.history(user?.id ?? ''),
@@ -115,7 +119,7 @@ export function CoachTeaserCard() {
         <Text style={[styles.body, { color: colors.textMuted }]}>Ask your coach anything about training, recovery, or your progress.</Text>
       )}
       <View style={styles.link}>
-        <TextLink href="/(app)/coach">Continue chatting</TextLink>
+        <TextLink onPress={openCoach}>Continue chatting</TextLink>
       </View>
     </Card>
   );

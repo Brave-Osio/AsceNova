@@ -38,7 +38,7 @@ export default function RecoveryEmailForm() {
   return (
     <>
       <Text style={styles.note}>
-        If you forget your password, we send the reset link to this Gmail. It isn&apos;t verified — double-check it&apos;s
+        If you forget your password, we send the reset link to this Gmail. It isn&apos;t verified, so double-check it&apos;s
         yours.
       </Text>
       <Text style={styles.current}>

@@ -1,13 +1,11 @@
 import { useMemo, useState, useRef } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet } from 'react-native';
-import { Send, Bot, User, Lightbulb } from 'lucide-react-native';
-import { useCoachChat } from '../../src/features/coach-chat/hooks/useCoachChat';
-import { SUGGESTED_QUESTIONS } from '../../src/features/coach-chat/types';
-import type { ChatMessage } from '../../src/features/coach-chat/types';
-import MarkdownText from '../../src/components/MarkdownText';
-import PageHeader from '../../src/components/ui/PageHeader';
-import { fonts, spacing, radius, type ColorPalette } from '../../src/theme';
-import { useAppTheme } from '../../src/context/ThemeContext';
+import { Send, Bot, User, Lightbulb, AlertCircle, RotateCw } from 'lucide-react-native';
+import { SUGGESTED_QUESTIONS } from '../types';
+import type { ChatMessage } from '../types';
+import MarkdownText from '../../../components/MarkdownText';
+import { fonts, spacing, radius, type ColorPalette } from '../../../theme';
+import { useAppTheme } from '../../../context/ThemeContext';
 
 type Styles = ReturnType<typeof createStyles>;
 
@@ -36,10 +34,21 @@ function Bubble({ message, colors, styles }: { message: ChatMessage; colors: Col
   );
 }
 
-export default function CoachScreen() {
+interface CoachChatProps {
+  messages: ChatMessage[];
+  isThinking: boolean;
+  /** Message from the last failed request; cleared when a new request starts. */
+  sendError: string | null;
+  /** True when the newest message is the user's and no request is running, so a retry makes sense. */
+  canRetry: boolean;
+  sendMessage: (text: string) => Promise<void>;
+  retry: () => Promise<void>;
+}
+
+/** The conversation UI. State lives in CoachPanel (mounted once in AppShell) so it survives opening and closing the panel. */
+export default function CoachChat({ messages, isThinking, sendError, canRetry, sendMessage, retry }: CoachChatProps) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { messages, isThinking, sendMessage } = useCoachChat();
   const [input, setInput] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
@@ -56,7 +65,6 @@ export default function CoachScreen() {
 
   const header = (
     <View style={styles.headerWrap}>
-      <PageHeader title="AI Fitness Coach" subtitle="Online · Answers instantly · Knows your goals" />
       <View style={styles.topics}>
         {['Workouts', 'Nutrition', 'Supplements', 'Recovery', 'XP & Ranks'].map((topic) => (
           <View key={topic} style={styles.topicChip}>
@@ -89,6 +97,17 @@ export default function CoachScreen() {
                   ))}
                 </View>
               </View>
+            </View>
+          ) : sendError && canRetry ? (
+            <View style={styles.errorBox} accessibilityRole="alert">
+              <View style={styles.errorRow}>
+                <AlertCircle size={16} color={colors.danger} />
+                <Text style={styles.errorText}>{sendError}</Text>
+              </View>
+              <Pressable onPress={() => void retry()} accessibilityRole="button" style={styles.retryButton}>
+                <RotateCw size={12} color={colors.danger} />
+                <Text style={styles.retryText}>Retry</Text>
+              </Pressable>
             </View>
           ) : null
         }
@@ -140,6 +159,28 @@ export default function CoachScreen() {
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.bg },
+    errorBox: {
+      gap: spacing.sm,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: 'rgba(248,113,113,0.35)',
+      backgroundColor: 'rgba(248,113,113,0.1)',
+      padding: spacing.md,
+    },
+    errorRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+    errorText: { flex: 1, color: colors.danger, fontSize: 13, fontFamily: fonts.regular, lineHeight: 19 },
+    retryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 6,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: 'rgba(248,113,113,0.45)',
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+    },
+    retryText: { color: colors.danger, fontSize: 12, fontFamily: fonts.bold },
     headerWrap: { marginBottom: spacing.sm },
     topics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: -spacing.xs },
     topicChip: { backgroundColor: colors.cardAlt, borderRadius: radius.full, paddingVertical: 4, paddingHorizontal: 12 },

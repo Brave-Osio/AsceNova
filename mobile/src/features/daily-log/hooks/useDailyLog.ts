@@ -5,7 +5,7 @@ import { upsertLog } from '../../../services/logService';
 import { applyDailyLog } from '../../../services/progressService';
 import { queryKeys } from '../../../lib/queryKeys';
 import { getTodayDateString } from '../../../utils/dateUtils';
-import { validateNumberInRange } from '../../../utils/validation';
+import { validateWeightKg } from '../../../utils/validation';
 import { getErrorMessage } from '../../../lib/errors';
 import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
 
@@ -44,7 +44,7 @@ export function useDailyLog() {
   }
 
   async function handleSubmit() {
-    const weightError = validateNumberInRange(Number(form.weightKg), 30, 300, 'Weight (kg)');
+    const weightError = validateWeightKg(form.weightKg, 'Weight');
     if (weightError) {
       setError(weightError);
       return;

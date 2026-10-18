@@ -9,6 +9,9 @@ export const queryKeys = {
   plan: {
     active: (userId: string) => ['plan', 'active', userId] as const,
   },
+  workoutDay: {
+    byDate: (userId: string, date: string) => ['workout-day', userId, date] as const,
+  },
   logs: {
     list: (userId: string) => ['logs', userId] as const,
   },

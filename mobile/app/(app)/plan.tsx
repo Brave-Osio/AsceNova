@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { User, Sparkles } from 'lucide-react-native';
+import { User } from 'lucide-react-native';
 import Button from '../../src/components/ui/Button';
 import Card, { CardGroup, CardDivider } from '../../src/components/ui/Card';
 import PageHeader, { SectionLabel } from '../../src/components/ui/PageHeader';
@@ -10,7 +10,7 @@ import SplitStylePicker from '../../src/features/fitness-plan/components/SplitSt
 import WorkoutDayCard from '../../src/features/fitness-plan/components/WorkoutDayCard';
 import { usePlanGenerator } from '../../src/features/fitness-plan/hooks/usePlanGenerator';
 import type { WorkoutSplitStyle } from '../../src/types/plan.types';
-import { fonts, radius, spacing, typography, type ColorPalette } from '../../src/theme';
+import { fonts, spacing, typography, type ColorPalette } from '../../src/theme';
 import { useAppTheme } from '../../src/context/ThemeContext';
 
 export default function PlanScreen() {
@@ -37,7 +37,7 @@ export default function PlanScreen() {
           <User size={40} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>No profile yet</Text>
           <Text style={styles.emptyBody}>Set up your profile so we know what to plan for you.</Text>
-          <Button size="lg" fullWidth={false} onPress={() => router.push('/(app)/profile-setup')}>
+          <Button size="lg" fullWidth={false} onPress={() => router.push('/(app)/settings')}>
             Set Up Profile
           </Button>
         </Card>
@@ -56,11 +56,8 @@ export default function PlanScreen() {
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.container}>
-      <View style={styles.chip}>
-        <Sparkles size={12} color={colors.primaryLight} />
-        <Text style={styles.chipText}>AI-Generated Plan</Text>
-      </View>
       <PageHeader
+        eyebrow="AI-Generated Plan"
         title="Your Fitness Plan"
         subtitle={`Tailored for ${profile.fullName}'s ${profile.goal.replace(/_/g, ' ').toLowerCase()} goal`}
       />
@@ -114,18 +111,6 @@ function createStyles(colors: ColorPalette) {
     emptyCard: { alignItems: 'center', gap: spacing.sm, alignSelf: 'stretch', paddingVertical: spacing.xl },
     emptyTitle: { ...typography.h2, color: colors.textPrimary, marginTop: spacing.sm },
     emptyBody: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
-    chip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      gap: 4,
-      backgroundColor: colors.primaryMuted,
-      borderRadius: radius.full,
-      paddingHorizontal: 12,
-      paddingVertical: 4,
-      marginBottom: 12,
-    },
-    chipText: { color: colors.primaryLight, fontSize: 12, fontFamily: fonts.semibold },
     sectionGap: { height: spacing.md },
     subLabel: {
       color: colors.textMuted,

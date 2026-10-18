@@ -6,7 +6,7 @@ import Card from '../../../components/ui/Card';
 import { usePlanGenerator } from '../../fitness-plan/hooks/usePlanGenerator';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { useProfile } from '../../profile/hooks/useProfile';
-import { getTodayDateString } from '../../../utils/dateUtils';
+import { useToday } from '../../../hooks/useToday';
 import { fonts, radius, spacing, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
 import type { DailyHabits } from '../../../types/log.types';
@@ -35,12 +35,13 @@ export default function TodayTargetsCard() {
   const { plan, isLoading: isPlanLoading } = usePlanGenerator();
   const { data: logs, isLoading: isLogsLoading } = useLogs();
   const { data: profile } = useProfile();
+  const today = useToday();
 
   if (isPlanLoading || isLogsLoading) {
     return <Card size="hero" style={styles.skeleton}>{null}</Card>;
   }
 
-  const todayLog = logs?.find((l) => l.date === getTodayDateString());
+  const todayLog = logs?.find((l) => l.date === today);
   const items = buildItems(plan?.nutrition.waterLiters, plan?.nutrition.proteinGrams, profile?.sleepHoursTarget);
   const done = todayLog ? items.filter((item) => todayLog.habits[item.key]).length : 0;
   const total = items.length;
@@ -60,7 +61,7 @@ export default function TodayTargetsCard() {
         {done} <Text style={styles.hitsSub}>of {total} targets hit</Text>
       </Text>
       <Text style={[styles.remaining, { color: isComplete ? okColor : colors.textMuted }]}>
-        {isComplete ? 'All targets hit — great day!' : `${remaining} remaining`}
+        {isComplete ? 'All targets hit. Great day!' : `${remaining} remaining`}
       </Text>
 
       <View style={styles.track}>

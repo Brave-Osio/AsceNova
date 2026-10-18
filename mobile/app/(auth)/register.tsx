@@ -111,7 +111,7 @@ export default function RegisterScreen() {
               helperText={
                 errors.recoveryEmail
                   ? undefined
-                  : 'Used only to send a password reset link — you can add it later in Settings'
+                  : 'Used only to send a password reset link. You can add it later in Settings'
               }
               error={errors.recoveryEmail?.message}
             />
