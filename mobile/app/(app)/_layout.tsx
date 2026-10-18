@@ -15,6 +15,8 @@ export default function AppLayout() {
         <Tabs.Screen name="leaderboard" />
         <Tabs.Screen name="challenges" />
         <Tabs.Screen name="goals" />
+        <Tabs.Screen name="coach" />
+        <Tabs.Screen name="coach-client" />
         <Tabs.Screen name="settings" />
       </Tabs>
     </AppShell>

@@ -21,6 +21,8 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  /** Coaches and admins: may open the coach tab (the server enforces which clients each can see). */
+  canCoach: boolean;
   login: (input: { email: string; password: string }) => Promise<void>;
   register: (input: { email: string; password: string; fullName: string; recoveryEmail?: string }) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<{ isNewUser: boolean }>;
@@ -126,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: status === 'loading',
     isAuthenticated: status === 'authenticated',
     isAdmin: user?.role === 'ADMIN',
+    canCoach: user?.role === 'COACH' || user?.role === 'ADMIN',
     login,
     register,
     loginWithGoogle,

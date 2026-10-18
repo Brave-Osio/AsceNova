@@ -11,6 +11,7 @@ import {
   Trophy,
   Swords,
   Target,
+  Users,
   Bot,
   Settings as SettingsIcon,
   LogOut,
@@ -31,6 +32,8 @@ interface NavItem {
   /** Path as seen by usePathname() (route groups are not part of it). */
   path: string;
   icon: LucideIcon;
+  /** Visible to coaches and admins only. */
+  coachOnly?: boolean;
 }
 
 /** Same order as the web's NAV_LINKS (minus Home/Admin, which the app doesn't have). */
@@ -41,6 +44,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Leaderboard', path: '/leaderboard', icon: Trophy },
   { label: 'Challenges', path: '/challenges', icon: Swords },
   { label: 'Goals', path: '/goals', icon: Target },
+  { label: 'Coach', path: '/coach', icon: Users, coachOnly: true },
   { label: 'Settings', path: '/settings', icon: SettingsIcon },
 ];
 
@@ -59,7 +63,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 function AppShellInner({ children }: { children: ReactNode }) {
   const { open: openCoach } = useCoachPanel();
   const { colors, theme, toggleTheme } = useAppTheme();
-  const { logout } = useAuth();
+  const { logout, canCoach } = useAuth();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -152,7 +156,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
             </View>
 
             <View style={styles.navList}>
-              {NAV_ITEMS.map(({ label, path, icon: Icon }) => {
+              {NAV_ITEMS.filter((item) => !item.coachOnly || canCoach).map(({ label, path, icon: Icon }) => {
                 const active = path === '/' ? pathname === '/' : pathname.startsWith(path);
                 return (
                   <Pressable

@@ -19,7 +19,7 @@ export interface TermsSection {
 
 export const TERMS_TITLE = 'Terms and Conditions';
 export const TERMS_SUBTITLE = 'Terms of use, privacy, and data protection information';
-export const TERMS_LAST_UPDATED = 'October 17, 2026';
+export const TERMS_LAST_UPDATED = 'October 19, 2026';
 
 /**
  * Optional privacy contact, set via EXPO_PUBLIC_PRIVACY_CONTACT_EMAIL. Deliberately has no default: no
@@ -123,6 +123,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
           'You, through your signed-in account. Backend queries for your data are scoped to your user ID.',
           'Other signed-in users see only your leaderboard entry (name, rank, XP, streak) and, if you share a challenge, your name or login username and your challenge progress.',
           'Administrators (accounts with the admin role) can use the admin panel to see aggregate platform statistics and a minimal account list: a system-generated user ID, your login username, role, status, join date, XP and rank, and counts of check-ins and completed workouts. The server returns only those fields. The panel does not show your recovery Gmail, full name, profile or health details, passwords, session tokens or chat conversations. Administrative actions are recorded in an append-only audit log.',
+          'Coaches (accounts with the coach role, assigned to you by an administrator) can open a read-only progress dashboard for you: your login username, rank, XP, streaks, check-in and workout counts, which daily habits you completed over the last 30 days (workout, water, protein, sleep, steps), your fitness goal and level, and the type, status and target date of your goals. The server returns only those fields. Coaches do not see your weight or body measurements, notes, step or sleep numbers, goal targets, recovery Gmail, full name, birthday, workout plan, or chat conversations. Administrators can open the same dashboard for any account. Each time a coach or administrator opens a client list or dashboard, it is recorded in the audit log.',
           'Anyone with direct access to the project\'s database or hosting accounts (for example the developers) can technically reach stored data. Access to those accounts is controlled outside this application.',
         ],
       },
@@ -149,7 +150,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
           'Self-service deletion: in Settings you can permanently delete your account after typing DELETE and re-entering your password (or confirming with Google). This immediately signs you out everywhere and erases your profile, plans, logs, weight and water history, XP, ranks, achievements, goals, notifications, chat messages and sign-in details. A random-ID placeholder row with no name, email or credentials remains so that shared records such as a challenge you started are not destroyed for other participants.',
           'When an administrator deletes an account, it is soft-deleted first: it can no longer sign in or use the API, and its data is permanently erased by the retention job after the soft-delete period (30 days by default).',
           'A retention job runs automatically every night. It permanently removes expired or revoked session tokens and used or expired reset tokens (after a 7-day grace period), and deletes AI chat messages older than 90 days.',
-          'Administrator actions (sign-ins, suspensions, role changes, deletions, achievement edits, exports) are recorded in an append-only audit log containing IDs, times and outcomes, never passwords, tokens or message content.',
+          'Administrator and coach actions (sign-ins, suspensions, role changes, coach assignments, coach and administrator views of client dashboards, deletions, achievement edits, exports) are recorded in an append-only audit log containing IDs, times and outcomes, never passwords, tokens or message content.',
         ],
       },
       {
@@ -193,7 +194,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
           'HTTPS and encryption at rest depend on the hosting and database configuration. The application does not itself enforce HTTPS or set security headers such as HSTS or a content security policy.',
           'Only authentication routes are rate limited. Rate limits for other API routes are not implemented.',
           'The recovery Gmail address and login username are not email-verified, and there is no two-factor authentication.',
-          'The audit log records administrative actions, not every page view. Administrators cannot view personal profile or chat data through the admin panel at all.',
+          'The audit log records administrative actions and coach/administrator views of client dashboards, not every page view by ordinary users. Administrators cannot view personal profile or chat data through the admin panel at all.',
           'Database access restrictions (who holds the database credentials, network rules) are managed outside the application and are not verified here.',
         ],
       },
