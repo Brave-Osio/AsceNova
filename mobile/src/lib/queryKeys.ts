@@ -31,6 +31,10 @@ export const queryKeys = {
     list: (userId: string) => ['notifications', userId] as const,
     unreadCount: (userId: string) => ['notifications', 'unread-count', userId] as const,
   },
+  coaching: {
+    clients: (filters: Record<string, unknown>) => ['coaching', 'clients', filters] as const,
+    dashboard: (clientId: string) => ['coaching', 'dashboard', clientId] as const,
+  },
   challenges: {
     catalog: () => ['challenges', 'catalog'] as const,
     mine: (userId: string) => ['challenges', 'mine', userId] as const,

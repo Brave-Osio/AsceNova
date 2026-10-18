@@ -3,7 +3,7 @@ import { httpClient, getStoredRefreshToken, setStoredRefreshToken } from '../lib
 export interface AuthUser {
   id: string;
   email: string;
-  role?: 'USER' | 'ADMIN';
+  role?: 'USER' | 'COACH' | 'ADMIN';
   status?: string;
   createdAt?: string;
   /** False for accounts created through Google sign-in that have no password. */
