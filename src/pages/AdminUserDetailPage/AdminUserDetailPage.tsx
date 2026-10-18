@@ -7,6 +7,7 @@ import { ROUTES } from '../../constants/routes';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import PageContainer from '../../components/layout/PageContainer';
+import CoachAssignmentPanel from '../../features/admin/components/CoachAssignmentPanel';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -100,6 +101,8 @@ export default function AdminUserDetailPage() {
           <Row label="Workout plans generated" value={String(workoutPlans)} />
         </div>
       </div>
+
+      <CoachAssignmentPanel detail={detail} />
 
       <ConfirmDialog
         isOpen={pending !== null}

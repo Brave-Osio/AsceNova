@@ -11,6 +11,12 @@ export const AUDIT_ACTIONS = [
   'USER_DELETE',
   'ACHIEVEMENT_UPDATE',
   'USER_EXPORT',
+  'USER_GRANT_COACH',
+  'USER_REVOKE_COACH',
+  'COACH_ASSIGN_CLIENT',
+  'COACH_UNASSIGN_CLIENT',
+  'COACH_VIEW_CLIENT_LIST',
+  'COACH_VIEW_CLIENT_DASHBOARD',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 export type AuditOutcome = 'SUCCESS' | 'FAILURE';
@@ -49,7 +55,7 @@ export async function record(entry: AuditEntry, db: Db = prisma): Promise<void> 
 }
 
 /** Failure auditing must never mask the original error or take the request down. */
-async function recordFailureQuietly(entry: AuditEntry): Promise<void> {
+export async function recordFailureQuietly(entry: AuditEntry): Promise<void> {
   try {
     await record(entry);
   } catch (err) {

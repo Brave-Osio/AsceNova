@@ -14,8 +14,10 @@ datasource db {
 
 // ===================== ENUMS =====================
 
+// Privilege order: USER < COACH < ADMIN (see src/lib/roles.ts).
 enum Role {
   USER
+  COACH
   ADMIN
 }
 
@@ -188,6 +190,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   reportsGenerated    Report[]              @relation("ReportsGeneratedBy")
   settingsUpdated     SystemSetting[]       @relation("SettingsUpdatedBy")
+  coachClients        CoachAssignment[]     @relation("CoachClients")
+  coachAssignment     CoachAssignment?      @relation("ClientCoach")
 
   @@index([status])
   @@map("users")
@@ -725,4 +729,24 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([action, createdAt])
   @@map("audit_logs")
+}
+
+// Which coach supervises which client. clientId is unique: a client has at most one
+// coach, while a coach can have many clients. Never hard-deleted — unassigning (or the
+// coach losing the role) sets active = false; re-assigning reuses the client's row.
+// assignedById is a plain string (no FK) like AuditLog's ids, so history survives purges.
+model CoachAssignment {
+  id           String   @id @default(cuid())
+  coachId      String
+  clientId     String   @unique
+  active       Boolean  @default(true)
+  assignedById String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  coach  User @relation("CoachClients", fields: [coachId], references: [id], onDelete: Cascade)
+  client User @relation("ClientCoach", fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([coachId, active])
+  @@map("coach_assignments")
 }

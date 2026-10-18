@@ -21,6 +21,7 @@ const { prismaMock, txMock, verifyGoogleIdToken, envMock } = vi.hoisted(() => {
     challengeParticipant: model(),
     workoutPlan: model(),
     profile: model(),
+    coachAssignment: { updateMany: vi.fn() },
     user: { findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
     $executeRaw: vi.fn().mockResolvedValue(0),
   };

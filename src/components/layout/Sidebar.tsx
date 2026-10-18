@@ -68,8 +68,8 @@ function AccountLink({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 }
 
 function SidebarContent({ collapsed, onNavigate, onClose }: SidebarContentProps) {
-  const { isAdmin, logout } = useAuth();
-  const links = NAV_LINKS.filter((link) => !link.adminOnly || isAdmin);
+  const { isAdmin, canCoach, logout } = useAuth();
+  const links = NAV_LINKS.filter((link) => (!link.adminOnly || isAdmin) && (!link.coachOnly || canCoach));
 
   return (
     <div className="flex h-full flex-col">

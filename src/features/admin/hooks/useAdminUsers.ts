@@ -2,16 +2,25 @@ import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { listAdminUsers } from '../../../services/adminService';
 import { queryKeys } from '../../../lib/queryKeys';
-import type { AccountStatus } from '../../../types/admin.types';
+import type { AccountStatus, UserRole } from '../../../types/admin.types';
 
 const PAGE_SIZE = 20;
 
-export function useAdminUsers() {
-  const [search, setSearchState] = useState('');
-  const [status, setStatusState] = useState<AccountStatus | undefined>(undefined);
-  const [page, setPage] = useState(1);
+export interface AdminUserListFilters {
+  search: string;
+  status: AccountStatus | undefined;
+}
 
-  const filters = { search: search || undefined, status, page, pageSize: PAGE_SIZE };
+/**
+ * One role's slice of the user list (the admin page shows one section per role). Search and status are
+ * shared across sections; each section pages independently, and returns to page 1 when a filter changes.
+ */
+export function useAdminUsers(role: UserRole, { search, status }: AdminUserListFilters) {
+  const filterKey = `${search}|${status ?? ''}`;
+  const [pageState, setPageState] = useState({ filterKey, page: 1 });
+  const page = pageState.filterKey === filterKey ? pageState.page : 1;
+
+  const filters = { search: search || undefined, status, role, page, pageSize: PAGE_SIZE };
 
   const query = useQuery({
     queryKey: queryKeys.admin.users(filters),
@@ -19,25 +28,11 @@ export function useAdminUsers() {
     placeholderData: keepPreviousData,
   });
 
-  function setSearch(value: string) {
-    setSearchState(value);
-    setPage(1);
-  }
-
-  function setStatus(value: AccountStatus | undefined) {
-    setStatusState(value);
-    setPage(1);
-  }
-
   return {
     result: query.data,
     isLoading: query.isLoading,
-    search,
-    setSearch,
-    status,
-    setStatus,
     page,
-    setPage,
+    setPage: (next: number) => setPageState({ filterKey, page: next }),
     pageSize: PAGE_SIZE,
   };
 }

@@ -10,7 +10,7 @@ import BrandLogo from '../ui/BrandLogo';
  * Sidebar instead. Shows just the links that don't require auth.
  */
 export default function Navbar() {
-  const visibleLinks = NAV_LINKS.filter((link) => !link.requiresAuth && !link.adminOnly);
+  const visibleLinks = NAV_LINKS.filter((link) => !link.requiresAuth && !link.adminOnly && !link.coachOnly);
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-border bg-brand-bg">

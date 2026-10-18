@@ -6,6 +6,8 @@ import {
   deleteUser as deleteUserRequest,
   grantAdmin as grantAdminRequest,
   revokeAdmin as revokeAdminRequest,
+  grantCoach as grantCoachRequest,
+  revokeCoach as revokeCoachRequest,
   exportUsersCsv as exportUsersCsvRequest,
 } from '../../../services/adminService';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -80,6 +82,20 @@ export function useAdminUserActions() {
     }
   }
 
+  async function setCoachAccess(userId: string, makeCoach: boolean) {
+    setPendingUserId(userId);
+    try {
+      await (makeCoach ? grantCoachRequest(userId) : revokeCoachRequest(userId));
+      invalidate(userId);
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.coaches() });
+      showSuccessToast(makeCoach ? 'Coach role granted' : 'Coach role revoked');
+    } catch (err) {
+      showErrorToast(err);
+    } finally {
+      setPendingUserId(null);
+    }
+  }
+
   async function exportCsv() {
     try {
       await exportUsersCsvRequest();
@@ -88,5 +104,5 @@ export function useAdminUserActions() {
     }
   }
 
-  return { suspendUser, reactivateUser, deleteUser, setAdminAccess, exportCsv, pendingUserId };
+  return { suspendUser, reactivateUser, deleteUser, setAdminAccess, setCoachAccess, exportCsv, pendingUserId };
 }

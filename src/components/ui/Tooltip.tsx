@@ -7,6 +7,8 @@ interface TooltipProps {
   disabled?: boolean;
   /** `right` centers beside the trigger (sidebar rail); `bottom` sits under it, left-aligned (top-bar buttons near the viewport edge). */
   side?: 'right' | 'bottom';
+  /** Replaces the wrapper's default display class (e.g. `block min-w-0` so a truncating child can shrink inside a table cell). */
+  className?: string;
   children: ReactNode;
 }
 
@@ -14,7 +16,7 @@ interface TooltipProps {
  * Tooltip shown on hover and keyboard focus. Rendered in a portal with fixed
  * positioning so scrolling/overflow containers (the sidebar nav) can't clip it.
  */
-export default function Tooltip({ label, disabled = false, side = 'right', children }: TooltipProps) {
+export default function Tooltip({ label, disabled = false, side = 'right', className, children }: TooltipProps) {
   const id = useId();
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
@@ -32,7 +34,7 @@ export default function Tooltip({ label, disabled = false, side = 'right', child
 
   return (
     <span
-      className={side === 'right' ? 'block' : 'inline-block'}
+      className={className ?? (side === 'right' ? 'block' : 'inline-block')}
       aria-describedby={pos ? id : undefined}
       onMouseEnter={show}
       onMouseLeave={hide}

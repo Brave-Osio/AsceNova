@@ -9,6 +9,8 @@ import type {
   UpdateAchievementInput,
   AuditLogFilters,
   AuditLogResult,
+  AdminCoach,
+  AdminCoachClient,
 } from '../types/admin.types';
 
 /**
@@ -75,6 +77,32 @@ export async function grantAdmin(userId: string): Promise<void> {
 
 export async function revokeAdmin(userId: string): Promise<void> {
   await httpClient.post(`/api/admin/users/${userId}/revoke-admin`);
+}
+
+export async function grantCoach(userId: string): Promise<void> {
+  await httpClient.post(`/api/admin/users/${userId}/grant-coach`);
+}
+
+export async function revokeCoach(userId: string): Promise<void> {
+  await httpClient.post(`/api/admin/users/${userId}/revoke-coach`);
+}
+
+export async function listCoaches(): Promise<AdminCoach[]> {
+  const res = await httpClient.get<{ coaches: AdminCoach[] }>('/api/admin/coaches');
+  return res.data.coaches;
+}
+
+export async function listAdminCoachClients(coachId: string): Promise<AdminCoachClient[]> {
+  const res = await httpClient.get<{ clients: AdminCoachClient[] }>(`/api/admin/coaches/${coachId}/clients`);
+  return res.data.clients;
+}
+
+export async function assignClient(coachId: string, clientId: string): Promise<void> {
+  await httpClient.post(`/api/admin/coaches/${coachId}/clients`, { clientId });
+}
+
+export async function unassignClient(coachId: string, clientId: string): Promise<void> {
+  await httpClient.delete(`/api/admin/coaches/${coachId}/clients/${clientId}`);
 }
 
 export async function getAiUsage(): Promise<AiUsage> {

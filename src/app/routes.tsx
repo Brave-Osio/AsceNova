@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from './router/ProtectedRoute';
 import AdminRoute from './router/AdminRoute';
+import CoachRoute from './router/CoachRoute';
 import { Navigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import LandingPage from '../pages/LandingPage/LandingPage';
@@ -16,6 +17,8 @@ import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
 import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPage';
 import AdminAuditLogsPage from '../pages/AdminAuditLogsPage/AdminAuditLogsPage';
+import CoachPage from '../pages/CoachPage/CoachPage';
+import CoachClientPage from '../pages/CoachClientPage/CoachClientPage';
 import SettingsPage from '../pages/SettingsPage/SettingsPage';
 import ChallengesPage from '../pages/ChallengesPage/ChallengesPage';
 import GoalsPage from '../pages/GoalsPage/GoalsPage';
@@ -46,6 +49,13 @@ export const routes: RouteObject[] = [
           { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
           { path: ROUTES.challenges.slice(1), element: <ChallengesPage /> },
           { path: ROUTES.goals.slice(1), element: <GoalsPage /> },
+        ],
+      },
+      {
+        element: <CoachRoute />,
+        children: [
+          { path: ROUTES.coach.slice(1), element: <CoachPage /> },
+          { path: `${ROUTES.coach.slice(1)}/clients/:clientId`, element: <CoachClientPage /> },
         ],
       },
       {
