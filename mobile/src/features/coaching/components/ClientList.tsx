@@ -5,6 +5,7 @@ import { ChevronRight, Flame } from 'lucide-react-native';
 import { useCoachClients } from '../hooks/useCoachClients';
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
+import TablePagination from '../../../components/ui/TablePagination';
 import TextField from '../../../components/ui/TextField';
 import { fonts, radius, spacing, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
@@ -14,8 +15,7 @@ const STREAK_COLOR = '#fb923c';
 export default function ClientList() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { result, isLoading, isError, refetch, search, setSearch, page, setPage, pageSize } = useCoachClients();
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
+  const { result, isLoading, isError, refetch, search, setSearch, page, setPage, pageSize, setPageSize } = useCoachClients();
 
   return (
     <Card>
@@ -69,20 +69,14 @@ export default function ClientList() {
         </View>
       )}
 
-      {result && result.total > pageSize && (
-        <View style={styles.pager}>
-          <Text style={styles.metaText}>
-            Page {page} of {totalPages} · {result.total} total
-          </Text>
-          <View style={styles.pagerButtons}>
-            <Button variant="secondary" size="sm" fullWidth={false} disabled={page <= 1} onPress={() => setPage(page - 1)}>
-              Prev
-            </Button>
-            <Button variant="secondary" size="sm" fullWidth={false} disabled={page >= totalPages} onPress={() => setPage(page + 1)}>
-              Next
-            </Button>
-          </View>
-        </View>
+      {result && result.total > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={result.total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
     </Card>
   );
@@ -103,7 +97,5 @@ function createStyles(colors: ColorPalette) {
     meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing.md, rowGap: 2 },
     metaText: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.medium },
     streak: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    pager: { marginTop: spacing.md, gap: spacing.sm },
-    pagerButtons: { flexDirection: 'row', gap: spacing.sm },
   });
 }
