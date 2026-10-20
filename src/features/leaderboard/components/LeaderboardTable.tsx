@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Flame, Shield, Trophy } from 'lucide-react';
+import { Flame, Shield, Trophy } from 'lucide-react';
 import { RANK_COLOR_VAR, RANK_ICON } from '../../../constants/rankVisuals';
 import RankWings from './RankWings';
+import TablePagination from '../../../components/ui/TablePagination';
+import { DEFAULT_PAGE_SIZE } from '../../../constants/pagination';
 import type { LeaderboardRowData } from '../hooks/useLeaderboard';
 
-export const LEADERBOARD_PAGE_SIZE = 10;
 
 interface LeaderboardTableProps {
   rows: LeaderboardRowData[];
@@ -42,14 +43,13 @@ function SkeletonRows() {
 
 export default function LeaderboardTable({ rows, isLoading = false }: LeaderboardTableProps) {
   const [requestedPage, setRequestedPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / LEADERBOARD_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   // Clamp during render so a shrinking list never leaves us on a page that no longer exists.
   const page = Math.min(requestedPage, totalPages);
-  const startIndex = (page - 1) * LEADERBOARD_PAGE_SIZE;
-  const pageRows = rows.slice(startIndex, startIndex + LEADERBOARD_PAGE_SIZE);
-  const showingFrom = rows.length === 0 ? 0 : startIndex + 1;
-  const showingTo = startIndex + pageRows.length;
+  const startIndex = (page - 1) * pageSize;
+  const pageRows = rows.slice(startIndex, startIndex + pageSize);
 
   return (
     <div>
@@ -135,32 +135,17 @@ export default function LeaderboardTable({ rows, isLoading = false }: Leaderboar
       </div>
 
       {!isLoading && rows.length > 0 && (
-        <nav aria-label="Leaderboard pages" className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-brand-text-muted" aria-live="polite">
-            Showing {showingFrom} to {showingTo} of {rows.length}
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setRequestedPage(page - 1)}
-              disabled={page <= 1}
-              className="inline-flex items-center gap-1 rounded-full border border-brand-border bg-brand-card px-3.5 py-2 text-xs font-semibold text-brand-text-secondary transition-colors hover:bg-brand-card-alt hover:text-brand-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-brand-card"
-            >
-              <ChevronLeft size={14} aria-hidden="true" /> Previous
-            </button>
-            <span className="min-w-20 text-center text-xs font-semibold text-brand-text-secondary">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setRequestedPage(page + 1)}
-              disabled={page >= totalPages}
-              className="inline-flex items-center gap-1 rounded-full border border-brand-border bg-brand-card px-3.5 py-2 text-xs font-semibold text-brand-text-secondary transition-colors hover:bg-brand-card-alt hover:text-brand-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-brand-card"
-            >
-              Next <ChevronRight size={14} aria-hidden="true" />
-            </button>
-          </div>
-        </nav>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={rows.length}
+          noun="players"
+          onPageChange={setRequestedPage}
+          onPageSizeChange={(next) => {
+            setPageSize(next);
+            setRequestedPage(1);
+          }}
+        />
       )}
     </div>
   );

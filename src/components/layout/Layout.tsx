@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import SidebarToggle from './SidebarToggle';
 import BrandLogo from '../ui/BrandLogo';
+import NotificationBell from '../../features/notifications/components/NotificationBell';
 import CoachPanel from '../../features/coach-chat/components/CoachPanel';
 import { CoachPanelProvider } from '../../features/coach-chat/CoachPanelContext';
 import { ROUTES } from '../../constants/routes';
@@ -48,7 +49,7 @@ export default function Layout() {
     return (
       <div className="flex min-h-svh flex-col bg-brand-bg">
         <Navbar />
-        <main className="flex-1">
+        <main className="flex-1 md:pt-10">
           <Outlet />
         </main>
         <footer className="border-t border-brand-border px-4 py-6 text-center text-xs text-brand-text-muted">
@@ -94,9 +95,13 @@ export default function Layout() {
             </div>
           </div>
 
-          <main className="flex-1 md:pt-10">
+          <main className="flex-1">
             <Outlet />
           </main>
+        </div>
+        {/* Pinned beside the AI coach launcher (CoachPanel's fixed top-right button, 44px wide). */}
+        <div className="fixed right-16 top-2.5 z-40 sm:right-[4.25rem] sm:top-3">
+          <NotificationBell />
         </div>
         <CoachPanel />
       </div>

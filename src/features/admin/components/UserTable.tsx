@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, ChevronLeft, ChevronRight, ShieldCheck, ShieldOff, UserCheck, UserMinus } from 'lucide-react';
+import { Download, ShieldCheck, ShieldOff, UserCheck, UserMinus } from 'lucide-react';
 import { useAdminUsers, type AdminUserListFilters } from '../hooks/useAdminUsers';
 import { useAdminUserActions } from '../hooks/useAdminUserActions';
 import { adminUserDetailPath } from '../../../constants/routes';
 import TextField from '../../../components/ui/TextField';
 import Button from '../../../components/ui/Button';
 import Tooltip from '../../../components/ui/Tooltip';
+import TablePagination from '../../../components/ui/TablePagination';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import { useAuth } from '../../../context/AuthContext';
 import type { AccountStatus, AdminUserListItem, UserRole } from '../../../types/admin.types';
@@ -37,7 +38,7 @@ const SECTIONS: { role: UserRole; title: string; description: string; empty: str
 /** Fixed widths (the username column takes the rest) so every section's columns line up with the others. */
 const COLUMN_WIDTHS = ['', 'w-28', 'w-24', 'w-24', 'w-44', 'w-28', 'w-[25rem]'];
 
-type PendingAction = { kind: 'role' | 'coach' | 'suspend' | 'delete'; user: AdminUserListItem };
+type PendingAction = { kind: 'role' | 'coach' | 'suspend'; user: AdminUserListItem };
 
 const label = (u: AdminUserListItem) => u.email;
 
@@ -51,8 +52,7 @@ interface UserSectionProps {
 }
 
 function UserSection({ section, filters, currentUserId, pendingUserId, onReactivate, onPending }: UserSectionProps) {
-  const { result, isLoading, page, setPage, pageSize } = useAdminUsers(section.role, filters);
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
+  const { result, isLoading, page, setPage, pageSize, setPageSize } = useAdminUsers(section.role, filters);
   const headingId = `user-section-${section.role.toLowerCase()}`;
   const hasFilters = !!filters.search || !!filters.status;
 
@@ -139,9 +139,6 @@ function UserSection({ section, filters, currentUserId, pendingUserId, onReactiv
                           Suspend
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" loading={pendingUserId === u.id} onClick={() => onPending({ kind: 'delete', user: u })}>
-                        Delete
-                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -151,27 +148,21 @@ function UserSection({ section, filters, currentUserId, pendingUserId, onReactiv
         </table>
       </div>
 
-      {result && result.total > pageSize && (
-        <div className="mt-4 flex items-center justify-between text-xs text-brand-text-muted">
-          <span>
-            Page {page} of {totalPages} · {result.total} total
-          </span>
-          <div className="flex gap-2">
-            <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              <ChevronLeft size={14} /> Prev
-            </Button>
-            <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-              Next <ChevronRight size={14} />
-            </Button>
-          </div>
-        </div>
+      {result && result.total > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={result.total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
     </section>
   );
 }
 
 export default function UserTable() {
-  const { suspendUser, reactivateUser, deleteUser, setAdminAccess, setCoachAccess, exportCsv, pendingUserId } = useAdminUserActions();
+  const { suspendUser, reactivateUser, setAdminAccess, setCoachAccess, exportCsv, pendingUserId } = useAdminUserActions();
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<AccountStatus | undefined>(undefined);
@@ -182,8 +173,7 @@ export default function UserTable() {
     if (!pending) return;
     if (pending.kind === 'role') await setAdminAccess(pending.user.id, isGranting);
     else if (pending.kind === 'coach') await setCoachAccess(pending.user.id, pending.user.role !== 'COACH');
-    else if (pending.kind === 'suspend') await suspendUser(pending.user.id);
-    else await deleteUser(pending.user.id);
+    else await suspendUser(pending.user.id);
     setPending(null);
   }
 
@@ -192,13 +182,6 @@ export default function UserTable() {
     const who = <strong>{label(pending.user)}</strong>;
     if (pending.kind === 'suspend') {
       return { title: 'Suspend this account?', description: <>{who} will not be able to sign in until reactivated.</>, confirmLabel: 'Suspend' };
-    }
-    if (pending.kind === 'delete') {
-      return {
-        title: 'Delete this account?',
-        description: <>{who} will be deactivated now and permanently erased after the retention period. This is recorded in the audit log.</>,
-        confirmLabel: 'Delete',
-      };
     }
     if (pending.kind === 'coach') {
       return pending.user.role === 'COACH'

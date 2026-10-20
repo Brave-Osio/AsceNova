@@ -16,6 +16,8 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage/ResetPasswordPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
 import AdminUserDetailPage from '../pages/AdminUserDetailPage/AdminUserDetailPage';
+import AdminUsersPage from '../pages/AdminUsersPage/AdminUsersPage';
+import AdminAchievementsPage from '../pages/AdminAchievementsPage/AdminAchievementsPage';
 import AdminAuditLogsPage from '../pages/AdminAuditLogsPage/AdminAuditLogsPage';
 import CoachPage from '../pages/CoachPage/CoachPage';
 import CoachClientPage from '../pages/CoachClientPage/CoachClientPage';
@@ -62,6 +64,8 @@ export const routes: RouteObject[] = [
         element: <AdminRoute />,
         children: [
           { path: ROUTES.admin.slice(1), element: <AdminDashboardPage /> },
+          { path: ROUTES.adminUsers.slice(1), element: <AdminUsersPage /> },
+          { path: ROUTES.adminAchievements.slice(1), element: <AdminAchievementsPage /> },
           { path: ROUTES.adminAuditLogs.slice(1), element: <AdminAuditLogsPage /> },
           { path: `${ROUTES.admin.slice(1)}/users/:userId`, element: <AdminUserDetailPage /> },
         ],

@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { useCoachClients } from '../hooks/useCoachClients';
 import { coachClientPath } from '../../../constants/routes';
 import TextField from '../../../components/ui/TextField';
-import Button from '../../../components/ui/Button';
+import TablePagination from '../../../components/ui/TablePagination';
 
 export default function ClientTable() {
-  const { result, isLoading, isError, search, setSearch, page, setPage, pageSize } = useCoachClients();
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
+  const { result, isLoading, isError, search, setSearch, page, setPage, pageSize, setPageSize } = useCoachClients();
 
   return (
     <div className="card rounded-2xl p-5">
@@ -79,19 +78,13 @@ export default function ClientTable() {
       </div>
 
       {result && result.total > 0 && (
-        <div className="mt-4 flex items-center justify-between text-xs text-brand-text-muted">
-          <span>
-            Page {page} of {totalPages} · {result.total} total
-          </span>
-          <div className="flex gap-2">
-            <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              <ChevronLeft size={14} /> Prev
-            </Button>
-            <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-              Next <ChevronRight size={14} />
-            </Button>
-          </div>
-        </div>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={result.total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
     </div>
   );

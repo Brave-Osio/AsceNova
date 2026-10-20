@@ -104,7 +104,7 @@ export default function ScheduledWorkoutCard({ date }: { date: string }) {
                 </div>
                 <div className="text-right text-sm text-brand-text-secondary">
                   <span className="font-semibold text-brand-text">
-                    {exercise.sets} × {exercise.reps}
+                    {exercise.sets} sets × {exercise.reps} reps
                   </span>
                   <span className="ml-2 text-xs text-brand-text-muted">rest {exercise.restSeconds}s</span>
                 </div>

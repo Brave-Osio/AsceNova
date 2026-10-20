@@ -6,6 +6,8 @@ import type { AccountStatus, Prisma, Role } from '@prisma/client';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * DAY_MS;
 const THIRTY_DAYS_MS = 30 * DAY_MS;
+/** Window of the per-day series; the admin UI buckets it into daily (30d), weekly (12w) and monthly (6mo) views. */
+const SERIES_DAYS = 180;
 
 /** Neutralises spreadsheet formula injection and quotes fields containing separators. */
 function csvEscape(value: string): string {
@@ -29,6 +31,7 @@ export async function getStats() {
   // "Last N days" = N calendar days inclusive of today (the @db.Date column has no time part).
   const activeSince7d = new Date(startOfUtcDay(new Date(now)).getTime() - 6 * DAY_MS);
   const activeSince30d = new Date(startOfUtcDay(new Date(now)).getTime() - 29 * DAY_MS);
+  const seriesSince = new Date(startOfUtcDay(new Date(now)).getTime() - (SERIES_DAYS - 1) * DAY_MS);
 
   const [
     totalUsers,
@@ -62,7 +65,7 @@ export async function getStats() {
     prisma.dailyProgress.count({ where: { workoutCompleted: true } }),
     prisma.profile.groupBy({ by: ['goal'], _count: { goal: true } }),
     prisma.user.count({ where: { deleted: false, role: 'ADMIN' } }),
-    prisma.user.findMany({ where: { deleted: false, createdAt: { gte: thirtyDaysAgo } }, select: { createdAt: true } }),
+    prisma.user.findMany({ where: { deleted: false, createdAt: { gte: seriesSince } }, select: { createdAt: true } }),
     prisma.dailyProgress
       .groupBy({ by: ['userId'], where: { date: { gte: activeSince7d }, user: { deleted: false } } })
       .then((rows) => rows.length),
@@ -74,12 +77,12 @@ export async function getStats() {
     prisma.challengeParticipant.count({ where: { completedAt: { not: null } } }),
     prisma.dailyProgress.groupBy({
       by: ['date'],
-      where: { date: { gte: activeSince30d }, user: { deleted: false } },
+      where: { date: { gte: seriesSince }, user: { deleted: false } },
       _count: { _all: true },
     }),
     prisma.dailyProgress.groupBy({
       by: ['date'],
-      where: { date: { gte: activeSince30d }, workoutCompleted: true, user: { deleted: false } },
+      where: { date: { gte: seriesSince }, workoutCompleted: true, user: { deleted: false } },
       _count: { _all: true },
     }),
   ]);
@@ -485,13 +488,13 @@ export async function exportUsersCsv(ctx: AdminContext): Promise<string> {
   return [header.join(','), ...rows].join('\n');
 }
 
-/** Last 30 UTC days (inclusive of today), oldest first: distinct active users and completed workouts per day. */
+/** Last SERIES_DAYS UTC days (inclusive of today), oldest first: distinct active users and completed workouts per day. */
 function bucketEngagementByDay(active: { date: Date; count: number }[], workouts: { date: Date; count: number }[]) {
   const activeMap = new Map(active.map((r) => [r.date.toISOString().slice(0, 10), r.count]));
   const workoutMap = new Map(workouts.map((r) => [r.date.toISOString().slice(0, 10), r.count]));
   const todayUtc = startOfUtcDay(new Date());
   const days: { date: string; activeUsers: number; workoutsCompleted: number }[] = [];
-  for (let i = 29; i >= 0; i--) {
+  for (let i = SERIES_DAYS - 1; i >= 0; i--) {
     const key = new Date(todayUtc.getTime() - i * DAY_MS).toISOString().slice(0, 10);
     days.push({ date: key, activeUsers: activeMap.get(key) ?? 0, workoutsCompleted: workoutMap.get(key) ?? 0 });
   }
@@ -499,13 +502,13 @@ function bucketEngagementByDay(active: { date: Date; count: number }[], workouts
 }
 
 /**
- * Last 30 days (oldest first, inclusive of today, UTC days) of signups plus a
+ * Last SERIES_DAYS days (oldest first, inclusive of today, UTC days) of signups plus a
  * running total, so the UI can draw both a daily bar chart and a growth line.
  * `total` is back-computed from today's user count, so it only ever reflects
  * users who still exist.
  */
 function bucketSignupsByDay(createdAts: Date[], totalUsersNow: number) {
-  const DAYS = 30;
+  const DAYS = SERIES_DAYS;
   const counts = new Map<string, number>();
   for (const d of createdAts) {
     const key = d.toISOString().slice(0, 10);

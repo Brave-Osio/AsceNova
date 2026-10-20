@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAuditLogs } from '../../features/admin/hooks/useAuditLogs';
 import PageContainer from '../../components/layout/PageContainer';
 import PageHeader from '../../components/ui/PageHeader';
 import TextField from '../../components/ui/TextField';
 import Button from '../../components/ui/Button';
 import Tooltip from '../../components/ui/Tooltip';
-import { ROUTES } from '../../constants/routes';
+import TablePagination from '../../components/ui/TablePagination';
 import type { AuditAction, AuditEvent, AuditOutcome } from '../../types/admin.types';
 
 const ACTION_LABEL: Record<AuditAction, string> = {
@@ -140,16 +139,12 @@ export default function AdminAuditLogsPage() {
     page,
     setPage,
     pageSize,
+    setPageSize,
   } = useAuditLogs();
   const [selected, setSelected] = useState<AuditEvent | null>(null);
 
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1;
-
   return (
     <PageContainer>
-      <Link to={ROUTES.admin} className="mb-4 flex items-center gap-1 text-xs text-brand-text-muted hover:text-brand-text-secondary">
-        <ArrowLeft size={12} /> Back to Admin
-      </Link>
       <PageHeader
         eyebrow="Admin"
         title="Audit logs"
@@ -305,19 +300,14 @@ export default function AdminAuditLogsPage() {
         </div>
 
         {result && result.total > 0 && (
-          <div className="mt-4 flex items-center justify-between text-xs text-brand-text-muted">
-            <span>
-              Page {page} of {totalPages} · {result.total} event{result.total === 1 ? '' : 's'}
-            </span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                <ChevronLeft size={14} /> Prev
-              </Button>
-              <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                Next <ChevronRight size={14} />
-              </Button>
-            </div>
-          </div>
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={result.total}
+            noun={result.total === 1 ? 'event' : 'events'}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         )}
       </div>
 
