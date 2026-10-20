@@ -51,7 +51,7 @@ const NAV_ITEMS: NavItem[] = [
 const DRAWER_WIDTH = 256;
 const TOP_BAR_HEIGHT = 56;
 
-/** The web's phone-width chrome: sticky top bar (hamburger + logo + coach launcher) and an off-canvas drawer. */
+/** The web's phone-width chrome: sticky top bar (hamburger + logo + notification bell + coach launcher) and an off-canvas drawer. */
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <CoachPanelProvider>
@@ -118,9 +118,12 @@ function AppShellInner({ children }: { children: ReactNode }) {
           <BrandLogo size={30} />
           <Text style={styles.logoText}>AsceNova</Text>
         </View>
-        <Pressable onPress={openCoach} accessibilityRole="button" accessibilityLabel="Open AI coach chat" style={styles.coachButton}>
-          <Bot size={20} color="#fff" />
-        </Pressable>
+        <View style={styles.topActions}>
+          <NotificationBell />
+          <Pressable onPress={openCoach} accessibilityRole="button" accessibilityLabel="Open AI coach chat" style={styles.coachButton}>
+            <Bot size={20} color="#fff" />
+          </Pressable>
+        </View>
       </View>
 
       {/* Android draws edge-to-edge, so the OS no longer resizes the window for the keyboard — pad here, once, for every screen. */}
@@ -174,7 +177,6 @@ function AppShellInner({ children }: { children: ReactNode }) {
             </View>
 
             <View style={styles.drawerFooter}>
-              <NotificationBell />
               <Pressable onPress={toggleTheme} style={styles.navItem} accessibilityRole="button">
                 {theme === 'dark' ? (
                   <Sun size={18} color={colors.textSecondary} />
@@ -224,8 +226,8 @@ function createStyles(colors: ColorPalette) {
       justifyContent: 'center',
       backgroundColor: colors.cardAlt,
     },
+    topActions: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     coachButton: {
-      marginLeft: 'auto',
       width: 40,
       height: 40,
       borderRadius: radius.full,

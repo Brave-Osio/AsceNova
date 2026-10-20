@@ -36,7 +36,7 @@ function ExerciseRow({ exercise, styles, colors }: { exercise: WorkoutExercise; 
       <View style={styles.exerciseTop}>
         <Text style={styles.exerciseName}>{exercise.name}</Text>
         <Text style={styles.exerciseSets} numberOfLines={1}>
-          {exercise.sets} × {exercise.reps}
+          {exercise.sets} sets × {exercise.reps} reps
         </Text>
       </View>
       <View style={styles.exerciseMetaRow}>

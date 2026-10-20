@@ -74,8 +74,8 @@ function NotificationRow({
 }
 
 /**
- * Drawer-footer entry for the web's NotificationBell: a bell row with an unread badge that
- * opens a bottom-sheet panel. Renders nothing when logged out.
+ * The web's NotificationBell as a round icon button with an unread badge, shown in the top bar beside
+ * the AI coach launcher. Opens a bottom-sheet panel. Renders nothing when logged out.
  */
 export default function NotificationBell() {
   const { colors } = useAppTheme();
@@ -91,19 +91,16 @@ export default function NotificationBell() {
     <>
       <Pressable
         onPress={() => setIsOpen(true)}
-        style={styles.bellRow}
+        style={styles.bellButton}
         accessibilityRole="button"
         accessibilityLabel="Notifications"
       >
-        <View>
-          <Bell size={18} color={colors.textSecondary} />
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-            </View>
-          )}
-        </View>
-        <Text style={styles.bellLabel}>Notifications</Text>
+        <Bell size={20} color={colors.textPrimary} />
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+          </View>
+        )}
       </Pressable>
 
       <Modal visible={isOpen} transparent animationType="slide" onRequestClose={() => setIsOpen(false)}>
@@ -144,19 +141,18 @@ export default function NotificationBell() {
 
 function createStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    bellRow: {
-      flexDirection: 'row',
+    bellButton: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.full,
       alignItems: 'center',
-      gap: spacing.sm + 4,
-      paddingVertical: 10,
-      paddingHorizontal: spacing.sm + 4,
-      borderRadius: radius.md,
+      justifyContent: 'center',
+      backgroundColor: colors.cardAlt,
     },
-    bellLabel: { color: colors.textSecondary, fontSize: 14, fontFamily: fonts.medium },
     badge: {
       position: 'absolute',
-      top: -6,
-      right: -8,
+      top: -4,
+      right: -4,
       minWidth: 16,
       height: 16,
       paddingHorizontal: 4,

@@ -90,7 +90,7 @@ export default function ScheduledWorkoutCard({ date }: { date: string }) {
                 </View>
                 <View style={styles.exerciseSets}>
                   <Text style={styles.setsText}>
-                    {exercise.sets} × {exercise.reps}
+                    {exercise.sets} sets × {exercise.reps} reps
                   </Text>
                   <Text style={styles.rest}>rest {exercise.restSeconds}s</Text>
                 </View>

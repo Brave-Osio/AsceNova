@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { ChevronLeft, ChevronRight, Flame, Shield, Trophy } from 'lucide-react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Flame, Shield, Trophy } from 'lucide-react-native';
 import { RANK_COLOR, RANK_ICON } from '../../../constants/rankVisuals';
 import RankWings from './RankWings';
 import { CardGroup } from '../../../components/ui/Card';
+import TablePagination from '../../../components/ui/TablePagination';
+import { DEFAULT_PAGE_SIZE } from '../../../constants/pagination';
 import type { LeaderboardRowData } from '../../../services/leaderboardService';
 import { fonts, radius, spacing, type ColorPalette } from '../../../theme';
 import { useAppTheme } from '../../../context/ThemeContext';
-
-export const LEADERBOARD_PAGE_SIZE = 10;
 
 const STREAK_COLOR = '#fb923c';
 
@@ -81,19 +81,18 @@ function Row({ row, colors, styles, last }: { row: LeaderboardRowData; colors: C
   );
 }
 
-/** Mirrors the web's LeaderboardTable: podium treatment, tinted rank pills, and 10-per-page pagination. */
+/** Mirrors the web's LeaderboardTable: podium treatment, tinted rank pills, and editable pagination. */
 export default function LeaderboardTable({ rows, isLoading = false }: { rows: LeaderboardRowData[]; isLoading?: boolean }) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [requestedPage, setRequestedPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / LEADERBOARD_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   // Clamp during render so a shrinking list never leaves us on a page that no longer exists.
   const page = Math.min(requestedPage, totalPages);
-  const startIndex = (page - 1) * LEADERBOARD_PAGE_SIZE;
-  const pageRows = rows.slice(startIndex, startIndex + LEADERBOARD_PAGE_SIZE);
-  const showingFrom = rows.length === 0 ? 0 : startIndex + 1;
-  const showingTo = startIndex + pageRows.length;
+  const startIndex = (page - 1) * pageSize;
+  const pageRows = rows.slice(startIndex, startIndex + pageSize);
 
   return (
     <View>
@@ -123,36 +122,17 @@ export default function LeaderboardTable({ rows, isLoading = false }: { rows: Le
       </CardGroup>
 
       {!isLoading && rows.length > 0 && (
-        <View style={styles.pager}>
-          <Text style={styles.pagerInfo} accessibilityLiveRegion="polite">
-            Showing {showingFrom} to {showingTo} of {rows.length}
-          </Text>
-          <View style={styles.pagerButtons}>
-            <Pressable
-              onPress={() => setRequestedPage(page - 1)}
-              disabled={page <= 1}
-              accessibilityRole="button"
-              accessibilityLabel="Previous page"
-              style={[styles.pagerButton, page <= 1 && styles.pagerDisabled]}
-            >
-              <ChevronLeft size={14} color={colors.textSecondary} />
-              <Text style={styles.pagerButtonText}>Previous</Text>
-            </Pressable>
-            <Text style={styles.pagerPage}>
-              Page {page} of {totalPages}
-            </Text>
-            <Pressable
-              onPress={() => setRequestedPage(page + 1)}
-              disabled={page >= totalPages}
-              accessibilityRole="button"
-              accessibilityLabel="Next page"
-              style={[styles.pagerButton, page >= totalPages && styles.pagerDisabled]}
-            >
-              <Text style={styles.pagerButtonText}>Next</Text>
-              <ChevronRight size={14} color={colors.textSecondary} />
-            </Pressable>
-          </View>
-        </View>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={rows.length}
+          noun="players"
+          onPageChange={setRequestedPage}
+          onPageSizeChange={(next) => {
+            setPageSize(next);
+            setRequestedPage(1);
+          }}
+        />
       )}
     </View>
   );
@@ -187,22 +167,5 @@ function createStyles(colors: ColorPalette) {
     streak: { fontSize: 14, fontFamily: fonts.semibold, color: STREAK_COLOR },
     state: { alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.xl },
     empty: { color: colors.textSecondary, fontFamily: fonts.regular, fontSize: 14, textAlign: 'center' },
-    pager: { marginTop: spacing.md, gap: spacing.sm + 4 },
-    pagerInfo: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.regular },
-    pagerButtons: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-    pagerButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      borderRadius: radius.full,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceAlt,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-    },
-    pagerDisabled: { opacity: 0.4 },
-    pagerButtonText: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.semibold },
-    pagerPage: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.semibold },
   });
 }
