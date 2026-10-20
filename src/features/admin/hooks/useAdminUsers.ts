@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { listAdminUsers } from '../../../services/adminService';
 import { queryKeys } from '../../../lib/queryKeys';
+import { DEFAULT_PAGE_SIZE } from '../../../constants/pagination';
 import type { AccountStatus, UserRole } from '../../../types/admin.types';
-
-const PAGE_SIZE = 20;
 
 export interface AdminUserListFilters {
   search: string;
@@ -18,9 +17,10 @@ export interface AdminUserListFilters {
 export function useAdminUsers(role: UserRole, { search, status }: AdminUserListFilters) {
   const filterKey = `${search}|${status ?? ''}`;
   const [pageState, setPageState] = useState({ filterKey, page: 1 });
+  const [pageSize, setPageSizeState] = useState(DEFAULT_PAGE_SIZE);
   const page = pageState.filterKey === filterKey ? pageState.page : 1;
 
-  const filters = { search: search || undefined, status, role, page, pageSize: PAGE_SIZE };
+  const filters = { search: search || undefined, status, role, page, pageSize };
 
   const query = useQuery({
     queryKey: queryKeys.admin.users(filters),
@@ -33,6 +33,10 @@ export function useAdminUsers(role: UserRole, { search, status }: AdminUserListF
     isLoading: query.isLoading,
     page,
     setPage: (next: number) => setPageState({ filterKey, page: next }),
-    pageSize: PAGE_SIZE,
+    pageSize,
+    setPageSize: (next: number) => {
+      setPageSizeState(next);
+      setPageState({ filterKey, page: 1 });
+    },
   };
 }

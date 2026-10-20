@@ -23,7 +23,7 @@ describe('LeaderboardTable pagination', () => {
     render(<LeaderboardTable rows={makeRows(25)} />);
     expect(visibleNames()).toHaveLength(10);
     expect(visibleNames()[0]).toBe('User 1');
-    expect(screen.getByText('Page 1 of 3')).toBeTruthy();
+    expect(screen.getByText(/Page 1 of 3/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
     expect(visibleNames()[0]).toBe('User 11');
@@ -33,12 +33,12 @@ describe('LeaderboardTable pagination', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
     expect(visibleNames()).toHaveLength(5);
-    expect(screen.getByText('Page 3 of 3')).toBeTruthy();
+    expect(screen.getByText(/Page 3 of 3/)).toBeTruthy();
   });
 
   it('disables Previous on the first page and Next on the last page', () => {
     render(<LeaderboardTable rows={makeRows(25)} />);
-    const prev = screen.getByRole('button', { name: /previous/i }) as HTMLButtonElement;
+    const prev = screen.getByRole('button', { name: /prev/i }) as HTMLButtonElement;
     const next = screen.getByRole('button', { name: /next/i }) as HTMLButtonElement;
     expect(prev.disabled).toBe(true);
     expect(next.disabled).toBe(false);
@@ -57,6 +57,13 @@ describe('LeaderboardTable pagination', () => {
     expect(rowsWithWings).toHaveLength(6);
   });
 
+  it('lets the rows-per-page size be changed', () => {
+    render(<LeaderboardTable rows={makeRows(25)} />);
+    fireEvent.change(screen.getByLabelText(/rows per page/i), { target: { value: '25' } });
+    expect(visibleNames()).toHaveLength(25);
+    expect(screen.getByText(/Page 1 of 1/)).toBeTruthy();
+  });
+
   it('shows an empty state and a loading state without pagination controls', () => {
     const { rerender } = render(<LeaderboardTable rows={[]} />);
     expect(screen.getByText(/No one is on the leaderboard yet/)).toBeTruthy();
@@ -67,7 +74,7 @@ describe('LeaderboardTable pagination', () => {
 
   it('shows a single page without enabling either control for 10 or fewer rows', () => {
     render(<LeaderboardTable rows={makeRows(10)} />);
-    expect(screen.getByText('Page 1 of 1')).toBeTruthy();
+    expect(screen.getByText(/Page 1 of 1/)).toBeTruthy();
     expect((screen.getByRole('button', { name: /next/i }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

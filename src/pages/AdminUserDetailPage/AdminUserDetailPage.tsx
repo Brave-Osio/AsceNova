@@ -21,8 +21,8 @@ function Row({ label, value }: { label: string; value: string }) {
 export default function AdminUserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
   const { detail, isLoading } = useAdminUserDetail(userId ?? '');
-  const { suspendUser, reactivateUser, deleteUser, pendingUserId } = useAdminUserActions();
-  const [pending, setPending] = useState<'suspend' | 'delete' | null>(null);
+  const { suspendUser, reactivateUser, pendingUserId } = useAdminUserActions();
+  const [pending, setPending] = useState<'suspend' | null>(null);
 
   if (isLoading || !detail) {
     return (
@@ -37,14 +37,13 @@ export default function AdminUserDetailPage() {
 
   async function confirmPending() {
     if (pending === 'suspend') await suspendUser(user.id);
-    else if (pending === 'delete') await deleteUser(user.id);
     setPending(null);
   }
 
   return (
     <PageContainer>
-      <Link to={ROUTES.admin} className="flex items-center gap-1 text-xs text-brand-text-muted hover:text-brand-text-secondary">
-        <ArrowLeft size={12} /> Back to Admin
+      <Link to={ROUTES.adminUsers} className="flex items-center gap-1 text-xs text-brand-text-muted hover:text-brand-text-secondary">
+        <ArrowLeft size={12} /> Back to Users
       </Link>
 
       <div className="mt-4 flex items-start justify-between gap-4">
@@ -62,9 +61,6 @@ export default function AdminUserDetailPage() {
               Suspend
             </Button>
           )}
-          <Button size="sm" variant="ghost" loading={isPending} onClick={() => setPending('delete')}>
-            Delete
-          </Button>
         </div>
       </div>
 
@@ -106,13 +102,9 @@ export default function AdminUserDetailPage() {
 
       <ConfirmDialog
         isOpen={pending !== null}
-        title={pending === 'delete' ? 'Delete this account?' : 'Suspend this account?'}
-        description={
-          pending === 'delete'
-            ? 'The account is deactivated now and permanently erased after the retention period. This is recorded in the audit log.'
-            : 'The user will not be able to sign in until reactivated. This is recorded in the audit log.'
-        }
-        confirmLabel={pending === 'delete' ? 'Delete' : 'Suspend'}
+        title="Suspend this account?"
+        description="The user will not be able to sign in until reactivated. This is recorded in the audit log."
+        confirmLabel="Suspend"
         isLoading={isPending}
         onConfirm={confirmPending}
         onCancel={() => setPending(null)}

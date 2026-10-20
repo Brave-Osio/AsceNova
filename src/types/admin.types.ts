@@ -21,7 +21,7 @@ export interface AdminStats {
   totalWorkoutsCompleted: number;
   challengeParticipants: number;
   challengeCompletions: number;
-  /** Last 30 UTC days, oldest first. */
+  /** Last 180 UTC days, oldest first. */
   engagementByDay: { date: string; activeUsers: number; workoutsCompleted: number }[];
 }
 

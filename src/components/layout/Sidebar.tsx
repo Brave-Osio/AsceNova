@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import { LogOut, X } from 'lucide-react';
 import { ROUTES } from '../../constants/routes';
 import { NAV_LINKS } from '../../constants/navLinks';
-import NotificationBell from '../../features/notifications/components/NotificationBell';
 import { useProfile } from '../../features/profile/hooks/useProfile';
 import ThemeToggle from '../ui/ThemeToggle';
 import BrandLogo from '../ui/BrandLogo';
@@ -69,7 +68,35 @@ function AccountLink({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 
 function SidebarContent({ collapsed, onNavigate, onClose }: SidebarContentProps) {
   const { isAdmin, canCoach, logout } = useAuth();
-  const links = NAV_LINKS.filter((link) => (!link.adminOnly || isAdmin) && (!link.coachOnly || canCoach));
+  // Home is a logged-out destination; signed-in users start from the dashboard (the logo still links to the landing page).
+  const visible = NAV_LINKS.filter(
+    (link) => link.to !== ROUTES.landing && (!link.adminOnly || isAdmin) && (!link.coachOnly || canCoach),
+  );
+  const links = visible.filter((link) => !link.adminSection);
+  const adminLinks = visible.filter((link) => link.adminSection);
+
+  const renderLink = (link: (typeof NAV_LINKS)[number]) => (
+    <Tooltip key={link.to} label={link.label} disabled={!collapsed}>
+      <NavLink
+        to={link.to}
+        end={link.to === ROUTES.admin}
+        onClick={onNavigate}
+        aria-label={collapsed ? link.label : undefined}
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-colors ${FOCUS_RING} ${
+            collapsed ? 'justify-center px-0' : 'px-3'
+          } ${
+            isActive
+              ? 'bg-brand-primary/15 text-brand-primary-light'
+              : 'text-brand-text-secondary hover:bg-brand-card-alt hover:text-brand-text'
+          }`
+        }
+      >
+        <link.icon size={18} className="flex-shrink-0" />
+        {!collapsed && <span className="truncate">{link.label}</span>}
+      </NavLink>
+    </Tooltip>
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -91,35 +118,23 @@ function SidebarContent({ collapsed, onNavigate, onClose }: SidebarContentProps)
       </div>
 
       <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
-        {links.map((link) => (
-          <Tooltip key={link.to} label={link.label} disabled={!collapsed}>
-            <NavLink
-              to={link.to}
-              end={link.to === ROUTES.landing}
-              onClick={onNavigate}
-              aria-label={collapsed ? link.label : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-colors ${FOCUS_RING} ${
-                  collapsed ? 'justify-center px-0' : 'px-3'
-                } ${
-                  isActive
-                    ? 'bg-brand-primary/15 text-brand-primary-light'
-                    : 'text-brand-text-secondary hover:bg-brand-card-alt hover:text-brand-text'
-                }`
-              }
-            >
-              <link.icon size={18} className="flex-shrink-0" />
-              {!collapsed && <span className="truncate">{link.label}</span>}
-            </NavLink>
-          </Tooltip>
-        ))}
+        {links.map(renderLink)}
+        {adminLinks.length > 0 && (
+          <div role="group" aria-label="Admin" className="pt-3">
+            {collapsed ? (
+              <div className="mx-2 mb-2 border-t border-brand-border" />
+            ) : (
+              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-brand-text-muted">Admin</p>
+            )}
+            <div className="space-y-1">{adminLinks.map(renderLink)}</div>
+          </div>
+        )}
       </nav>
 
-      {/* Footer hierarchy: theme + notifications, then account, then logout. */}
+      {/* Footer hierarchy: theme, then account, then logout. Notifications live in the top-right bar. */}
       <div className={`flex flex-shrink-0 flex-col gap-2 border-t border-brand-border p-2 ${collapsed ? 'items-center' : ''}`}>
         <div className={`flex items-center gap-2 ${collapsed ? 'flex-col' : 'px-1'}`}>
           <ThemeToggle />
-          <NotificationBell placement="side" />
         </div>
         <AccountLink collapsed={collapsed} onNavigate={onNavigate} />
         <Tooltip label="Log Out" disabled={!collapsed}>

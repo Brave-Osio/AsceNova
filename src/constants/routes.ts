@@ -17,6 +17,8 @@ export const ROUTES = {
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   admin: '/admin',
+  adminUsers: '/admin/users',
+  adminAchievements: '/admin/achievements',
   adminAuditLogs: '/admin/audit-logs',
   settings: '/settings',
   challenges: '/challenges',

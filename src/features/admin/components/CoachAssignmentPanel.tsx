@@ -70,7 +70,7 @@ function CoachClients({ coachId }: { coachId: string }) {
   const { data: matches } = useQuery({
     queryKey: queryKeys.admin.users({ search: term, picker: true }),
     queryFn: () => listAdminUsers({ search: term, status: 'ACTIVE', page: 1, pageSize: 8 }),
-    enabled: term.length >= 2,
+    enabled: term.length >= 1,
   });
   const clientIds = new Set(clients.map((c) => c.id));
   const candidates = (matches?.users ?? []).filter((u) => u.role === 'USER' && !clientIds.has(u.id));
@@ -99,7 +99,7 @@ function CoachClients({ coachId }: { coachId: string }) {
       <div className="mt-4 w-64">
         <TextField label="Add a client" value={search} onChange={setSearch} placeholder="Search username…" />
       </div>
-      {term.length >= 2 && (
+      {term.length >= 1 && (
         <ul className="mt-2 divide-y divide-brand-border">
           {candidates.length === 0 ? (
             <li className="py-2 text-sm text-brand-text-muted">No matching regular users.</li>

@@ -1,15 +1,13 @@
 import { useAdminStats } from '../../features/admin/hooks/useAdminStats';
-import UserTable from '../../features/admin/components/UserTable';
-import AchievementEditor from '../../features/admin/components/AchievementEditor';
+import { useState } from 'react';
 import DonutChart from '../../components/charts/DonutChart';
 import SimpleBarChart from '../../components/charts/SimpleBarChart';
 import SimpleLineChart from '../../components/charts/SimpleLineChart';
 import Button from '../../components/ui/Button';
 import AiUsageCard from '../../features/admin/components/AiUsageCard';
 import PageContainer from '../../components/layout/PageContainer';
-import { Link } from 'react-router-dom';
-import { ScrollText } from 'lucide-react';
-import { ROUTES } from '../../constants/routes';
+import PageHeader from '../../components/ui/PageHeader';
+import { bucketSeries, RANGE_OPTIONS, type AnalyticsRange } from '../../features/admin/analyticsRange';
 
 const GOAL_LABEL: Record<string, string> = {
   WEIGHT_LOSS: 'Weight Loss',
@@ -37,26 +35,39 @@ function ChartCard({ title, description, children }: { title: string; descriptio
   );
 }
 
-/** "2026-09-30" -> "09-30", matching the weight chart's compact axis labels. */
-const shortDate = (iso: string) => iso.slice(5);
-
 export default function AdminDashboardPage() {
   const { stats, isLoading, isError, refetch } = useAdminStats();
+  const [range, setRange] = useState<AnalyticsRange>('daily');
+  const windowLabel = RANGE_OPTIONS.find((o) => o.value === range)?.window ?? '';
+  const unit = range === 'daily' ? 'day' : range === 'weekly' ? 'week' : 'month';
+  const signups = bucketSeries(stats?.signupsByDay.map((d) => ({ date: d.date, value: d.count })) ?? [], range);
+  const growth = bucketSeries(stats?.signupsByDay.map((d) => ({ date: d.date, value: d.total })) ?? [], range, 'last');
+  const activeUsers = bucketSeries(stats?.engagementByDay.map((d) => ({ date: d.date, value: d.activeUsers })) ?? [], range);
+  const workouts = bucketSeries(stats?.engagementByDay.map((d) => ({ date: d.date, value: d.workoutsCompleted })) ?? [], range);
 
   return (
     <PageContainer>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-brand-text-muted mb-1">Admin</p>
-          <h1 className="text-2xl font-extrabold text-brand-text sm:text-3xl">Platform Overview</h1>
-        </div>
-        <Link
-          to={ROUTES.adminAuditLogs}
-          className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-card px-4 py-2 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-card-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60"
-        >
-          <ScrollText size={14} /> Audit logs
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Analytics"
+        actions={
+          <div role="group" aria-label="Analytics range" className="inline-flex rounded-full border border-brand-border bg-brand-card p-1">
+            {RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={range === option.value}
+                onClick={() => setRange(option.value)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 ${
+                  range === option.value ? 'bg-brand-primary text-white' : 'text-brand-text-secondary hover:text-brand-text'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {isLoading ? (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" aria-busy="true">
@@ -102,39 +113,31 @@ export default function AdminDashboardPage() {
               )}
             </ChartCard>
 
-            <ChartCard title="New Users per Day" description="Signups over the past 30 days (UTC).">
-              {stats.newUsers30d === 0 ? (
-                <p className="py-10 text-center text-sm text-brand-text-muted">No signups in the past 30 days.</p>
+            <ChartCard title={`New Users per ${unit}`} description={`Signups, ${windowLabel} (UTC).`}>
+              {signups.every((p) => p.value === 0) ? (
+                <p className="py-10 text-center text-sm text-brand-text-muted">No signups in the {windowLabel}.</p>
               ) : (
-                <SimpleBarChart
-                  unitLabel="new users"
-                  data={stats.signupsByDay.map((d) => ({ label: shortDate(d.date), value: d.count }))}
-                />
+                <SimpleBarChart unitLabel="new users" data={signups} />
               )}
             </ChartCard>
 
             <ChartCard
-              title="Daily Active Users"
-              description="Distinct users with a daily check-in each day, past 30 days (UTC)."
+              title={range === 'daily' ? 'Daily Active Users' : `Active Check-ins per ${unit}`}
+              description={
+                range === 'daily'
+                  ? `Distinct users with a daily check-in each day, ${windowLabel} (UTC).`
+                  : `Daily distinct active users added up per ${unit}, ${windowLabel} (UTC). A user active on several days counts once per day.`
+              }
             >
-              <SimpleBarChart
-                unitLabel="active users"
-                data={stats.engagementByDay.map((d) => ({ label: shortDate(d.date), value: d.activeUsers }))}
-              />
+              <SimpleBarChart unitLabel={range === 'daily' ? 'active users' : 'active user-days'} data={activeUsers} />
             </ChartCard>
 
-            <ChartCard title="Workouts Completed per Day" description="Daily check-ins with the workout marked done, past 30 days (UTC).">
-              <SimpleBarChart
-                unitLabel="workouts"
-                data={stats.engagementByDay.map((d) => ({ label: shortDate(d.date), value: d.workoutsCompleted }))}
-              />
+            <ChartCard title={`Workouts Completed per ${unit}`} description={`Daily check-ins with the workout marked done, ${windowLabel} (UTC).`}>
+              <SimpleBarChart unitLabel="workouts" data={workouts} />
             </ChartCard>
 
-            <ChartCard title="User Growth" description="Total accounts over the past 30 days.">
-              <SimpleLineChart
-                unitLabel=" users"
-                data={stats.signupsByDay.map((d) => ({ label: shortDate(d.date), value: d.total }))}
-              />
+            <ChartCard title="User Growth" description={`Total accounts at the end of each ${unit}, ${windowLabel}.`}>
+              <SimpleLineChart unitLabel=" users" data={growth} />
             </ChartCard>
           </div>
           <div className="mt-4">
@@ -158,13 +161,6 @@ export default function AdminDashboardPage() {
         </>
       )}
 
-      <div className="mt-8">
-        <UserTable />
-      </div>
-
-      <div className="mt-8">
-        <AchievementEditor />
-      </div>
     </PageContainer>
   );
 }

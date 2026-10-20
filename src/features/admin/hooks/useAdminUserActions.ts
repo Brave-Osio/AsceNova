@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   suspendUser as suspendUserRequest,
   reactivateUser as reactivateUserRequest,
-  deleteUser as deleteUserRequest,
   grantAdmin as grantAdminRequest,
   revokeAdmin as revokeAdminRequest,
   grantCoach as grantCoachRequest,
@@ -56,19 +55,6 @@ export function useAdminUserActions() {
     }
   }
 
-  async function deleteUser(userId: string) {
-    setPendingUserId(userId);
-    try {
-      await deleteUserRequest(userId);
-      invalidate(userId);
-      showSuccessToast('User deleted');
-    } catch (err) {
-      showErrorToast(err);
-    } finally {
-      setPendingUserId(null);
-    }
-  }
-
   async function setAdminAccess(userId: string, makeAdmin: boolean) {
     setPendingUserId(userId);
     try {
@@ -104,5 +90,5 @@ export function useAdminUserActions() {
     }
   }
 
-  return { suspendUser, reactivateUser, deleteUser, setAdminAccess, setCoachAccess, exportCsv, pendingUserId };
+  return { suspendUser, reactivateUser, setAdminAccess, setCoachAccess, exportCsv, pendingUserId };
 }

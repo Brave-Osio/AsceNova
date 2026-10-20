@@ -40,10 +40,6 @@ export async function reactivateUser(userId: string): Promise<void> {
   await httpClient.post(`/api/admin/users/${userId}/reactivate`);
 }
 
-export async function deleteUser(userId: string): Promise<void> {
-  await httpClient.delete(`/api/admin/users/${userId}`);
-}
-
 /**
  * Triggers a browser download rather than returning a URL — the export
  * endpoint requires the Authorization header the axios interceptor

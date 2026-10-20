@@ -32,7 +32,7 @@ function ExerciseRow({ exercise }: { exercise: WorkoutExercise }) {
       <div className="flex items-start justify-between gap-2">
         <span className="text-sm font-semibold text-brand-text">{exercise.name}</span>
         <span className="whitespace-nowrap text-xs font-bold text-brand-primary-light">
-          {exercise.sets} × {exercise.reps}
+          {exercise.sets} sets × {exercise.reps} reps
         </span>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-brand-text-muted">

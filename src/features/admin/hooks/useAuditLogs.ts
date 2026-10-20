@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { listAuditLogs } from '../../../services/adminService';
 import { queryKeys } from '../../../lib/queryKeys';
+import { DEFAULT_PAGE_SIZE } from '../../../constants/pagination';
 import type { AuditAction, AuditOutcome } from '../../../types/admin.types';
-
-const PAGE_SIZE = 20;
 
 export interface AuditLogFilterState {
   actor: string;
@@ -28,6 +27,7 @@ function endOfLocalDayIso(day: string): string {
 export function useAuditLogs() {
   const [filters, setFiltersState] = useState<AuditLogFilterState>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSizeState] = useState(DEFAULT_PAGE_SIZE);
 
   const params = {
     actor: filters.actor.trim() || undefined,
@@ -36,17 +36,26 @@ export function useAuditLogs() {
     from: filters.fromDay ? startOfLocalDayIso(filters.fromDay) : undefined,
     to: filters.toDay ? endOfLocalDayIso(filters.toDay) : undefined,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
   };
 
   const query = useQuery({
     queryKey: queryKeys.admin.auditLogs(params),
     queryFn: () => listAuditLogs(params),
     placeholderData: keepPreviousData,
+    // Live view: new events appear without a manual refresh, and reopening the page refetches immediately.
+    refetchInterval: 5_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   function setFilters(next: Partial<AuditLogFilterState>) {
     setFiltersState((prev) => ({ ...prev, ...next }));
+    setPage(1);
+  }
+
+  function setPageSize(next: number) {
+    setPageSizeState(next);
     setPage(1);
   }
 
@@ -71,6 +80,7 @@ export function useAuditLogs() {
     rangeIsInvalid,
     page,
     setPage,
-    pageSize: PAGE_SIZE,
+    pageSize,
+    setPageSize,
   };
 }
