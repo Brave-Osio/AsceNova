@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { NotebookPen } from 'lucide-react';
@@ -7,16 +6,13 @@ import { ROUTES } from '../../constants/routes';
 import PageHeader from '../../components/ui/PageHeader';
 import DailyLogForm from '../../features/daily-log/components/DailyLogForm';
 import ScheduledWorkoutCard from '../../features/workouts/components/ScheduledWorkoutCard';
-import { useToday } from '../../hooks/useToday';
+import { useSelectedDate } from '../../hooks/useSelectedDate';
 import { toDateString } from '../../utils/dateUtils';
 import PageContainer from '../../components/layout/PageContainer';
 
 export default function DailyLogPage() {
   const { data: profile, isLoading } = useProfile();
-  const today = useToday();
-  // null = "follow today", so a page left open past midnight moves on to the new day by itself.
-  const [pickedDate, setPickedDate] = useState<string | null>(null);
-  const selectedDate = pickedDate && pickedDate <= today ? pickedDate : today;
+  const { today, selectedDate, setSelectedDate } = useSelectedDate();
   const earliest = toDateString(new Date(new Date(`${today}T00:00:00`).getTime() - 7 * 24 * 60 * 60 * 1000));
 
   if (isLoading) return null;
@@ -55,7 +51,7 @@ export default function DailyLogPage() {
             value={selectedDate}
             min={earliest}
             max={today}
-            onChange={(e) => setPickedDate(e.target.value && e.target.value !== today ? e.target.value : null)}
+            onChange={(e) => setSelectedDate(e.target.value && e.target.value !== today ? e.target.value : null)}
             className="w-full rounded-xl border border-brand-border bg-brand-card px-4 py-2.5 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/60"
           />
         </label>
@@ -67,7 +63,7 @@ export default function DailyLogPage() {
         transition={{ delay: 0.15, duration: 0.4 }}
         className="mt-8"
       >
-        <DailyLogForm />
+        <DailyLogForm date={selectedDate} isToday={selectedDate === today} />
       </motion.div>
     </PageContainer>
   );

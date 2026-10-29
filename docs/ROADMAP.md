@@ -558,13 +558,19 @@ Frontend-led, no schema changes. Profile and Settings are one page at `/settings
 
 ## Phase 15 — Compliance & activity features (Oct 2026)
 
-✅ Implemented (web + server; **mobile parity pending**): BMI card (computed on read from profile height/weight), admin dashboard engagement metrics with minimal-data user list, append-only admin audit log + `/admin/audit-logs` page, scheduled workout + idempotent "Mark as Done" in Daily Logs, dashboard "today" rollover (`useToday`), self-service account deletion, retention job. Details and limits: `docs/DATA_RETENTION.md`.
+✅ Implemented (web + server + mobile for the end-user features; the admin dashboard and audit log stay web-only): BMI card (computed on read from profile height/weight), admin dashboard engagement metrics with minimal-data user list, append-only admin audit log + `/admin/audit-logs` page, scheduled workout + idempotent "Mark as Done" in Daily Logs, dashboard "today" rollover (`useToday`), self-service account deletion, retention job. Details and limits: `docs/DATA_RETENTION.md`.
+
+Mobile parity update: the mobile app now has the BMI card (`mobile/src/features/profile/components/BmiCard.tsx`), the scheduled workout with "Mark as Done" (`mobile/src/features/workouts/`), and self-service Delete Account (`DeleteAccountPanel.tsx`). Admin features and the audit log viewer remain web-only by design.
+
+Admin account deletion: the web admin UI no longer has a delete control for users. Account deletion is done by the user from Settings → Delete Account (web and mobile). The `DELETE /api/admin/users/:id` soft-delete endpoint still exists on the server but has no UI; the Phase 6 description of delete actions in the admin user table is superseded by this.
 
 Requires manual steps: apply migration `20261017120000_add_audit_logs_and_workout_log_unique`, `npx prisma generate`, and set `CRON_SECRET` / `RETENTION_DRY_RUN=false` to enable the purge.
 
 ## Phase 16 — Coach role (Oct 2026)
 
 ✅ Implemented (web + server + mobile): new `COACH` role (RBAC is `USER < COACH < ADMIN`, `lib/roles.ts` + `requireMinRole`). Admins grant/revoke it (`POST /api/admin/users/:id/grant-coach|revoke-coach`) and assign clients (`/api/admin/coaches/:id/clients`, POST/DELETE/GET; `GET /api/admin/coaches`). A client has at most one coach, a coach has many (`CoachAssignment`, soft-removed via `active`). Coaches get a "Coach" tab (`/coach`, `/coach/clients/:clientId`) backed by `GET /api/coach/clients` and `/clients/:id/dashboard`: read-only, whitelisted fields only (rank/XP/streak, 30-day habit booleans, goals' type/status/date, achievement count). No weight/body data, notes, step/sleep numbers, goal values, contact info, plans or chats. Coaches see only their active assigned clients; admins can open any account. Every list/dashboard view (and denied attempt) is written to the audit log (`COACH_VIEW_CLIENT_LIST`, `COACH_VIEW_CLIENT_DASHBOARD`, plus grant/revoke/assign/unassign actions); usernames are resolved at read time, never stored in the audit row. Naming: "coach" in `src/services/coachService.ts` / `coach-chat` is still the AI coach; the human-coach feature is `coaching*` / `/api/coach`.
+
+Thesis paper note (Oct 2026): the revised paper (`docs/ASCENOVA_Revised-spacing_ISO9126 (2) (1).pdf`) still described only USER and ADMIN roles. Chapters 1 to 3 need the Coach role, audit log, privacy/retention features and the other items listed above added; the AI Coach (Gemini chat) and the human Coach role must be named distinctly.
 
 Mobile has the Coach drawer item and two screens (`app/(app)/coach.tsx` client list, `coach-client.tsx` dashboard, both redirecting non-coaches) for coaches and admins; it has no admin panel, so granting coach and assigning clients is done on the web.
 

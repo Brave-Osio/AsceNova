@@ -4,9 +4,11 @@ import type { LucideIcon } from 'lucide-react';
 import { usePlanGenerator } from '../../fitness-plan/hooks/usePlanGenerator';
 import { useLogs } from '../../daily-log/hooks/useLogs';
 import { useProfile } from '../../profile/hooks/useProfile';
-import { useToday } from '../../../hooks/useToday';
+import { useSelectedDate } from '../../../hooks/useSelectedDate';
 import { ROUTES } from '../../../constants/routes';
 import type { DailyHabits } from '../../../types/log.types';
+
+const DATE_LABEL = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 
 interface TargetItem {
   key: keyof DailyHabits;
@@ -20,9 +22,14 @@ interface TargetItem {
  * toward today's target" is the number of today's targets hit — each row shows
  * the concrete goal it stands for (water/protein come from the active plan).
  */
-function buildItems(waterLiters: number | undefined, proteinGrams: number | undefined, sleepHours: number | null | undefined): TargetItem[] {
+function buildItems(
+  waterLiters: number | undefined,
+  proteinGrams: number | undefined,
+  sleepHours: number | null | undefined,
+  isToday: boolean,
+): TargetItem[] {
   return [
-    { key: 'workoutCompleted', label: 'Workout', target: 'Complete today’s session', icon: Dumbbell },
+    { key: 'workoutCompleted', label: 'Workout', target: isToday ? 'Complete today’s session' : 'Complete that day’s session', icon: Dumbbell },
     { key: 'hitWaterGoal', label: 'Water', target: waterLiters ? `${waterLiters} L` : 'Hit your water goal', icon: Droplet },
     { key: 'hitProteinGoal', label: 'Protein', target: proteinGrams ? `${proteinGrams} g` : 'Hit your protein goal', icon: Beef },
     { key: 'slept7PlusHours', label: 'Sleep', target: `${sleepHours ?? 7}+ hours`, icon: Moon },
@@ -34,14 +41,14 @@ export default function TodayTargetsCard() {
   const { plan, isLoading: isPlanLoading } = usePlanGenerator();
   const { data: logs, isLoading: isLogsLoading } = useLogs();
   const { data: profile } = useProfile();
-  const today = useToday();
+  const { selectedDate, isToday, setSelectedDate } = useSelectedDate();
 
   if (isPlanLoading || isLogsLoading) {
     return <div className="card h-56 animate-pulse rounded-3xl" aria-busy="true" aria-label="Loading today's target" />;
   }
 
-  const todayLog = logs?.find((l) => l.date === today);
-  const items = buildItems(plan?.nutrition.waterLiters, plan?.nutrition.proteinGrams, profile?.sleepHoursTarget);
+  const todayLog = logs?.find((l) => l.date === selectedDate);
+  const items = buildItems(plan?.nutrition.waterLiters, plan?.nutrition.proteinGrams, profile?.sleepHoursTarget, isToday);
   const done = todayLog ? items.filter((item) => todayLog.habits[item.key]).length : 0;
   const total = items.length;
   const percent = Math.round((done / total) * 100);
@@ -52,7 +59,18 @@ export default function TodayTargetsCard() {
     <div className="card rounded-3xl p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Today's Target</div>
+          <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-brand-text-muted">
+            {isToday ? "Today's Target" : `Target for ${DATE_LABEL.format(new Date(`${selectedDate}T00:00:00`))}`}
+            {!isToday && (
+              <button
+                type="button"
+                onClick={() => setSelectedDate(null)}
+                className="rounded-full border border-brand-border px-2.5 py-1 normal-case tracking-normal text-brand-primary-light hover:text-brand-text"
+              >
+                Back to today
+              </button>
+            )}
+          </div>
           <div className="mt-2 flex items-end gap-3">
             <span className="text-5xl font-black leading-none text-brand-text sm:text-6xl">{percent}%</span>
             <span className="mb-1 text-sm font-semibold text-brand-text-secondary">complete</span>
@@ -124,7 +142,7 @@ export default function TodayTargetsCard() {
             to={ROUTES.log}
             className="inline-flex items-center gap-1 rounded-full bg-brand-primary px-4 py-2 font-bold text-white transition-colors hover:bg-brand-primary-light"
           >
-            Log today's progress <ArrowRight size={12} />
+            {isToday ? "Log today's progress" : 'Log this day'} <ArrowRight size={12} />
           </Link>
         )}
       </div>
