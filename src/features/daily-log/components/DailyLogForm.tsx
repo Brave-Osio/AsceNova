@@ -14,8 +14,10 @@ const HABIT_ITEMS: { key: keyof DailyHabits; label: string; icon: LucideIcon }[]
   { key: 'reachedStepGoal', label: 'Reached Step Goal (8,000+)', icon: Footprints },
 ];
 
-export default function DailyLogForm() {
-  const { form, error, lastResult, isSubmitting, updateField, toggleHabit, handleSubmit } = useDailyLog();
+const DATE_LABEL = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+
+export default function DailyLogForm({ date, isToday }: { date: string; isToday: boolean }) {
+  const { form, error, lastResult, isSubmitting, updateField, toggleHabit, handleSubmit } = useDailyLog(date);
   const checkedCount = Object.values(form.habits).filter(Boolean).length;
 
   return (
@@ -38,7 +40,9 @@ export default function DailyLogForm() {
 
         <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <div className="mb-2 flex items-baseline justify-between">
-            <span className="text-sm font-medium text-brand-text-secondary">Today's Checklist</span>
+            <span className="text-sm font-medium text-brand-text-secondary">
+              {isToday ? "Today's Checklist" : `Checklist for ${DATE_LABEL.format(new Date(`${date}T00:00:00`))}`}
+            </span>
             <span className="text-xs text-brand-text-muted">{checkedCount} / {HABIT_ITEMS.length} done</span>
           </div>
 
@@ -75,7 +79,7 @@ export default function DailyLogForm() {
             label="Notes"
             value={form.notes}
             onChange={(v) => updateField('notes', v)}
-            placeholder="How did today go?"
+            placeholder={isToday ? 'How did today go?' : 'How did that day go?'}
           />
         </div>
 

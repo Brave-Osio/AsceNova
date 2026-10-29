@@ -7,7 +7,7 @@ import { queryKeys } from '../../../lib/queryKeys';
 import { showErrorToast } from '../../../lib/toast';
 import { fireConfetti } from '../../../lib/confetti';
 import { getRankForXp } from '../../../engines/rankEngine';
-import { getTodayDateString } from '../../../utils/dateUtils';
+import { useLogs } from './useLogs';
 import { validateWeightKg } from '../../../utils/validation';
 import { DEFAULT_HABITS, type DailyHabits, type DailyLogEntry } from '../../../types/log.types';
 import type { UserProgress } from '../../../types/gamification.types';
@@ -37,13 +37,32 @@ const INITIAL_STATE: DailyLogFormState = {
  * gamification effects genuinely don't happen, surfaced via the error
  * toast, rather than silently falling back to a local computation.
  */
-export function useDailyLog() {
+export function useDailyLog(date: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: logs } = useLogs();
   const [form, setForm] = useState<DailyLogFormState>(INITIAL_STATE);
   const [error, setError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Resume: switching the date shows that day's saved log, or a blank form if it has none.
+  // Adjusts state during render (not in an effect) keyed on the date and the saved row, so a
+  // background refetch of the same log never overwrites what the user is typing. The workout flag is
+  // part of the key because "Mark as Done" can flip it on the saved row after the form has loaded.
+  const savedLog = logs?.find((l) => l.date === date);
+  const syncKey = logs ? `${date}|${savedLog?.id ?? 'none'}|${savedLog?.habits.workoutCompleted ?? false}` : null;
+  const [syncedKey, setSyncedKey] = useState<string | null>(null);
+  if (syncKey !== null && syncKey !== syncedKey) {
+    setSyncedKey(syncKey);
+    setForm(
+      savedLog
+        ? { weightKg: String(savedLog.weightKg), habits: savedLog.habits, notes: savedLog.notes }
+        : INITIAL_STATE,
+    );
+    setError(null);
+    setLastResult(null);
+  }
 
   function updateField<K extends keyof DailyLogFormState>(field: K, value: DailyLogFormState[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -63,9 +82,8 @@ export function useDailyLog() {
     }
     setError(null);
 
-    const today = getTodayDateString();
     const input = {
-      date: today,
+      date,
       weightKg: Number(form.weightKg),
       habits: form.habits,
       notes: form.notes.trim(),
@@ -85,7 +103,7 @@ export function useDailyLog() {
         ? queryClient.getQueryData<UserProgress>(queryKeys.progress.detail(user.id))?.totalXp ?? 0
         : 0;
 
-      const result = await applyDailyLog(today);
+      const result = await applyDailyLog(date);
       if (user) {
         queryClient.setQueryData(queryKeys.progress.detail(user.id), result.progress);
         // applyDailyLog may have unlocked achievements or a rank-up, which
@@ -106,7 +124,6 @@ export function useDailyLog() {
       }
 
       setLastResult({ xpGained: result.xpGained, newAchievementTitles: result.newAchievementTitles });
-      setForm(INITIAL_STATE);
     } catch (err) {
       showErrorToast(err);
     } finally {
