@@ -13,7 +13,7 @@ const CHECK_INTERVAL_MS = 1000;
  * while backgrounded).
  */
 export function useIdleLogout(enabled: boolean, onIdle: () => void) {
-  const lastActivity = useRef(Date.now());
+  const lastActivity = useRef(0); // set to Date.now() in the effect below, once enabled
   const onIdleRef = useRef(onIdle);
   useEffect(() => {
     onIdleRef.current = onIdle;
