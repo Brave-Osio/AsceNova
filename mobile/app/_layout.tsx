@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useAppTheme } from '../src/context/ThemeContext';
 import { queryClient } from '../src/lib/queryClient';
 import { useIdleLogout } from '../src/hooks/useIdleLogout';
+import SessionTimeoutDialog from '../src/components/ui/SessionTimeoutDialog';
 
 /**
  * Auth-guarded root navigator — Stack.Protected redirects automatically
@@ -24,7 +25,7 @@ import { useIdleLogout } from '../src/hooks/useIdleLogout';
 function RootNavigator() {
   const { isLoading, isAuthenticated, logout } = useAuth();
   const { colors } = useAppTheme();
-  const { onTouchStart } = useIdleLogout(isAuthenticated, () => {
+  const { onTouchStart, isWarning, secondsLeft, stayActive } = useIdleLogout(isAuthenticated, () => {
     void logout().catch(() => undefined);
   });
   const [fontsLoaded, fontError] = useFonts({
@@ -54,6 +55,12 @@ function RootNavigator() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+      <SessionTimeoutDialog
+        visible={isWarning}
+        secondsLeft={secondsLeft}
+        onStay={stayActive}
+        onLogout={() => void logout().catch(() => undefined)}
+      />
     </View>
   );
 }
