@@ -11,7 +11,8 @@ import {
 } from '../services/authService';
 import { setAccessToken } from '../lib/httpClient';
 import { onAuthLogout } from '../lib/authEvents';
-import { showErrorToast, showSuccessToast } from '../lib/toast';
+import { showErrorToast, showInfoToast, showSuccessToast } from '../lib/toast';
+import { useIdleLogout } from '../hooks/useIdleLogout';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -112,6 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       showSuccessToast('Logged out');
     }
   }
+
+  useIdleLogout(status === 'authenticated', () => {
+    void logout().then(() => showInfoToast('You were logged out after 5 minutes of inactivity'));
+  });
 
   async function deleteAccount(input: { confirmation: 'DELETE'; password?: string; idToken?: string }) {
     await deleteAccountRequest(input);
