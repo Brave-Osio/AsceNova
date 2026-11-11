@@ -13,6 +13,7 @@ import { setAccessToken } from '../lib/httpClient';
 import { onAuthLogout } from '../lib/authEvents';
 import { showErrorToast, showInfoToast, showSuccessToast } from '../lib/toast';
 import { useIdleLogout } from '../hooks/useIdleLogout';
+import SessionTimeoutDialog from '../components/ui/SessionTimeoutDialog';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -114,8 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  useIdleLogout(status === 'authenticated', () => {
-    void logout().then(() => showInfoToast('You were logged out after 5 minutes of inactivity'));
+  const idle = useIdleLogout(status === 'authenticated', () => {
+    void logout().then(() => showInfoToast('You were logged out after 3 minutes of inactivity'));
   });
 
   async function deleteAccount(input: { confirmation: 'DELETE'; password?: string; idToken?: string }) {
@@ -140,7 +141,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     deleteAccount,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <SessionTimeoutDialog
+        isOpen={idle.isWarning}
+        secondsLeft={idle.secondsLeft}
+        onStay={idle.stayActive}
+        onLogout={() => void logout()}
+      />
+    </AuthContext.Provider>
+  );
 }
 
 // Kept with AuthProvider deliberately; splitting it out would mean updating
