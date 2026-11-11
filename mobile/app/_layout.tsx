@@ -14,6 +14,7 @@ import {
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useAppTheme } from '../src/context/ThemeContext';
 import { queryClient } from '../src/lib/queryClient';
+import { useIdleLogout } from '../src/hooks/useIdleLogout';
 
 /**
  * Auth-guarded root navigator — Stack.Protected redirects automatically
@@ -21,8 +22,11 @@ import { queryClient } from '../src/lib/queryClient';
  * All routes are always defined; only reachability changes with auth state.
  */
 function RootNavigator() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, logout } = useAuth();
   const { colors } = useAppTheme();
+  const { onTouchStart } = useIdleLogout(isAuthenticated, () => {
+    void logout().catch(() => undefined);
+  });
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -41,14 +45,16 @@ function RootNavigator() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isAuthenticated}>
-        <Stack.Screen name="(app)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!isAuthenticated}>
-        <Stack.Screen name="(auth)" />
-      </Stack.Protected>
-    </Stack>
+    <View style={styles.root} onTouchStart={onTouchStart}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Protected guard={isAuthenticated}>
+          <Stack.Screen name="(app)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!isAuthenticated}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+      </Stack>
+    </View>
   );
 }
 
@@ -73,6 +79,9 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   loading: {
     flex: 1,
     alignItems: 'center',
